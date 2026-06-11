@@ -191,17 +191,33 @@ between them).
 
 Five streams, sequenced. Prices in FCFA (≈ XAF 600 = $1).
 
-### 6.1 Group subscriptions (SaaS) — from Day 1
+### 6.1 Group subscriptions — billed annually "at the share-out"
+
+The key billing insight is **timing**. Every njangi has one day a year — the **year-end
+share-out** ("njangi don end," typically December) — when the whole house is gathered and
+the treasury is full. That is the natural, culturally-native moment to collect an annual
+fee: the assembly decides together, it's paid once from the group treasury (a line item
+like the hall or the drinks), and one social decision per year crushes the churn that
+monthly card-billing suffers.
+
+Three named tiers, all renewed yearly at the share-out (live in the app's **Plan** tab):
 
 | Tier | Price | Includes |
 |---|---|---|
-| **Free** | 0 | 1 group ≤ 15 members, ledger, SMS receipts (capped), cash recording |
-| **Standard** | **FCFA 2,500/month per group** (~$4) | Unlimited members, MoMo/OM collection, fines engine, trouble fund, reports |
-| **Association** | **FCFA 10,000/month** (~$17) | Multi-fund (njangi + caisse + trouble), elections, minutes, diaspora bridge, priority support |
+| **Kola Start** | **Free forever** (renew free each year) | 1 house, ≤ 15 members, full core ledger, trouble fund, receipts, cash recording |
+| **Kola Standard** | **FCFA 24,000/year** (~$40, ≈ 2,000/mo) | Unlimited members, MoMo/OM collection, fines engine, reports & CSV, priority support |
+| **Kola Elite** | **FCFA 100,000/year** (~$165) | Everything + multiple funds per house, advanced exports & analytics, Elite badge, diaspora-ready — for high-value houses |
 
-Paid by the group treasury (a line item groups already budget — they pay for the meeting
-hall and drinks; FCFA 2,500 is less than one crate of beer). Free tier exists purely to
-seed; the conversion trigger is MoMo collection and the trouble fund.
+**Tiering by fund size (the user's instinct, built in):** Kola inspects the money flowing
+through a house (contribution size, trouble-fund levies, standing balance) and
+*automatically suggests Elite* to houses that are clearly high-value — e.g. those setting
+aside FCFA 100K+/member or contributing FCFA 50K+/sitting. The Start tier exists purely to
+seed; the conversion triggers are the member cap, MoMo collection, and the trouble fund.
+
+**Non-negotiable principle — books are never held hostage.** When a subscription lapses,
+the house silently falls back to Start limits but **keeps full read and export of its
+entire ledger forever**. We pause premium features, never the truth. Locking a njangi's
+records would destroy the only thing the product sells: trust.
 
 ### 6.2 Transaction fees — from Day 1
 
