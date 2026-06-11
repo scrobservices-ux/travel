@@ -3,252 +3,665 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sahel Digital — Automatisation pour PME africaines</title>
-<meta name="description" content="Bots WhatsApp, systèmes de réservation, boutiques Mobile Money et chatbots IA pour les PME camerounaises. Livré en 72 heures, prix fixe.">
+<title>Sahel Digital — Automatisation premium pour PME africaines</title>
+<meta name="description" content="Bots WhatsApp, réservations, boutiques Mobile Money et assistants IA pour les PME camerounaises. Prix fixe, livré en 72 heures.">
+<meta property="og:title" content="Sahel Digital — Votre business ne dort plus">
+<meta property="og:description" content="Automatisation clé en main pour PME africaines. WhatsApp, Mobile Money, IA. Livré en 72h.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🌍</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --ink: #1f2421;
-    --paper: #faf7f0;
-    --accent: #c2562b;
-    --accent-dark: #9c4220;
-    --green: #1f7a4d;
-    --muted: #6b6259;
-    --card: #ffffff;
-    --line: #e6dfd3;
+    --bg: #0d100e;
+    --bg-soft: #131713;
+    --line: rgba(244, 241, 234, 0.10);
+    --line-strong: rgba(244, 241, 234, 0.18);
+    --cream: #f4f1ea;
+    --cream-dim: rgba(244, 241, 234, 0.62);
+    --cream-faint: rgba(244, 241, 234, 0.38);
+    --terra: #e2683a;
+    --amber: #f0a851;
+    --wa: #25d366;
+    --wa-deep: #128c5e;
+    --radius: 22px;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
-    font-family: Georgia, 'Times New Roman', serif;
-    background: var(--paper);
-    color: var(--ink);
+    background: var(--bg);
+    color: var(--cream);
+    font-family: 'Space Grotesk', -apple-system, 'Segoe UI', sans-serif;
+    font-weight: 300;
     line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
-  .sans { font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
-  .wrap { max-width: 960px; margin: 0 auto; padding: 0 1.25rem; }
+  .serif { font-family: 'Fraunces', Georgia, serif; }
+  ::selection { background: var(--terra); color: var(--bg); }
 
+  /* ---------- texture & glow ---------- */
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.035 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .blob {
+    position: absolute; border-radius: 50%; filter: blur(90px); pointer-events: none;
+    opacity: 0.55; will-change: transform;
+  }
+  .blob-a { width: 480px; height: 480px; background: radial-gradient(circle, rgba(226,104,58,0.34), transparent 65%); top: -120px; right: -100px; animation: drift 16s ease-in-out infinite alternate; }
+  .blob-b { width: 420px; height: 420px; background: radial-gradient(circle, rgba(37,211,102,0.16), transparent 65%); top: 40%; left: -180px; animation: drift 20s ease-in-out infinite alternate-reverse; }
+  @keyframes drift {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(40px, 60px) scale(1.12); }
+  }
+
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 1.4rem; position: relative; z-index: 2; }
+
+  /* ---------- nav ---------- */
   header {
-    border-bottom: 1px solid var(--line);
-    background: var(--paper);
-    position: sticky; top: 0; z-index: 10;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    transition: background 0.4s, border-color 0.4s, backdrop-filter 0.4s;
+    border-bottom: 1px solid transparent;
   }
-  .nav { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 0; }
-  .logo { font-weight: bold; font-size: 1.15rem; letter-spacing: 0.02em; }
-  .logo em { color: var(--accent); font-style: italic; }
+  header.scrolled {
+    background: rgba(13, 16, 14, 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom-color: var(--line);
+  }
+  .nav { display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 0; }
+  .logo { font-family: 'Fraunces', serif; font-size: 1.25rem; font-weight: 500; letter-spacing: 0.01em; text-decoration: none; color: var(--cream); }
+  .logo em { color: var(--terra); font-style: italic; }
+  .nav-right { display: flex; align-items: center; gap: 0.9rem; }
+  .nav-links { display: none; gap: 1.6rem; }
+  @media (min-width: 760px) { .nav-links { display: flex; } }
+  .nav-links a {
+    color: var(--cream-dim); text-decoration: none; font-size: 0.88rem; letter-spacing: 0.02em;
+    transition: color 0.3s;
+  }
+  .nav-links a:hover { color: var(--cream); }
   .lang-toggle {
-    font-family: inherit; font-size: 0.85rem; cursor: pointer;
-    border: 1px solid var(--line); background: var(--card);
-    padding: 0.3rem 0.75rem; border-radius: 999px; color: var(--muted);
+    font-family: inherit; font-size: 0.78rem; letter-spacing: 0.08em; cursor: pointer;
+    border: 1px solid var(--line-strong); background: transparent; color: var(--cream-dim);
+    padding: 0.42rem 0.9rem; border-radius: 999px; transition: all 0.3s;
   }
-  .lang-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .lang-toggle:hover { border-color: var(--terra); color: var(--terra); }
+  .nav-cta {
+    display: none; text-decoration: none; font-size: 0.85rem; color: var(--bg);
+    background: var(--cream); padding: 0.5rem 1.1rem; border-radius: 999px;
+    transition: transform 0.3s var(--ease), background 0.3s;
+  }
+  .nav-cta:hover { background: var(--wa); transform: translateY(-1px); }
+  @media (min-width: 560px) { .nav-cta { display: inline-block; } }
 
-  .hero { padding: 3.5rem 0 2.5rem; }
-  .hero h1 { font-size: clamp(1.9rem, 5vw, 3rem); line-height: 1.15; max-width: 22ch; }
-  .hero h1 em { color: var(--accent); font-style: italic; }
-  .hero p.lede { margin-top: 1.1rem; font-size: 1.1rem; color: var(--muted); max-width: 52ch; }
-  .cta-row { margin-top: 1.75rem; display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  /* ---------- buttons ---------- */
   .btn {
-    display: inline-block; text-decoration: none; border-radius: 6px;
-    padding: 0.8rem 1.4rem; font-size: 1rem; font-family: inherit;
+    display: inline-flex; align-items: center; gap: 0.55rem; text-decoration: none;
+    border-radius: 999px; padding: 0.95rem 1.7rem; font-size: 1rem; font-weight: 400;
+    transition: transform 0.4s var(--ease), box-shadow 0.4s, background 0.3s, color 0.3s;
+    will-change: transform;
   }
-  .btn-primary { background: var(--green); color: #fff; }
-  .btn-primary:hover { background: #16613c; }
-  .btn-ghost { border: 1px solid var(--ink); color: var(--ink); }
-  .btn-ghost:hover { background: var(--ink); color: var(--paper); }
-  .trust { margin-top: 1.25rem; font-size: 0.85rem; color: var(--muted); }
+  .btn-wa { background: var(--wa); color: #04210f; box-shadow: 0 8px 32px rgba(37, 211, 102, 0.25); }
+  .btn-wa:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 14px 44px rgba(37, 211, 102, 0.35); }
+  .btn-ghost { border: 1px solid var(--line-strong); color: var(--cream); }
+  .btn-ghost:hover { border-color: var(--cream); transform: translateY(-3px); }
 
-  section { padding: 2.75rem 0; }
-  section h2 { font-size: 1.6rem; margin-bottom: 0.4rem; }
-  section p.sub { color: var(--muted); margin-bottom: 1.75rem; max-width: 56ch; }
-  .rule { border: none; border-top: 1px solid var(--line); }
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative; padding: 9.5rem 0 5rem; min-height: 92vh;
+    display: flex; align-items: center;
+  }
+  .hero-grid { display: grid; grid-template-columns: 1fr; gap: 4rem; align-items: center; width: 100%; }
+  @media (min-width: 920px) { .hero-grid { grid-template-columns: 1.15fr 0.85fr; } }
 
-  .grid { display: grid; gap: 1rem; grid-template-columns: 1fr; }
-  @media (min-width: 640px) { .grid { grid-template-columns: 1fr 1fr; } }
+  .kicker {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--cream-dim);
+    border: 1px solid var(--line-strong); padding: 0.45rem 1rem; border-radius: 999px; margin-bottom: 1.6rem;
+  }
+  .kicker .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--wa); animation: pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(37,211,102,0.5); } 50% { opacity: 0.6; box-shadow: 0 0 0 7px rgba(37,211,102,0); } }
 
+  h1 {
+    font-family: 'Fraunces', serif; font-weight: 380;
+    font-size: clamp(2.6rem, 6.4vw, 4.6rem);
+    line-height: 1.04; letter-spacing: -0.015em;
+  }
+  h1 .l { display: block; overflow: hidden; }
+  h1 .l > span { display: block; transform: translateY(115%); animation: rise 1.1s var(--ease) forwards; }
+  h1 .l:nth-child(2) > span { animation-delay: 0.12s; }
+  h1 .l:nth-child(3) > span { animation-delay: 0.24s; }
+  @keyframes rise { to { transform: translateY(0); } }
+  h1 em { font-style: italic; background: linear-gradient(100deg, var(--terra), var(--amber)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  .hero p.lede { margin-top: 1.6rem; font-size: 1.12rem; color: var(--cream-dim); max-width: 46ch; }
+  .cta-row { margin-top: 2.2rem; display: flex; gap: 0.9rem; flex-wrap: wrap; }
+
+  .hero-stats { margin-top: 3rem; display: flex; gap: 2.6rem; flex-wrap: wrap; }
+  .stat .num { font-family: 'Fraunces', serif; font-size: 1.9rem; font-weight: 450; color: var(--cream); }
+  .stat .num b { color: var(--terra); font-weight: 450; }
+  .stat .lab { font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cream-faint); margin-top: 0.1rem; }
+
+  /* ---------- phone mockup ---------- */
+  .phone-wrap { display: flex; justify-content: center; position: relative; }
+  .phone-halo {
+    position: absolute; inset: -40px; border-radius: 60px; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 40%, rgba(37,211,102,0.14), transparent 70%);
+  }
+  .phone {
+    width: min(330px, 86vw); border-radius: 44px; border: 1px solid var(--line-strong);
+    background: #060807; padding: 12px; position: relative; z-index: 2;
+    box-shadow: 0 40px 90px rgba(0,0,0,0.55), inset 0 0 0 2px rgba(255,255,255,0.04);
+    animation: float 7s ease-in-out infinite;
+  }
+  @keyframes float { 0%, 100% { transform: translateY(0) rotate(-0.6deg); } 50% { transform: translateY(-12px) rotate(0.6deg); } }
+  .phone .notch { width: 34%; height: 22px; background: #060807; border-radius: 0 0 16px 16px; position: absolute; top: 12px; left: 33%; z-index: 5; }
+  .screen { border-radius: 34px; overflow: hidden; background: #0b141a; display: flex; flex-direction: column; height: 580px; }
+  .chat-head {
+    background: #1f2c33; padding: 1.45rem 0.9rem 0.7rem; display: flex; align-items: center; gap: 0.65rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--terra), var(--amber));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 600; color: #fff;
+  }
+  .chat-head .who { line-height: 1.25; }
+  .chat-head .who .name { font-size: 0.9rem; color: #e9edef; font-weight: 500; }
+  .chat-head .who .status { font-size: 0.72rem; color: var(--wa); }
+  .chat-head .time { margin-left: auto; font-size: 0.72rem; color: rgba(233,237,239,0.45); }
+  .chat-body {
+    flex: 1; padding: 0.9rem 0.7rem; display: flex; flex-direction: column; gap: 0.45rem;
+    overflow: hidden; justify-content: flex-end;
+    background-image: radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .msg {
+    max-width: 82%; padding: 0.5rem 0.7rem; border-radius: 10px; font-size: 0.83rem; line-height: 1.42;
+    opacity: 0; transform: translateY(14px) scale(0.97);
+    animation: msgin 0.5s var(--ease) forwards;
+    position: relative;
+  }
+  @keyframes msgin { to { opacity: 1; transform: translateY(0) scale(1); } }
+  .msg.in { align-self: flex-start; background: #202c33; color: #e9edef; border-top-left-radius: 2px; }
+  .msg.out { align-self: flex-end; background: #005c4b; color: #e9edef; border-top-right-radius: 2px; }
+  .msg .meta { display: block; text-align: right; font-size: 0.62rem; color: rgba(233,237,239,0.5); margin-top: 0.18rem; }
+  .msg.out .meta .tick { color: #53bdeb; }
+  .msg .bot-tag {
+    display: inline-block; font-size: 0.58rem; letter-spacing: 0.05em; color: var(--wa);
+    background: rgba(37,211,102,0.12); border-radius: 4px; padding: 0.08rem 0.35rem; margin-bottom: 0.25rem;
+  }
+  .typing { align-self: flex-end; background: #005c4b; border-radius: 10px; border-top-right-radius: 2px; padding: 0.62rem 0.85rem; display: flex; gap: 4px; opacity: 0; animation: msgin 0.3s var(--ease) forwards; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: rgba(233,237,239,0.65); animation: bounce 1.1s infinite; }
+  .typing i:nth-child(2) { animation-delay: 0.15s; }
+  .typing i:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+  .chat-input { background: #1f2c33; padding: 0.55rem 0.8rem; display: flex; align-items: center; gap: 0.5rem; }
+  .chat-input .field { flex: 1; background: #2a3942; border-radius: 999px; padding: 0.45rem 0.9rem; font-size: 0.78rem; color: rgba(233,237,239,0.4); }
+  .chat-input .send { width: 32px; height: 32px; border-radius: 50%; background: var(--wa-deep); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+  .phone-caption { text-align: center; margin-top: 1.3rem; font-size: 0.82rem; color: var(--cream-faint); font-style: italic; font-family: 'Fraunces', serif; }
+
+  /* ---------- marquee ---------- */
+  .marquee { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: hidden; padding: 1.1rem 0; position: relative; z-index: 2; background: var(--bg-soft); }
+  .marquee-track { display: flex; gap: 3rem; white-space: nowrap; width: max-content; animation: scroll 30s linear infinite; }
+  .marquee:hover .marquee-track { animation-play-state: paused; }
+  @keyframes scroll { to { transform: translateX(-50%); } }
+  .marquee span { font-family: 'Fraunces', serif; font-style: italic; font-size: 1.05rem; color: var(--cream-faint); display: inline-flex; align-items: center; gap: 3rem; }
+  .marquee span::after { content: '✦'; color: var(--terra); font-style: normal; font-size: 0.8rem; }
+
+  /* ---------- sections ---------- */
+  section { padding: 6.5rem 0; position: relative; }
+  .sec-head { margin-bottom: 3.4rem; max-width: 640px; }
+  .sec-tag { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--terra); margin-bottom: 0.9rem; display: block; }
+  h2 { font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(1.9rem, 4.2vw, 3rem); line-height: 1.1; letter-spacing: -0.01em; }
+  h2 em { font-style: italic; color: var(--amber); }
+  .sec-head p { margin-top: 1.1rem; color: var(--cream-dim); font-size: 1.05rem; }
+
+  /* reveal on scroll */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s var(--ease), transform 0.9s var(--ease); }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* ---------- services ---------- */
+  .cards { display: grid; gap: 1.2rem; grid-template-columns: 1fr; }
+  @media (min-width: 700px) { .cards { grid-template-columns: 1fr 1fr; } }
   .card {
-    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-    padding: 1.4rem;
+    border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
+    background: var(--bg-soft); display: flex; flex-direction: column;
+    transition: transform 0.5s var(--ease), border-color 0.4s, box-shadow 0.5s;
   }
-  .card .tag {
-    display: inline-block; font-size: 0.72rem; letter-spacing: 0.06em;
-    text-transform: uppercase; color: var(--accent); margin-bottom: 0.5rem;
+  .card:hover { transform: translateY(-7px); border-color: var(--line-strong); box-shadow: 0 30px 60px rgba(0,0,0,0.4); }
+  .card-img { height: 215px; overflow: hidden; position: relative; background: linear-gradient(135deg, #1d2420, #11150f); }
+  .card-img::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(13,16,14,0.85), transparent 55%);
   }
-  .card h3 { font-size: 1.15rem; margin-bottom: 0.45rem; }
-  .card p { font-size: 0.95rem; color: var(--muted); }
-  .card .price { margin-top: 0.9rem; font-size: 1.05rem; }
-  .card .price strong { color: var(--ink); }
-  .card .price span { font-size: 0.85rem; color: var(--muted); }
+  .card-img img { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.92); transition: transform 0.8s var(--ease); }
+  .card:hover .card-img img { transform: scale(1.06); }
+  .card-img .pill {
+    position: absolute; bottom: 0.9rem; left: 1.1rem; z-index: 2;
+    font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase;
+    background: rgba(13,16,14,0.65); backdrop-filter: blur(8px); border: 1px solid var(--line-strong);
+    color: var(--amber); padding: 0.32rem 0.8rem; border-radius: 999px;
+  }
+  .card-body { padding: 1.5rem 1.5rem 1.7rem; display: flex; flex-direction: column; flex: 1; }
+  .card-body h3 { font-family: 'Fraunces', serif; font-weight: 450; font-size: 1.4rem; margin-bottom: 0.55rem; }
+  .card-body > p { color: var(--cream-dim); font-size: 0.95rem; flex: 0; }
+  .feat { list-style: none; margin: 1.1rem 0 1.4rem; display: grid; gap: 0.45rem; flex: 1; }
+  .feat li { font-size: 0.88rem; color: var(--cream-dim); padding-left: 1.4rem; position: relative; }
+  .feat li::before { content: '→'; position: absolute; left: 0; color: var(--terra); }
+  .price-row { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--line); padding-top: 1.15rem; flex-wrap: wrap; }
+  .price-row .p { font-family: 'Fraunces', serif; font-size: 1.3rem; }
+  .price-row .p small { display: block; font-family: 'Space Grotesk'; font-size: 0.75rem; color: var(--cream-faint); margin-top: 0.1rem; }
+  .card-link { font-size: 0.85rem; color: var(--wa); text-decoration: none; white-space: nowrap; transition: gap 0.3s; display: inline-flex; gap: 0.3rem; }
+  .card-link:hover { text-decoration: underline; }
 
-  .steps { counter-reset: step; display: grid; gap: 1rem; grid-template-columns: 1fr; }
-  @media (min-width: 640px) { .steps { grid-template-columns: repeat(3, 1fr); } }
-  .step { padding: 1.1rem 1.2rem; border-left: 3px solid var(--accent); background: var(--card); border-radius: 0 8px 8px 0; }
+  /* ---------- process ---------- */
+  .steps { display: grid; gap: 1.2rem; grid-template-columns: 1fr; counter-reset: step; }
+  @media (min-width: 760px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+  .step {
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 2rem 1.7rem;
+    background: linear-gradient(160deg, var(--bg-soft), transparent);
+    transition: transform 0.5s var(--ease), border-color 0.4s;
+    position: relative; overflow: hidden;
+  }
+  .step:hover { transform: translateY(-5px); border-color: var(--line-strong); }
   .step::before {
-    counter-increment: step; content: counter(step);
-    display: block; font-size: 1.6rem; color: var(--accent); font-style: italic;
+    counter-increment: step; content: '0' counter(step);
+    font-family: 'Fraunces', serif; font-style: italic; font-size: 4.4rem; font-weight: 300;
+    position: absolute; top: -0.8rem; right: 0.8rem; color: rgba(226,104,58,0.16);
   }
-  .step h4 { margin: 0.2rem 0 0.3rem; font-size: 1rem; }
-  .step p { font-size: 0.9rem; color: var(--muted); }
+  .step h4 { font-family: 'Fraunces', serif; font-weight: 450; font-size: 1.25rem; margin-bottom: 0.6rem; }
+  .step p { font-size: 0.92rem; color: var(--cream-dim); }
+  .step .dur { display: inline-block; margin-top: 1.1rem; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--amber); border: 1px solid rgba(240,168,81,0.3); border-radius: 999px; padding: 0.28rem 0.75rem; }
 
-  .faq details { border-bottom: 1px solid var(--line); padding: 0.85rem 0; }
-  .faq summary { cursor: pointer; font-size: 1.02rem; }
-  .faq details p { margin-top: 0.5rem; color: var(--muted); font-size: 0.95rem; }
+  /* ---------- promise band ---------- */
+  .band {
+    border: 1px solid var(--line); border-radius: calc(var(--radius) * 1.4);
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(226,104,58,0.13), transparent 55%),
+      radial-gradient(ellipse at 90% 100%, rgba(37,211,102,0.08), transparent 55%),
+      var(--bg-soft);
+    padding: 3.4rem 2rem; text-align: center;
+  }
+  @media (min-width: 760px) { .band { padding: 4.5rem 4rem; } }
+  .band h2 { max-width: 18ch; margin: 0 auto; }
+  .band p { color: var(--cream-dim); max-width: 52ch; margin: 1.2rem auto 0; }
+  .band .cta-row { justify-content: center; }
+  .band .fine { margin-top: 1.4rem; font-size: 0.8rem; color: var(--cream-faint); }
 
-  footer { border-top: 1px solid var(--line); padding: 2rem 0 3rem; color: var(--muted); font-size: 0.85rem; }
-  footer a { color: var(--accent); }
+  /* ---------- faq ---------- */
+  .faq { max-width: 760px; }
+  .faq details { border-bottom: 1px solid var(--line); }
+  .faq summary {
+    cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    padding: 1.45rem 0.2rem; font-family: 'Fraunces', serif; font-size: 1.12rem; font-weight: 420;
+    transition: color 0.3s;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary:hover { color: var(--amber); }
+  .faq summary .ico { flex-shrink: 0; width: 30px; height: 30px; border: 1px solid var(--line-strong); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--cream-dim); transition: transform 0.4s var(--ease), background 0.3s, color 0.3s; }
+  .faq details[open] summary .ico { transform: rotate(45deg); background: var(--terra); border-color: var(--terra); color: var(--bg); }
+  .faq details p { padding: 0 0.2rem 1.5rem; color: var(--cream-dim); font-size: 0.97rem; max-width: 60ch; }
 
+  /* ---------- footer ---------- */
+  footer { border-top: 1px solid var(--line); padding: 3.5rem 0 2.5rem; position: relative; z-index: 2; }
+  .foot-grid { display: flex; flex-wrap: wrap; gap: 2rem; justify-content: space-between; align-items: flex-start; }
+  .foot-grid .logo { font-size: 1.5rem; }
+  .foot-grid .tag { margin-top: 0.5rem; color: var(--cream-faint); font-size: 0.88rem; max-width: 30ch; }
+  .foot-links { display: flex; gap: 1.6rem; flex-wrap: wrap; }
+  .foot-links a { color: var(--cream-dim); text-decoration: none; font-size: 0.88rem; transition: color 0.3s; }
+  .foot-links a:hover { color: var(--wa); }
+  .legal { margin-top: 2.6rem; padding-top: 1.4rem; border-top: 1px solid var(--line); font-size: 0.76rem; color: var(--cream-faint); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; }
+
+  /* ---------- floating wa ---------- */
   .wa-float {
-    position: fixed; right: 1rem; bottom: 1rem; z-index: 20;
-    background: var(--green); color: #fff; text-decoration: none;
-    border-radius: 999px; padding: 0.75rem 1.2rem; font-size: 0.95rem;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    position: fixed; right: 1.1rem; bottom: 1.1rem; z-index: 60;
+    width: 58px; height: 58px; border-radius: 50%;
+    background: var(--wa); color: #04210f; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; font-size: 1.6rem;
+    box-shadow: 0 10px 32px rgba(37, 211, 102, 0.4);
+    transition: transform 0.4s var(--ease);
+    animation: pulse 3s ease-in-out infinite;
+  }
+  .wa-float:hover { transform: scale(1.1) rotate(8deg); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    h1 .l > span { transform: none; }
+    .reveal { opacity: 1; transform: none; }
   }
 </style>
 </head>
 <body>
 
-<header>
+<div class="grain"></div>
+
+<header id="hdr">
   <div class="wrap nav">
-    <div class="logo">Sahel<em>Digital</em></div>
-    <button class="lang-toggle sans" id="langToggle" aria-label="Switch language">EN</button>
+    <a class="logo" href="#">Sahel<em>Digital</em></a>
+    <nav class="nav-links">
+      <a href="#offres" data-fr="Offres" data-en="Packages"></a>
+      <a href="#process" data-fr="Méthode" data-en="Process"></a>
+      <a href="#faq" data-fr="FAQ" data-en="FAQ"></a>
+    </nav>
+    <div class="nav-right">
+      <button class="lang-toggle" id="langToggle" aria-label="Switch language">EN</button>
+      <a class="nav-cta wa-link" href="#" data-fr="Discutons →" data-en="Let's talk →"></a>
+    </div>
   </div>
 </header>
 
-<main class="wrap">
+<main>
 
+  <!-- ============ HERO ============ -->
   <div class="hero">
-    <h1 data-fr="Votre business travaille. <em>Même quand vous dormez.</em>"
-        data-en="Your business keeps working. <em>Even while you sleep.</em>"></h1>
-    <p class="lede"
-       data-fr="Nous installons des bots WhatsApp, des systèmes de réservation, des boutiques Mobile Money et des assistants IA pour les PME camerounaises. Prix fixe. Livré en 72 heures. Aucune compétence technique requise."
-       data-en="We build WhatsApp bots, booking systems, Mobile Money storefronts and AI assistants for Cameroonian SMBs. Fixed price. Delivered in 72 hours. No technical skills required."></p>
-    <div class="cta-row">
-      <a class="btn btn-primary" id="ctaWa" href="#"
-         data-fr="Parlez-nous sur WhatsApp"
-         data-en="Talk to us on WhatsApp"></a>
-      <a class="btn btn-ghost" href="#offres"
-         data-fr="Voir les offres"
-         data-en="See packages"></a>
+    <div class="blob blob-a"></div>
+    <div class="blob blob-b"></div>
+    <div class="wrap hero-grid">
+      <div>
+        <span class="kicker"><span class="dot"></span><span data-fr="Automatisation pour PME africaines" data-en="Automation for African SMBs"></span></span>
+        <h1 id="heroTitle"></h1>
+        <p class="lede"
+           data-fr="Bots WhatsApp, réservations, boutiques Mobile Money et assistants IA — installés pour votre business, à prix fixe, en 72 heures. Pendant que vous dormez, vos clients sont servis."
+           data-en="WhatsApp bots, bookings, Mobile Money storefronts and AI assistants — installed for your business, fixed price, in 72 hours. While you sleep, your customers are served."></p>
+        <div class="cta-row">
+          <a class="btn btn-wa wa-link" href="#"><span>💬</span><span data-fr="Discutons sur WhatsApp" data-en="Chat with us on WhatsApp"></span></a>
+          <a class="btn btn-ghost" href="#offres" data-fr="Voir les offres" data-en="See packages"></a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat"><div class="num"><b>72</b>h</div><div class="lab" data-fr="de l'idée au lancement" data-en="from idea to launch"></div></div>
+          <div class="stat"><div class="num">24<b>/</b>7</div><div class="lab" data-fr="vos clients servis" data-en="customers served"></div></div>
+          <div class="stat"><div class="num"><b>0</b></div><div class="lab" data-fr="compétence technique requise" data-en="technical skills needed"></div></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="phone-wrap">
+          <div class="phone-halo"></div>
+          <div class="phone">
+            <div class="notch"></div>
+            <div class="screen">
+              <div class="chat-head">
+                <div class="avatar">SA</div>
+                <div class="who">
+                  <div class="name">Salon Awa <span style="color:#53bdeb">✓</span></div>
+                  <div class="status" data-fr="en ligne" data-en="online"></div>
+                </div>
+                <div class="time">23:47</div>
+              </div>
+              <div class="chat-body" id="chatBody"></div>
+              <div class="chat-input">
+                <div class="field" data-fr="Message" data-en="Message"></div>
+                <div class="send">➤</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="phone-caption"
+           data-fr="23h47 — la propriétaire dort. Son business, non."
+           data-en="11:47pm — the owner is asleep. Her business isn't."></p>
+      </div>
     </div>
-    <p class="trust sans"
-       data-fr="Paiement par MTN MoMo ou Orange Money · Service 100% à distance · Support en français et en anglais"
-       data-en="Pay by MTN MoMo or Orange Money · 100% remote service · Support in French and English"></p>
   </div>
 
-  <hr class="rule">
+  <!-- ============ MARQUEE ============ -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track" id="marqueeTrack"></div>
+  </div>
 
+  <!-- ============ SERVICES ============ -->
   <section id="offres">
-    <h2 data-fr="Quatre offres. Prix fixes. Pas de surprise."
-        data-en="Four packages. Fixed prices. No surprises."></h2>
-    <p class="sub"
-       data-fr="Chaque offre comprend l'installation, la configuration pour votre business, la formation de votre équipe, et un mois de support inclus."
-       data-en="Every package includes setup, configuration for your business, team training, and one month of support included."></p>
-
-    <div class="grid">
-      <div class="card">
-        <span class="tag sans" data-fr="Le plus populaire" data-en="Most popular"></span>
-        <h3 data-fr="Bot WhatsApp Business" data-en="WhatsApp Business Bot"></h3>
-        <p data-fr="Répond automatiquement à vos clients 24h/24 : horaires, tarifs, localisation, catalogue. Transfère à un humain quand il le faut. Plus aucun client perdu parce que vous n'avez pas répondu."
-           data-en="Answers your customers automatically, 24/7: opening hours, prices, location, catalogue. Hands over to a human when needed. Never lose another customer because you didn't reply."></p>
-        <p class="price"><strong>150 000 FCFA</strong> <span data-fr="installation + 25 000 FCFA/mois" data-en="setup + 25,000 FCFA/month"></span></p>
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="sec-tag" data-fr="Les offres" data-en="The packages"></span>
+        <h2 data-fr="Quatre produits. <em>Prix fixes.</em> Aucune surprise."
+            data-en="Four products. <em>Fixed prices.</em> No surprises."></h2>
+        <p data-fr="Chaque offre comprend l'installation, la configuration pour votre business, la formation de votre équipe et un mois de support. Paiement par MTN MoMo, Orange Money ou virement."
+           data-en="Every package includes setup, configuration for your business, team training and one month of support. Pay by MTN MoMo, Orange Money or bank transfer."></p>
       </div>
 
-      <div class="card">
-        <span class="tag sans" data-fr="Salons · Cliniques · Tourisme" data-en="Salons · Clinics · Tourism"></span>
-        <h3 data-fr="Système de réservation" data-en="Booking System"></h3>
-        <p data-fr="Vos clients réservent en ligne ou via WhatsApp. Confirmations et rappels automatiques. Fini les rendez-vous oubliés et les doubles réservations."
-           data-en="Customers book online or through WhatsApp. Automatic confirmations and reminders. No more forgotten appointments or double bookings."></p>
-        <p class="price"><strong>250 000 FCFA</strong> <span data-fr="installation + 35 000 FCFA/mois" data-en="setup + 35,000 FCFA/month"></span></p>
-      </div>
+      <div class="cards">
 
-      <div class="card">
-        <span class="tag sans" data-fr="Commerce" data-en="Commerce"></span>
-        <h3 data-fr="Boutique Mobile Money" data-en="Mobile Money Storefront"></h3>
-        <p data-fr="Une boutique en ligne où vos clients paient directement par MTN MoMo ou Orange Money. Catalogue, commande, paiement, confirmation — sans carte bancaire."
-           data-en="An online shop where customers pay directly with MTN MoMo or Orange Money. Catalogue, order, payment, confirmation — no bank card needed."></p>
-        <p class="price"><strong>350 000 FCFA</strong> <span data-fr="installation + 50 000 FCFA/mois" data-en="setup + 50,000 FCFA/month"></span></p>
-      </div>
+        <article class="card reveal">
+          <div class="card-img">
+            <img src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=900&q=80" alt="Commerçante répondant à ses clients" loading="lazy" onerror="this.remove()">
+            <span class="pill" data-fr="Le plus populaire" data-en="Most popular"></span>
+          </div>
+          <div class="card-body">
+            <h3 data-fr="Bot WhatsApp Business" data-en="WhatsApp Business Bot"></h3>
+            <p data-fr="Votre WhatsApp répond seul, 24h/24 — et passe la main à un humain quand il le faut."
+               data-en="Your WhatsApp answers by itself, 24/7 — and hands over to a human when needed."></p>
+            <ul class="feat">
+              <li data-fr="Horaires, tarifs, localisation, catalogue : réponses instantanées" data-en="Hours, prices, location, catalogue: instant answers"></li>
+              <li data-fr="Transfert intelligent vers vous quand le client le demande" data-en="Smart handover to you when the customer asks"></li>
+              <li data-fr="API officielle Meta — zéro risque de blocage de numéro" data-en="Official Meta API — zero number-ban risk"></li>
+            </ul>
+            <div class="price-row">
+              <div class="p">150 000 FCFA <small data-fr="installation · puis 25 000 FCFA/mois" data-en="setup · then 25,000 FCFA/month"></small></div>
+              <a class="card-link wa-link" href="#" data-fr="Demander →" data-en="Enquire →"></a>
+            </div>
+          </div>
+        </article>
 
-      <div class="card">
-        <span class="tag sans" data-fr="Intelligence artificielle" data-en="Artificial intelligence"></span>
-        <h3 data-fr="Assistant IA sur WhatsApp" data-en="AI Assistant on WhatsApp"></h3>
-        <p data-fr="Un assistant intelligent qui connaît votre business et répond à vos clients en français et en anglais, comme un vrai employé. Il vend, conseille, et ne dort jamais."
-           data-en="A smart assistant that knows your business and answers customers in French and English, like a real employee. It sells, advises, and never sleeps."></p>
-        <p class="price"><strong>400 000 FCFA</strong> <span data-fr="installation + 75 000 FCFA/mois" data-en="setup + 75,000 FCFA/month"></span></p>
+        <article class="card reveal" data-d="1">
+          <div class="card-img">
+            <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=900&q=80" alt="Salon de coiffure" loading="lazy" onerror="this.remove()">
+            <span class="pill" data-fr="Salons · Cliniques · Tourisme" data-en="Salons · Clinics · Tourism"></span>
+          </div>
+          <div class="card-body">
+            <h3 data-fr="Système de réservation" data-en="Booking System"></h3>
+            <p data-fr="Vos clients réservent en ligne ; vous recevez chaque rendez-vous sur WhatsApp."
+               data-en="Customers book online; every appointment lands on your WhatsApp."></p>
+            <ul class="feat">
+              <li data-fr="Page de réservation mobile, à vos couleurs" data-en="Mobile booking page, in your brand"></li>
+              <li data-fr="Confirmations WhatsApp automatiques, pour vous et le client" data-en="Automatic WhatsApp confirmations, for you and the customer"></li>
+              <li data-fr="Fini les doubles réservations et les rendez-vous oubliés" data-en="No more double bookings or forgotten appointments"></li>
+            </ul>
+            <div class="price-row">
+              <div class="p">250 000 FCFA <small data-fr="installation · puis 35 000 FCFA/mois" data-en="setup · then 35,000 FCFA/month"></small></div>
+              <a class="card-link wa-link" href="#" data-fr="Demander →" data-en="Enquire →"></a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card reveal">
+          <div class="card-img">
+            <img src="https://images.unsplash.com/photo-1556742044-3c52d6e88c62?auto=format&fit=crop&w=900&q=80" alt="Paiement par téléphone mobile" loading="lazy" onerror="this.remove()">
+            <span class="pill" data-fr="Commerce" data-en="Commerce"></span>
+          </div>
+          <div class="card-body">
+            <h3 data-fr="Boutique Mobile Money" data-en="Mobile Money Storefront"></h3>
+            <p data-fr="Une boutique en ligne où l'on paie par MTN MoMo ou Orange Money. Sans carte bancaire."
+               data-en="An online shop where customers pay by MTN MoMo or Orange Money. No bank card."></p>
+            <ul class="feat">
+              <li data-fr="Catalogue produits + panier, pensé pour mobile" data-en="Product catalogue + cart, built for mobile"></li>
+              <li data-fr="Paiement poussé directement sur le téléphone du client" data-en="Payment prompt pushed straight to the customer's phone"></li>
+              <li data-fr="Alerte WhatsApp à chaque commande payée" data-en="WhatsApp alert on every paid order"></li>
+            </ul>
+            <div class="price-row">
+              <div class="p">350 000 FCFA <small data-fr="installation · puis 50 000 FCFA/mois" data-en="setup · then 50,000 FCFA/month"></small></div>
+              <a class="card-link wa-link" href="#" data-fr="Demander →" data-en="Enquire →"></a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card reveal" data-d="1">
+          <div class="card-img">
+            <img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=80" alt="Équipe au travail" loading="lazy" onerror="this.remove()">
+            <span class="pill" data-fr="Intelligence artificielle" data-en="Artificial intelligence"></span>
+          </div>
+          <div class="card-body">
+            <h3 data-fr="Assistant IA sur WhatsApp" data-en="AI Assistant on WhatsApp"></h3>
+            <p data-fr="Un assistant qui connaît votre business et répond comme un vrai employé — en français et en anglais."
+               data-en="An assistant that knows your business and answers like a real employee — in French and English."></p>
+            <ul class="feat">
+              <li data-fr="Nourri de vos tarifs, politiques et ton de marque" data-en="Trained on your prices, policies and brand voice"></li>
+              <li data-fr="N'invente jamais un prix : il escalade vers vous au moindre doute" data-en="Never invents a price: escalates to you at any doubt"></li>
+              <li data-fr="Coût d'IA inclus dans l'abonnement" data-en="AI usage cost included in the subscription"></li>
+            </ul>
+            <div class="price-row">
+              <div class="p">400 000 FCFA <small data-fr="installation · puis 75 000 FCFA/mois" data-en="setup · then 75,000 FCFA/month"></small></div>
+              <a class="card-link wa-link" href="#" data-fr="Demander →" data-en="Enquire →"></a>
+            </div>
+          </div>
+        </article>
+
       </div>
     </div>
   </section>
 
-  <hr class="rule">
-
-  <section>
-    <h2 data-fr="Comment ça marche" data-en="How it works"></h2>
-    <p class="sub" data-fr="De la première conversation à la mise en ligne : 72 heures."
-       data-en="From first conversation to going live: 72 hours."></p>
-    <div class="steps">
-      <div class="step">
-        <h4 data-fr="On discute" data-en="We talk"></h4>
-        <p data-fr="30 minutes sur WhatsApp ou en personne. Vous nous expliquez votre business, on choisit l'offre ensemble."
-           data-en="30 minutes on WhatsApp or in person. You explain your business, we pick the package together."></p>
+  <!-- ============ PROCESS ============ -->
+  <section id="process" style="padding-top: 1rem;">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="sec-tag" data-fr="La méthode" data-en="The process"></span>
+        <h2 data-fr="De la première conversation au lancement : <em>72 heures.</em>"
+            data-en="From first conversation to launch: <em>72 hours.</em>"></h2>
       </div>
-      <div class="step">
-        <h4 data-fr="On installe" data-en="We build"></h4>
-        <p data-fr="On configure tout : votre numéro WhatsApp, vos tarifs, vos produits, vos horaires. Vous validez avant la mise en ligne."
-           data-en="We configure everything: your WhatsApp number, your prices, your products, your hours. You approve before launch."></p>
-      </div>
-      <div class="step">
-        <h4 data-fr="Vous encaissez" data-en="You earn"></h4>
-        <p data-fr="C'est en ligne. On forme votre équipe, et on reste disponible chaque mois pour les ajustements."
-           data-en="It's live. We train your team and stay available every month for changes."></p>
+      <div class="steps">
+        <div class="step reveal">
+          <h4 data-fr="On discute" data-en="We talk"></h4>
+          <p data-fr="30 minutes sur WhatsApp ou en visio. Vous racontez votre business ; on choisit l'offre ensemble — pas de jargon, pas de devis à rallonge."
+             data-en="30 minutes on WhatsApp or video call. You tell us about your business; we pick the package together — no jargon, no endless quotes."></p>
+          <span class="dur" data-fr="Jour 0" data-en="Day 0"></span>
+        </div>
+        <div class="step reveal" data-d="1">
+          <h4 data-fr="On construit" data-en="We build"></h4>
+          <p data-fr="On configure tout : votre numéro, vos tarifs, vos produits, votre ton. Vous testez et validez avant la mise en ligne."
+             data-en="We configure everything: your number, your prices, your products, your tone. You test and approve before launch."></p>
+          <span class="dur" data-fr="Jour 1–2" data-en="Day 1–2"></span>
+        </div>
+        <div class="step reveal" data-d="2">
+          <h4 data-fr="Vous encaissez" data-en="You earn"></h4>
+          <p data-fr="C'est en ligne. On forme votre équipe en vidéo, et on reste là chaque mois pour les ajustements — réponse sous 24h."
+             data-en="It's live. We train your team by video, and we stay around every month for changes — replies within 24h."></p>
+          <span class="dur" data-fr="Jour 3" data-en="Day 3"></span>
+        </div>
       </div>
     </div>
   </section>
 
-  <hr class="rule">
+  <!-- ============ PROMISE BAND ============ -->
+  <section style="padding-top: 0.5rem;">
+    <div class="wrap">
+      <div class="band reveal">
+        <h2 data-fr="Le système vous <em>appartient.</em>" data-en="The system <em>belongs to you.</em>"></h2>
+        <p data-fr="Pas d'abonnement piège : vous arrêtez quand vous voulez, sans pénalité, et on vous remet tout — code, accès, données. Nous gagnons votre fidélité chaque mois, pas par contrat."
+           data-en="No subscription trap: stop anytime, no penalty, and we hand everything over — code, access, data. We earn your loyalty every month, not by contract."></p>
+        <div class="cta-row" style="margin-top: 2rem;">
+          <a class="btn btn-wa wa-link" href="#"><span>💬</span><span data-fr="Parler de mon projet" data-en="Talk about my project"></span></a>
+        </div>
+        <p class="fine" data-fr="50% à la commande · 50% à la livraison · MTN MoMo, Orange Money ou virement"
+           data-en="50% on order · 50% on delivery · MTN MoMo, Orange Money or bank transfer"></p>
+      </div>
+    </div>
+  </section>
 
-  <section class="faq">
-    <h2 data-fr="Questions fréquentes" data-en="Frequently asked questions"></h2>
-    <details>
-      <summary data-fr="Je n'ai pas de site web. C'est un problème ?" data-en="I don't have a website. Is that a problem?"></summary>
-      <p data-fr="Non. La plupart de nos clients n'en ont pas. Tout fonctionne sur WhatsApp, que vos clients utilisent déjà."
-         data-en="No. Most of our clients don't have one. Everything runs on WhatsApp, which your customers already use."></p>
-    </details>
-    <details>
-      <summary data-fr="Comment je paie ?" data-en="How do I pay?"></summary>
-      <p data-fr="MTN Mobile Money, Orange Money, ou virement bancaire. 50% à la commande, 50% à la livraison."
-         data-en="MTN Mobile Money, Orange Money, or bank transfer. 50% on order, 50% on delivery."></p>
-    </details>
-    <details>
-      <summary data-fr="Et si je veux arrêter l'abonnement ?" data-en="What if I want to stop the subscription?"></summary>
-      <p data-fr="Vous arrêtez quand vous voulez, sans pénalité. Le système vous appartient — on vous remet tout."
-         data-en="Stop anytime, no penalty. The system belongs to you — we hand everything over."></p>
-    </details>
-    <details>
-      <summary data-fr="Vous êtes basés où ?" data-en="Where are you based?"></summary>
-      <p data-fr="Nous travaillons 100% à distance. Tout se fait par WhatsApp, email et visio — nous servons tout le Cameroun et l'Afrique francophone."
-         data-en="We work 100% remotely. Everything happens over WhatsApp, email and video calls — we serve all of Cameroon and Francophone Africa."></p>
-    </details>
+  <!-- ============ FAQ ============ -->
+  <section id="faq" style="padding-top: 1rem;">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="sec-tag" data-fr="Questions" data-en="Questions"></span>
+        <h2 data-fr="Ce qu'on nous demande <em>souvent.</em>" data-en="What we get asked <em>often.</em>"></h2>
+      </div>
+      <div class="faq reveal">
+        <details>
+          <summary><span data-fr="Je n'ai pas de site web. C'est un problème ?" data-en="I don't have a website. Is that a problem?"></span><span class="ico">+</span></summary>
+          <p data-fr="Non — la plupart de nos clients n'en ont pas. Tout fonctionne sur WhatsApp, que vos clients utilisent déjà tous les jours. Le site, c'est nous qui l'apportons quand il sert à quelque chose."
+             data-en="No — most of our clients don't have one. Everything runs on WhatsApp, which your customers already use daily. We bring the web part only where it earns its keep."></p>
+        </details>
+        <details>
+          <summary><span data-fr="Pourquoi un prix fixe et pas un devis ?" data-en="Why a fixed price instead of a quote?"></span><span class="ico">+</span></summary>
+          <p data-fr="Parce que nos quatre produits existent déjà : on les configure pour vous, on ne repart pas de zéro. C'est ce qui rend possible un prix annoncé d'avance et une livraison en 72 heures."
+             data-en="Because our four products already exist: we configure them for you rather than starting from scratch. That's what makes an upfront price and 72-hour delivery possible."></p>
+        </details>
+        <details>
+          <summary><span data-fr="Comment je paie ?" data-en="How do I pay?"></span><span class="ico">+</span></summary>
+          <p data-fr="MTN Mobile Money, Orange Money ou virement bancaire. 50% à la commande, 50% à la livraison, une fois que vous avez testé et validé."
+             data-en="MTN Mobile Money, Orange Money or bank transfer. 50% on order, 50% on delivery, once you've tested and approved."></p>
+        </details>
+        <details>
+          <summary><span data-fr="Et si je veux arrêter l'abonnement ?" data-en="What if I want to stop the subscription?"></span><span class="ico">+</span></summary>
+          <p data-fr="Vous arrêtez quand vous voulez, sans pénalité. Le système vous appartient — on vous remet le code, les accès et vos données."
+             data-en="Stop anytime, no penalty. The system belongs to you — we hand over the code, the access and your data."></p>
+        </details>
+        <details>
+          <summary><span data-fr="Vous êtes basés où ?" data-en="Where are you based?"></span><span class="ico">+</span></summary>
+          <p data-fr="Nous travaillons 100% à distance, par WhatsApp, email et visio. Nous servons tout le Cameroun et l'Afrique francophone."
+             data-en="We work 100% remotely, over WhatsApp, email and video calls. We serve all of Cameroon and Francophone Africa."></p>
+        </details>
+      </div>
+    </div>
   </section>
 
 </main>
 
-<a class="wa-float sans" id="waFloat" href="#" data-fr="💬 WhatsApp" data-en="💬 WhatsApp"></a>
+<a class="wa-float wa-link" id="waFloat" href="#" aria-label="WhatsApp">💬</a>
 
 <footer>
   <div class="wrap">
-    <p>Sahel Digital · <span data-fr="Service 100% en ligne" data-en="100% online service"></span></p>
-    <p data-fr="Automatisation clé en main pour PME africaines."
-       data-en="Done-for-you automation for African SMBs."></p>
+    <div class="foot-grid">
+      <div>
+        <a class="logo" href="#">Sahel<em>Digital</em></a>
+        <p class="tag" data-fr="Automatisation clé en main pour PME africaines. Service 100% en ligne."
+           data-en="Done-for-you automation for African SMBs. 100% online service."></p>
+      </div>
+      <nav class="foot-links">
+        <a href="#offres" data-fr="Offres" data-en="Packages"></a>
+        <a href="#process" data-fr="Méthode" data-en="Process"></a>
+        <a href="#faq" data-fr="FAQ" data-en="FAQ"></a>
+        <a class="wa-link" href="#">WhatsApp</a>
+        <a id="mailLink" href="#">Email</a>
+      </nav>
+    </div>
+    <div class="legal">
+      <span>© <span id="year"></span> Sahel Digital</span>
+      <span data-fr="Fait avec soin, pour ceux qui construisent." data-en="Made with care, for the people who build."></span>
+    </div>
   </div>
 </footer>
 
 <script>
-  // Contact configuration.
-  // WHATSAPP_NUMBER works with ANY country's number (international format, no +)
-  // — it does not need to be Cameroonian. Leave it empty ('') to use email
-  // as the contact channel instead.
+  // ===== Contact configuration =====
   var WHATSAPP_NUMBER = '33625796813';
   var CONTACT_EMAIL = 'wheelswash66@gmail.com';
-  var MSG_FR = 'Bonjour, je suis intéressé par vos services d\'automatisation.';
-  var MSG_EN = 'Hello, I\'m interested in your automation services.';
+  var MSG = {
+    fr: 'Bonjour, je suis intéressé par vos services d’automatisation.',
+    en: 'Hello, I’m interested in your automation services.'
+  };
+
+  var I18N = {
+    heroTitle: {
+      fr: '<span class="l"><span>Votre business</span></span><span class="l"><span>travaille. <em>Même quand</em></span></span><span class="l"><span><em>vous dormez.</em></span></span>',
+      en: '<span class="l"><span>Your business</span></span><span class="l"><span>keeps working. <em>Even</em></span></span><span class="l"><span><em>while you sleep.</em></span></span>'
+    },
+    marquee: {
+      fr: ['Bots WhatsApp', 'Réservations en ligne', 'MTN Mobile Money', 'Orange Money', 'Assistants IA', 'Livré en 72h', 'Prix fixes', 'Support FR / EN'],
+      en: ['WhatsApp bots', 'Online bookings', 'MTN Mobile Money', 'Orange Money', 'AI assistants', 'Delivered in 72h', 'Fixed prices', 'FR / EN support']
+    },
+    chat: {
+      fr: [
+        { dir: 'in',  text: 'Bonsoir, c’est combien les box braids ?', t: '23:47' },
+        { dir: 'out', text: 'Bonsoir 👋 Les box braids sont à partir de 10 000 FCFA selon la longueur. Voulez-vous réserver un créneau ?', t: '23:47', bot: true },
+        { dir: 'in',  text: 'Oui ! Samedi c’est possible ?', t: '23:48' },
+        { dir: 'out', text: 'Samedi il reste 10h00 et 14h00. Je vous note laquelle ? ✂️', t: '23:48', bot: true },
+        { dir: 'in',  text: '14h 🙏', t: '23:49' },
+        { dir: 'out', text: '✅ Réservé ! Samedi 14h00 — box braids. À très vite chez Salon Awa 💛', t: '23:49', bot: true }
+      ],
+      en: [
+        { dir: 'in',  text: 'Good evening, how much are box braids?', t: '23:47' },
+        { dir: 'out', text: 'Good evening 👋 Box braids start at 10,000 FCFA depending on length. Would you like to book a slot?', t: '23:47', bot: true },
+        { dir: 'in',  text: 'Yes! Is Saturday possible?', t: '23:48' },
+        { dir: 'out', text: 'Saturday we still have 10:00 and 14:00. Which one shall I book? ✂️', t: '23:48', bot: true },
+        { dir: 'in',  text: '14:00 🙏', t: '23:49' },
+        { dir: 'out', text: '✅ Booked! Saturday 14:00 — box braids. See you soon at Salon Awa 💛', t: '23:49', bot: true }
+      ]
+    },
+    botTag: { fr: '🤖 réponse automatique', en: '🤖 automated reply' }
+  };
 
   var lang = localStorage.getItem('lang') || 'fr';
 
@@ -258,24 +671,88 @@
       el.innerHTML = el.getAttribute('data-' + lang);
     });
     document.getElementById('langToggle').textContent = lang === 'fr' ? 'EN' : 'FR';
+    document.getElementById('heroTitle').innerHTML = I18N.heroTitle[lang];
 
-    var msg = encodeURIComponent(lang === 'fr' ? MSG_FR : MSG_EN);
-    var hasWa = WHATSAPP_NUMBER.length > 0;
-    var href = hasWa
-      ? 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + msg
-      : 'mailto:' + CONTACT_EMAIL +
-        '?subject=' + encodeURIComponent(lang === 'fr' ? 'Demande — automatisation' : 'Enquiry — automation') +
-        '&body=' + msg;
+    var waHref = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(MSG[lang]);
+    document.querySelectorAll('.wa-link').forEach(function (a) { a.href = waHref; });
+    document.getElementById('mailLink').href =
+      'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent(lang === 'fr' ? 'Demande — automatisation' : 'Enquiry — automation');
 
-    var cta = document.getElementById('ctaWa');
-    cta.href = href;
-    if (!hasWa) cta.textContent = lang === 'fr' ? 'Écrivez-nous' : 'Email us';
+    var items = I18N.marquee[lang];
+    var seq = items.map(function (t) { return '<span>' + t + '</span>'; }).join('');
+    document.getElementById('marqueeTrack').innerHTML = seq + seq; // duplicated for seamless loop
 
-    var float = document.getElementById('waFloat');
-    float.href = href;
-    if (!hasWa) float.textContent = '✉️ Email';
+    startChat();
   }
 
+  // ===== animated WhatsApp demo =====
+  var chatTimers = [];
+  function startChat() {
+    var body = document.getElementById('chatBody');
+    chatTimers.forEach(clearTimeout);
+    chatTimers = [];
+    body.innerHTML = '';
+    var script = I18N.chat[lang];
+    var t = 600;
+
+    script.forEach(function (m) {
+      if (m.dir === 'out') {
+        chatTimers.push(setTimeout(function () {
+          var typing = document.createElement('div');
+          typing.className = 'typing';
+          typing.innerHTML = '<i></i><i></i><i></i>';
+          body.appendChild(typing);
+        }, t));
+        t += 1400;
+        chatTimers.push(setTimeout(function () {
+          var typ = body.querySelector('.typing');
+          if (typ) typ.remove();
+          appendMsg(body, m);
+        }, t));
+      } else {
+        chatTimers.push(setTimeout(function () { appendMsg(body, m); }, t));
+      }
+      t += 1700;
+    });
+
+    chatTimers.push(setTimeout(startChat, t + 4500)); // loop
+  }
+
+  function appendMsg(body, m) {
+    var div = document.createElement('div');
+    div.className = 'msg ' + m.dir;
+    var tag = m.bot ? '<span class="bot-tag">' + I18N.botTag[lang] + '</span>' : '';
+    var ticks = m.dir === 'out' ? ' <span class="tick">✓✓</span>' : '';
+    div.innerHTML = tag + escapeHtml(m.text) + '<span class="meta">' + m.t + ticks + '</span>';
+    body.appendChild(div);
+    while (body.children.length > 6) body.removeChild(body.firstChild);
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // ===== scroll reveals =====
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        var d = Number(e.target.getAttribute('data-d') || 0);
+        e.target.style.transitionDelay = (d * 0.12) + 's';
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+
+  // ===== nav scroll state =====
+  var hdr = document.getElementById('hdr');
+  addEventListener('scroll', function () {
+    hdr.classList.toggle('scrolled', scrollY > 24);
+  }, { passive: true });
+
+  // ===== misc =====
+  document.getElementById('year').textContent = new Date().getFullYear();
   document.getElementById('langToggle').addEventListener('click', function () {
     lang = lang === 'fr' ? 'en' : 'fr';
     localStorage.setItem('lang', lang);
