@@ -1,2 +1,3 @@
 # Derived packaging artifacts (rebuild: zip -q kola-app.zip app/* README.md Kola.html)
 kola-app.zip
+kola-netlify.zip
