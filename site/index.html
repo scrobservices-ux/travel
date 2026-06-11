@@ -129,8 +129,8 @@
          data-en="See packages"></a>
     </div>
     <p class="trust sans"
-       data-fr="Paiement par MTN MoMo ou Orange Money · Douala &amp; Yaoundé · Support en français et en anglais"
-       data-en="Pay by MTN MoMo or Orange Money · Douala &amp; Yaoundé · Support in French and English"></p>
+       data-fr="Paiement par MTN MoMo ou Orange Money · Service 100% à distance · Support en français et en anglais"
+       data-en="Pay by MTN MoMo or Orange Money · 100% remote service · Support in French and English"></p>
   </div>
 
   <hr class="rule">
@@ -222,9 +222,9 @@
          data-en="Stop anytime, no penalty. The system belongs to you — we hand everything over."></p>
     </details>
     <details>
-      <summary data-fr="Vous travaillez en dehors de Douala et Yaoundé ?" data-en="Do you work outside Douala and Yaoundé?"></summary>
-      <p data-fr="Oui — tout se fait à distance via WhatsApp. Nous servons tout le Cameroun et l'Afrique centrale."
-         data-en="Yes — everything is done remotely over WhatsApp. We serve all of Cameroon and Central Africa."></p>
+      <summary data-fr="Vous êtes basés où ?" data-en="Where are you based?"></summary>
+      <p data-fr="Nous travaillons 100% à distance. Tout se fait par WhatsApp, email et visio — nous servons tout le Cameroun et l'Afrique francophone."
+         data-en="We work 100% remotely. Everything happens over WhatsApp, email and video calls — we serve all of Cameroon and Francophone Africa."></p>
     </details>
   </section>
 
@@ -234,17 +234,21 @@
 
 <footer>
   <div class="wrap">
-    <p>Sahel Digital · Douala, Cameroun</p>
+    <p>Sahel Digital · <span data-fr="Service 100% en ligne" data-en="100% online service"></span></p>
     <p data-fr="Automatisation clé en main pour PME africaines."
        data-en="Done-for-you automation for African SMBs."></p>
   </div>
 </footer>
 
 <script>
-  // Set your agency WhatsApp number here (international format, no +)
-  var WHATSAPP_NUMBER = '237600000000';
-  var WA_MSG_FR = 'Bonjour, je suis intéressé par vos services d\'automatisation.';
-  var WA_MSG_EN = 'Hello, I\'m interested in your automation services.';
+  // Contact configuration.
+  // WHATSAPP_NUMBER works with ANY country's number (international format, no +)
+  // — it does not need to be Cameroonian. Leave it empty ('') to use email
+  // as the contact channel instead.
+  var WHATSAPP_NUMBER = '';
+  var CONTACT_EMAIL = 'wheelswash66@gmail.com';
+  var MSG_FR = 'Bonjour, je suis intéressé par vos services d\'automatisation.';
+  var MSG_EN = 'Hello, I\'m interested in your automation services.';
 
   var lang = localStorage.getItem('lang') || 'fr';
 
@@ -254,10 +258,22 @@
       el.innerHTML = el.getAttribute('data-' + lang);
     });
     document.getElementById('langToggle').textContent = lang === 'fr' ? 'EN' : 'FR';
-    var msg = encodeURIComponent(lang === 'fr' ? WA_MSG_FR : WA_MSG_EN);
-    var href = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + msg;
-    document.getElementById('ctaWa').href = href;
-    document.getElementById('waFloat').href = href;
+
+    var msg = encodeURIComponent(lang === 'fr' ? MSG_FR : MSG_EN);
+    var hasWa = WHATSAPP_NUMBER.length > 0;
+    var href = hasWa
+      ? 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + msg
+      : 'mailto:' + CONTACT_EMAIL +
+        '?subject=' + encodeURIComponent(lang === 'fr' ? 'Demande — automatisation' : 'Enquiry — automation') +
+        '&body=' + msg;
+
+    var cta = document.getElementById('ctaWa');
+    cta.href = href;
+    if (!hasWa) cta.textContent = lang === 'fr' ? 'Écrivez-nous' : 'Email us';
+
+    var float = document.getElementById('waFloat');
+    float.href = href;
+    if (!hasWa) float.textContent = '✉️ Email';
   }
 
   document.getElementById('langToggle').addEventListener('click', function () {
