@@ -1,0 +1,14 @@
+{
+  "name": "Salon Belle Étoile",
+  "language": "fr",
+  "timezone": "Africa/Douala",
+  "services": [
+    { "id": "coupe", "label": "Coiffure dame", "durationMin": 60, "price": 5000 },
+    { "id": "tresses", "label": "Tresses", "durationMin": 180, "price": 10000 },
+    { "id": "soin", "label": "Soin capillaire", "durationMin": 45, "price": 7000 }
+  ],
+  "openDays": [1, 2, 3, 4, 5, 6],
+  "openHour": 8,
+  "closeHour": 19,
+  "slotMinutes": 60
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Boutique Mballa & Fils",
+  "currencyLabel": "FCFA",
+  "products": [
+    { "id": "p1", "label": "Sac à main cuir", "price": 15000, "description": "Cuir véritable, fait main à Douala" },
+    { "id": "p2", "label": "Chaussures homme", "price": 25000, "description": "Pointures 39–45" },
+    { "id": "p3", "label": "Pagne wax 6 yards", "price": 12000, "description": "Motifs variés, qualité supérieure" }
+  ]
+}

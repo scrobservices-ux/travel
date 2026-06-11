@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sahel Digital — Automatisation pour PME africaines</title>
+<meta name="description" content="Bots WhatsApp, systèmes de réservation, boutiques Mobile Money et chatbots IA pour les PME camerounaises. Livré en 72 heures, prix fixe.">
+<style>
+  :root {
+    --ink: #1f2421;
+    --paper: #faf7f0;
+    --accent: #c2562b;
+    --accent-dark: #9c4220;
+    --green: #1f7a4d;
+    --muted: #6b6259;
+    --card: #ffffff;
+    --line: #e6dfd3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+  }
+  .sans { font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 1.25rem; }
+
+  header {
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .nav { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 0; }
+  .logo { font-weight: bold; font-size: 1.15rem; letter-spacing: 0.02em; }
+  .logo em { color: var(--accent); font-style: italic; }
+  .lang-toggle {
+    font-family: inherit; font-size: 0.85rem; cursor: pointer;
+    border: 1px solid var(--line); background: var(--card);
+    padding: 0.3rem 0.75rem; border-radius: 999px; color: var(--muted);
+  }
+  .lang-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  .hero { padding: 3.5rem 0 2.5rem; }
+  .hero h1 { font-size: clamp(1.9rem, 5vw, 3rem); line-height: 1.15; max-width: 22ch; }
+  .hero h1 em { color: var(--accent); font-style: italic; }
+  .hero p.lede { margin-top: 1.1rem; font-size: 1.1rem; color: var(--muted); max-width: 52ch; }
+  .cta-row { margin-top: 1.75rem; display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; text-decoration: none; border-radius: 6px;
+    padding: 0.8rem 1.4rem; font-size: 1rem; font-family: inherit;
+  }
+  .btn-primary { background: var(--green); color: #fff; }
+  .btn-primary:hover { background: #16613c; }
+  .btn-ghost { border: 1px solid var(--ink); color: var(--ink); }
+  .btn-ghost:hover { background: var(--ink); color: var(--paper); }
+  .trust { margin-top: 1.25rem; font-size: 0.85rem; color: var(--muted); }
+
+  section { padding: 2.75rem 0; }
+  section h2 { font-size: 1.6rem; margin-bottom: 0.4rem; }
+  section p.sub { color: var(--muted); margin-bottom: 1.75rem; max-width: 56ch; }
+  .rule { border: none; border-top: 1px solid var(--line); }
+
+  .grid { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .grid { grid-template-columns: 1fr 1fr; } }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1.4rem;
+  }
+  .card .tag {
+    display: inline-block; font-size: 0.72rem; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 0.5rem;
+  }
+  .card h3 { font-size: 1.15rem; margin-bottom: 0.45rem; }
+  .card p { font-size: 0.95rem; color: var(--muted); }
+  .card .price { margin-top: 0.9rem; font-size: 1.05rem; }
+  .card .price strong { color: var(--ink); }
+  .card .price span { font-size: 0.85rem; color: var(--muted); }
+
+  .steps { counter-reset: step; display: grid; gap: 1rem; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+  .step { padding: 1.1rem 1.2rem; border-left: 3px solid var(--accent); background: var(--card); border-radius: 0 8px 8px 0; }
+  .step::before {
+    counter-increment: step; content: counter(step);
+    display: block; font-size: 1.6rem; color: var(--accent); font-style: italic;
+  }
+  .step h4 { margin: 0.2rem 0 0.3rem; font-size: 1rem; }
+  .step p { font-size: 0.9rem; color: var(--muted); }
+
+  .faq details { border-bottom: 1px solid var(--line); padding: 0.85rem 0; }
+  .faq summary { cursor: pointer; font-size: 1.02rem; }
+  .faq details p { margin-top: 0.5rem; color: var(--muted); font-size: 0.95rem; }
+
+  footer { border-top: 1px solid var(--line); padding: 2rem 0 3rem; color: var(--muted); font-size: 0.85rem; }
+  footer a { color: var(--accent); }
+
+  .wa-float {
+    position: fixed; right: 1rem; bottom: 1rem; z-index: 20;
+    background: var(--green); color: #fff; text-decoration: none;
+    border-radius: 999px; padding: 0.75rem 1.2rem; font-size: 0.95rem;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <div class="logo">Sahel<em>Digital</em></div>
+    <button class="lang-toggle sans" id="langToggle" aria-label="Switch language">EN</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="hero">
+    <h1 data-fr="Votre business travaille. <em>Même quand vous dormez.</em>"
+        data-en="Your business keeps working. <em>Even while you sleep.</em>"></h1>
+    <p class="lede"
+       data-fr="Nous installons des bots WhatsApp, des systèmes de réservation, des boutiques Mobile Money et des assistants IA pour les PME camerounaises. Prix fixe. Livré en 72 heures. Aucune compétence technique requise."
+       data-en="We build WhatsApp bots, booking systems, Mobile Money storefronts and AI assistants for Cameroonian SMBs. Fixed price. Delivered in 72 hours. No technical skills required."></p>
+    <div class="cta-row">
+      <a class="btn btn-primary" id="ctaWa" href="#"
+         data-fr="Parlez-nous sur WhatsApp"
+         data-en="Talk to us on WhatsApp"></a>
+      <a class="btn btn-ghost" href="#offres"
+         data-fr="Voir les offres"
+         data-en="See packages"></a>
+    </div>
+    <p class="trust sans"
+       data-fr="Paiement par MTN MoMo ou Orange Money · Douala &amp; Yaoundé · Support en français et en anglais"
+       data-en="Pay by MTN MoMo or Orange Money · Douala &amp; Yaoundé · Support in French and English"></p>
+  </div>
+
+  <hr class="rule">
+
+  <section id="offres">
+    <h2 data-fr="Quatre offres. Prix fixes. Pas de surprise."
+        data-en="Four packages. Fixed prices. No surprises."></h2>
+    <p class="sub"
+       data-fr="Chaque offre comprend l'installation, la configuration pour votre business, la formation de votre équipe, et un mois de support inclus."
+       data-en="Every package includes setup, configuration for your business, team training, and one month of support included."></p>
+
+    <div class="grid">
+      <div class="card">
+        <span class="tag sans" data-fr="Le plus populaire" data-en="Most popular"></span>
+        <h3 data-fr="Bot WhatsApp Business" data-en="WhatsApp Business Bot"></h3>
+        <p data-fr="Répond automatiquement à vos clients 24h/24 : horaires, tarifs, localisation, catalogue. Transfère à un humain quand il le faut. Plus aucun client perdu parce que vous n'avez pas répondu."
+           data-en="Answers your customers automatically, 24/7: opening hours, prices, location, catalogue. Hands over to a human when needed. Never lose another customer because you didn't reply."></p>
+        <p class="price"><strong>150 000 FCFA</strong> <span data-fr="installation + 25 000 FCFA/mois" data-en="setup + 25,000 FCFA/month"></span></p>
+      </div>
+
+      <div class="card">
+        <span class="tag sans" data-fr="Salons · Cliniques · Tourisme" data-en="Salons · Clinics · Tourism"></span>
+        <h3 data-fr="Système de réservation" data-en="Booking System"></h3>
+        <p data-fr="Vos clients réservent en ligne ou via WhatsApp. Confirmations et rappels automatiques. Fini les rendez-vous oubliés et les doubles réservations."
+           data-en="Customers book online or through WhatsApp. Automatic confirmations and reminders. No more forgotten appointments or double bookings."></p>
+        <p class="price"><strong>250 000 FCFA</strong> <span data-fr="installation + 35 000 FCFA/mois" data-en="setup + 35,000 FCFA/month"></span></p>
+      </div>
+
+      <div class="card">
+        <span class="tag sans" data-fr="Commerce" data-en="Commerce"></span>
+        <h3 data-fr="Boutique Mobile Money" data-en="Mobile Money Storefront"></h3>
+        <p data-fr="Une boutique en ligne où vos clients paient directement par MTN MoMo ou Orange Money. Catalogue, commande, paiement, confirmation — sans carte bancaire."
+           data-en="An online shop where customers pay directly with MTN MoMo or Orange Money. Catalogue, order, payment, confirmation — no bank card needed."></p>
+        <p class="price"><strong>350 000 FCFA</strong> <span data-fr="installation + 50 000 FCFA/mois" data-en="setup + 50,000 FCFA/month"></span></p>
+      </div>
+
+      <div class="card">
+        <span class="tag sans" data-fr="Intelligence artificielle" data-en="Artificial intelligence"></span>
+        <h3 data-fr="Assistant IA sur WhatsApp" data-en="AI Assistant on WhatsApp"></h3>
+        <p data-fr="Un assistant intelligent qui connaît votre business et répond à vos clients en français et en anglais, comme un vrai employé. Il vend, conseille, et ne dort jamais."
+           data-en="A smart assistant that knows your business and answers customers in French and English, like a real employee. It sells, advises, and never sleeps."></p>
+        <p class="price"><strong>400 000 FCFA</strong> <span data-fr="installation + 75 000 FCFA/mois" data-en="setup + 75,000 FCFA/month"></span></p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2 data-fr="Comment ça marche" data-en="How it works"></h2>
+    <p class="sub" data-fr="De la première conversation à la mise en ligne : 72 heures."
+       data-en="From first conversation to going live: 72 hours."></p>
+    <div class="steps">
+      <div class="step">
+        <h4 data-fr="On discute" data-en="We talk"></h4>
+        <p data-fr="30 minutes sur WhatsApp ou en personne. Vous nous expliquez votre business, on choisit l'offre ensemble."
+           data-en="30 minutes on WhatsApp or in person. You explain your business, we pick the package together."></p>
+      </div>
+      <div class="step">
+        <h4 data-fr="On installe" data-en="We build"></h4>
+        <p data-fr="On configure tout : votre numéro WhatsApp, vos tarifs, vos produits, vos horaires. Vous validez avant la mise en ligne."
+           data-en="We configure everything: your WhatsApp number, your prices, your products, your hours. You approve before launch."></p>
+      </div>
+      <div class="step">
+        <h4 data-fr="Vous encaissez" data-en="You earn"></h4>
+        <p data-fr="C'est en ligne. On forme votre équipe, et on reste disponible chaque mois pour les ajustements."
+           data-en="It's live. We train your team and stay available every month for changes."></p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section class="faq">
+    <h2 data-fr="Questions fréquentes" data-en="Frequently asked questions"></h2>
+    <details>
+      <summary data-fr="Je n'ai pas de site web. C'est un problème ?" data-en="I don't have a website. Is that a problem?"></summary>
+      <p data-fr="Non. La plupart de nos clients n'en ont pas. Tout fonctionne sur WhatsApp, que vos clients utilisent déjà."
+         data-en="No. Most of our clients don't have one. Everything runs on WhatsApp, which your customers already use."></p>
+    </details>
+    <details>
+      <summary data-fr="Comment je paie ?" data-en="How do I pay?"></summary>
+      <p data-fr="MTN Mobile Money, Orange Money, ou virement bancaire. 50% à la commande, 50% à la livraison."
+         data-en="MTN Mobile Money, Orange Money, or bank transfer. 50% on order, 50% on delivery."></p>
+    </details>
+    <details>
+      <summary data-fr="Et si je veux arrêter l'abonnement ?" data-en="What if I want to stop the subscription?"></summary>
+      <p data-fr="Vous arrêtez quand vous voulez, sans pénalité. Le système vous appartient — on vous remet tout."
+         data-en="Stop anytime, no penalty. The system belongs to you — we hand everything over."></p>
+    </details>
+    <details>
+      <summary data-fr="Vous travaillez en dehors de Douala et Yaoundé ?" data-en="Do you work outside Douala and Yaoundé?"></summary>
+      <p data-fr="Oui — tout se fait à distance via WhatsApp. Nous servons tout le Cameroun et l'Afrique centrale."
+         data-en="Yes — everything is done remotely over WhatsApp. We serve all of Cameroon and Central Africa."></p>
+    </details>
+  </section>
+
+</main>
+
+<a class="wa-float sans" id="waFloat" href="#" data-fr="💬 WhatsApp" data-en="💬 WhatsApp"></a>
+
+<footer>
+  <div class="wrap">
+    <p>Sahel Digital · Douala, Cameroun</p>
+    <p data-fr="Automatisation clé en main pour PME africaines."
+       data-en="Done-for-you automation for African SMBs."></p>
+  </div>
+</footer>
+
+<script>
+  // Set your agency WhatsApp number here (international format, no +)
+  var WHATSAPP_NUMBER = '237600000000';
+  var WA_MSG_FR = 'Bonjour, je suis intéressé par vos services d\'automatisation.';
+  var WA_MSG_EN = 'Hello, I\'m interested in your automation services.';
+
+  var lang = localStorage.getItem('lang') || 'fr';
+
+  function render() {
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-fr]').forEach(function (el) {
+      el.innerHTML = el.getAttribute('data-' + lang);
+    });
+    document.getElementById('langToggle').textContent = lang === 'fr' ? 'EN' : 'FR';
+    var msg = encodeURIComponent(lang === 'fr' ? WA_MSG_FR : WA_MSG_EN);
+    var href = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + msg;
+    document.getElementById('ctaWa').href = href;
+    document.getElementById('waFloat').href = href;
+  }
+
+  document.getElementById('langToggle').addEventListener('click', function () {
+    lang = lang === 'fr' ? 'en' : 'fr';
+    localStorage.setItem('lang', lang);
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>

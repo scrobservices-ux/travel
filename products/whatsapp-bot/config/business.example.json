@@ -1,0 +1,47 @@
+{
+  "name": "Salon Belle Étoile",
+  "language": "fr",
+  "greeting": {
+    "fr": "Bonjour 👋 Bienvenue chez {name} ! Répondez avec un chiffre :",
+    "en": "Hello 👋 Welcome to {name}! Reply with a number:"
+  },
+  "menu": [
+    {
+      "key": "1",
+      "label": { "fr": "🕐 Horaires d'ouverture", "en": "🕐 Opening hours" },
+      "reply": {
+        "fr": "Nous sommes ouverts du lundi au samedi, de 8h à 19h. Dimanche : fermé.",
+        "en": "We are open Monday to Saturday, 8am to 7pm. Sunday: closed."
+      }
+    },
+    {
+      "key": "2",
+      "label": { "fr": "💰 Tarifs", "en": "💰 Prices" },
+      "reply": {
+        "fr": "Coiffure dame : à partir de 5 000 FCFA\nTresses : à partir de 10 000 FCFA\nSoins : à partir de 7 000 FCFA",
+        "en": "Ladies' haircut: from 5,000 FCFA\nBraids: from 10,000 FCFA\nTreatments: from 7,000 FCFA"
+      }
+    },
+    {
+      "key": "3",
+      "label": { "fr": "📍 Localisation", "en": "📍 Location" },
+      "reply": {
+        "fr": "Nous sommes à Akwa, Douala, en face de la pharmacie centrale.\nGoogle Maps : https://maps.app.goo.gl/example",
+        "en": "We are in Akwa, Douala, opposite the central pharmacy.\nGoogle Maps: https://maps.app.goo.gl/example"
+      }
+    },
+    {
+      "key": "4",
+      "label": { "fr": "🗣 Parler à quelqu'un", "en": "🗣 Talk to a person" },
+      "handoff": true,
+      "reply": {
+        "fr": "Un membre de notre équipe vous répond dans quelques minutes. Merci de patienter 🙏",
+        "en": "A member of our team will reply in a few minutes. Thank you for your patience 🙏"
+      }
+    }
+  ],
+  "fallback": {
+    "fr": "Désolé, je n'ai pas compris. Répondez avec un chiffre du menu, ou tapez 4 pour parler à quelqu'un.",
+    "en": "Sorry, I didn't understand. Reply with a number from the menu, or type 4 to talk to a person."
+  }
+}

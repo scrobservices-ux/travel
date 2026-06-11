@@ -1,0 +1,8 @@
+node_modules/
+.env
+*.db
+config/business.json
+config/catalog.json
+config/business-profile.md
+npm-debug.log*
+.DS_Store

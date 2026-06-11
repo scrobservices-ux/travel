@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boutique</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+         background: #faf7f0; color: #1f2421; padding: 1.25rem; max-width: 480px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; margin: 0.5rem 0 1.25rem; }
+  .product { background: #fff; border: 1px solid #e6dfd3; border-radius: 10px;
+             padding: 1rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; gap: 0.75rem; }
+  .product h3 { font-size: 1rem; }
+  .product p { font-size: 0.85rem; color: #6b6259; margin: 0.2rem 0 0.4rem; }
+  .price { font-weight: 700; }
+  .qty { display: flex; align-items: center; gap: 0.5rem; }
+  .qty button { width: 2rem; height: 2rem; font-size: 1.1rem; border: 1px solid #d9d2c4;
+                background: #fff; border-radius: 6px; cursor: pointer; }
+  .cartbar { position: sticky; bottom: 0; background: #fff; border: 1px solid #e6dfd3;
+             border-radius: 10px; padding: 1rem; margin-top: 1.25rem; }
+  label { display: block; font-size: 0.85rem; font-weight: 600; margin: 0.75rem 0 0.25rem; }
+  input { width: 100%; padding: 0.65rem; font-size: 1rem; border: 1px solid #d9d2c4; border-radius: 8px; }
+  .pay { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; }
+  .pay button { padding: 0.85rem 0.5rem; font-size: 0.95rem; border: none; border-radius: 8px;
+                color: #fff; cursor: pointer; }
+  .pay .mtn { background: #ffcb05; color: #1f2421; }
+  .pay .orange { background: #ff7900; }
+  .pay button:disabled { opacity: 0.45; cursor: default; }
+  .msg { margin-top: 0.85rem; padding: 0.85rem; border-radius: 8px; display: none; font-size: 0.95rem; }
+  .msg.show { display: block; }
+  .msg.ok { background: #e3f3ea; color: #1f7a4d; }
+  .msg.err { background: #fdeaea; color: #b03030; }
+  .msg.wait { background: #fff6e0; color: #8a6d1a; }
+</style>
+</head>
+<body>
+  <h1 id="shopName">…</h1>
+  <div id="products"></div>
+
+  <div class="cartbar">
+    <div>Total : <span class="price" id="total">0</span> <span id="cur"></span></div>
+    <label>Votre nom</label>
+    <input type="text" id="name" placeholder="Nom complet">
+    <label>Numéro Mobile Money</label>
+    <input type="tel" id="phone" placeholder="6XX XX XX XX">
+    <div class="pay">
+      <button class="mtn" id="payMtn">Payer par MTN MoMo</button>
+      <button class="orange" id="payOrange">Payer par Orange Money</button>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+<script>
+  let catalog = null;
+  const cart = {}; // id -> qty
+
+  async function init() {
+    catalog = await (await fetch('/api/catalog')).json();
+    document.getElementById('shopName').textContent = catalog.name;
+    document.title = catalog.name;
+    document.getElementById('cur').textContent = catalog.currencyLabel;
+    const box = document.getElementById('products');
+    catalog.products.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'product';
+      div.innerHTML =
+        '<div><h3>' + p.label + '</h3><p>' + (p.description || '') + '</p>' +
+        '<span class="price">' + p.price.toLocaleString('fr-FR') + ' ' + catalog.currencyLabel + '</span></div>' +
+        '<div class="qty"><button data-d="-1">−</button><span id="q-' + p.id + '">0</span><button data-d="1">+</button></div>';
+      div.querySelectorAll('button').forEach(b => {
+        b.onclick = () => {
+          cart[p.id] = Math.max(0, (cart[p.id] || 0) + Number(b.dataset.d));
+          document.getElementById('q-' + p.id).textContent = cart[p.id];
+          update();
+        };
+      });
+      box.appendChild(div);
+    });
+    document.getElementById('payMtn').disabled = !catalog.providers.mtn;
+    document.getElementById('payOrange').disabled = !catalog.providers.orange;
+    update();
+  }
+
+  function total() {
+    return Object.entries(cart).reduce((sum, [id, qty]) => {
+      const p = catalog.products.find(x => x.id === id);
+      return sum + (p ? p.price * qty : 0);
+    }, 0);
+  }
+
+  function update() {
+    document.getElementById('total').textContent = total().toLocaleString('fr-FR');
+  }
+
+  function showMsg(cls, text) {
+    const m = document.getElementById('msg');
+    m.className = 'msg show ' + cls;
+    m.textContent = text;
+  }
+
+  async function order(provider) {
+    const items = Object.entries(cart).filter(([, q]) => q > 0).map(([id, qty]) => ({ id, qty }));
+    const name = document.getElementById('name').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    if (!items.length) return showMsg('err', 'Ajoutez au moins un article.');
+    if (!name || !phone) return showMsg('err', 'Entrez votre nom et votre numéro.');
+
+    showMsg('wait', 'Initialisation du paiement…');
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items, name, phone, provider }),
+    });
+    if (!res.ok) return showMsg('err', 'Le paiement n\'a pas pu démarrer. Réessayez.');
+    const data = await res.json();
+
+    if (data.next === 'redirect') {
+      window.location.href = data.paymentUrl;
+      return;
+    }
+    // MTN: a prompt was pushed to the phone — poll until resolved
+    showMsg('wait', '📲 Confirmez le paiement sur votre téléphone (tapez votre code MoMo)…');
+    poll(data.orderId);
+  }
+
+  async function poll(orderId) {
+    for (let i = 0; i < 60; i++) {
+      await new Promise(r => setTimeout(r, 3000));
+      const { status } = await (await fetch('/api/orders/' + orderId + '/status')).json();
+      if (status === 'paid') return showMsg('ok', '✅ Paiement reçu ! Commande #' + orderId + ' confirmée.');
+      if (status === 'failed') return showMsg('err', 'Paiement refusé ou expiré. Réessayez.');
+    }
+    showMsg('err', 'Délai dépassé. Si vous avez payé, contactez-nous sur WhatsApp.');
+  }
+
+  document.getElementById('payMtn').addEventListener('click', () => order('mtn'));
+  document.getElementById('payOrange').addEventListener('click', () => order('orange'));
+
+  // Returning from Orange Money redirect
+  const params = new URLSearchParams(location.search);
+  if (params.get('paid')) { init().then(() => poll(params.get('paid'))); }
+  else if (params.get('cancelled')) { init().then(() => showMsg('err', 'Paiement annulé.')); }
+  else init();
+</script>
+</body>
+</html>
