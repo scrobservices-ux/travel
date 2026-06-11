@@ -1,4 +1,4 @@
-# Tamarun
+# Kola
 
 Digitized njangi / tontines & funeral (trouble) funds for Cameroon.
 
@@ -55,6 +55,6 @@ run on a cheap Android phone's browser over a weak connection.
 ### What this MVP deliberately is
 
 This is the **Phase 0/1 tool** from [PILOT_PLAN.md](PILOT_PLAN.md): the treasurer-side
-ledger. Money still moves through the group's own MoMo/OM accounts (keeping Tamarun
+ledger. Money still moves through the group's own MoMo/OM accounts (keeping Kola
 regulatory-clean); the app is the shared book and receipt machine. Automated payment
 collection, the WhatsApp bot, USSD and the diaspora bridge come after Gate 1 is passed.

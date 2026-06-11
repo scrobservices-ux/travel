@@ -1,8 +1,8 @@
-# Tamarun — Lean Pilot Plan
+# Kola — Lean Pilot Plan
 
 **Start small. Prove it. Then scale.**
 
-This is the low-cost path to validating Tamarun before building the full product or
+This is the low-cost path to validating Kola before building the full product or
 raising money. The full vision lives in [BUSINESS_MODEL.md](BUSINESS_MODEL.md); this
 document is about spending as little as possible to find out whether that vision is real.
 
@@ -19,7 +19,7 @@ haven't proven.**
 
 | Need | Lean solution | Cost |
 |---|---|---|
-| Ledger | **The Tamarun MVP app in [`app/`](app/)** — offline, runs in any phone browser, handles 5 or 200 members; Google Sheet as fallback | FCFA 0 |
+| Ledger | **The Kola MVP app in [`app/`](app/)** — offline, runs in any phone browser, handles 5 or 200 members; Google Sheet as fallback | FCFA 0 |
 | Member receipts & reminders | WhatsApp Business app (free) sent manually; SMS via a bulk-SMS reseller for non-WhatsApp members | ~FCFA 15–25K/mo |
 | Digital contributions | The group opens its **own MoMo/OM merchant or collection number** (group-owned — important for trust *and* it keeps you regulatory-clean) | FCFA 0 setup |
 | Cash contributions | Recorded in the sheet at the meeting; member gets a WhatsApp receipt same evening | FCFA 0 |
@@ -117,7 +117,7 @@ USSD, the diaspora bridge as a real product, insurance partnership, and the path
 
 1. **List your 10 candidate groups** and rank by trust-distance to you. Talk to the
    president of the top 3 — pitch the trouble-fund story, not "an app."
-2. **Open a WhatsApp Business profile** for Tamarun and design the receipt message
+2. **Open a WhatsApp Business profile** for Kola and design the receipt message
    format (FR + EN + Pidgin versions).
 3. **Build the ledger sheet template** once: contributions, fines, loans, trouble fund,
    auto-totals, member view link.

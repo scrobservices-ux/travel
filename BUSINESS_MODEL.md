@@ -1,4 +1,4 @@
-# Tamarun — Business Model
+# Kola — Business Model
 
 **Digitized Njangi, Tontines & Funeral Funds for Cameroon**
 
@@ -8,14 +8,14 @@
 
 ## 1. Executive Summary
 
-Tamarun digitizes Cameroon's most trusted financial institution: the **njangi house**.
+Kola digitizes Cameroon's most trusted financial institution: the **njangi house**.
 Roughly **half of all Cameroonians** save and borrow through njangis/tontines rather than
 banks, and nearly every family belongs to at least one "trouble fund" (funeral/emergency
 fund). These groups move enormous sums — but they run on paper notebooks, cash carried to
 meetings, treasurer memory, and trust that breaks when records are disputed or money
 "disappears."
 
-Tamarun is **not a bank and does not replace the njangi**. It is the digital ledger,
+Kola is **not a bank and does not replace the njangi**. It is the digital ledger,
 payment rail, and trust layer that sits underneath the existing social institution:
 
 - **Collect** contributions via MTN MoMo and Orange Money (12M+ users in Cameroon)
@@ -65,7 +65,7 @@ A typical njangi house meets weekly or monthly. Each sitting involves:
 ### 2.3 Why now
 
 - Mobile money penetration is ~42% and climbing; MoMo/OM are already how members send
-  "absent contributions" informally — Tamarun formalizes an existing behavior.
+  "absent contributions" informally — Kola formalizes an existing behavior.
 - Smartphone penetration in urban Cameroon (Douala, Yaoundé, Bafoussam, Bamenda, Buea)
   has crossed the threshold where the *treasurer and president* reliably have one, even
   if every member doesn't (our design assumes this asymmetry — see §4).
@@ -99,7 +99,7 @@ Sources: [Business in Cameroon — Orange Money](https://www.businessincameroon.
 
 ### 4.1 Design principles (cultural, not just technical)
 
-1. **The meeting survives.** Njangi is social: food, palaver, solidarity. Tamarun
+1. **The meeting survives.** Njangi is social: food, palaver, solidarity. Kola
    handles money and records *around* the meeting; it never tells people to stop meeting.
 2. **The president and treasurer are the users; members are beneficiaries.** Only the
    executive needs a smartphone. Members interact via **USSD, SMS, and WhatsApp** —
@@ -123,7 +123,7 @@ Sources: [Business in Cameroon — Orange Money](https://www.businessincameroon.
 
 **B. Tontine savings & in-group lending**
 - Accumulating savings ("caisse") with year-end share-out (commonly before Christmas or
-  the rentrée scolaire — Tamarun makes the September/December share-out a marketing moment).
+  the rentrée scolaire — Kola makes the September/December share-out a marketing moment).
 - In-group loans at the group's interest rate, with schedules, reminders, and guarantor
   (surety) tracking — digitizing the "njangi loan with two sureties" practice.
 
@@ -139,10 +139,10 @@ Sources: [Business in Cameroon — Orange Money](https://www.businessincameroon.
 
 **D. Diaspora bridge**
 - Members abroad pay contributions by card/bank transfer/Apple Pay (via an international
-  PSP); Tamarun converts and settles into the group fund in FCFA.
+  PSP); Kola converts and settles into the group fund in FCFA.
 - Diaspora members see the same ledger as everyone else — the #1 ask of bushfallers.
 - Village development associations (réunions de ressortissants) and diaspora cultural
-  meetings (in Maryland, Paris, Berlin…) can run *entire* njangis on Tamarun across borders.
+  meetings (in Maryland, Paris, Berlin…) can run *entire* njangis on Kola across borders.
 
 **E. Group governance**
 - Digital constitution (rules, fines, benefits) stored in-app.
@@ -172,7 +172,7 @@ Sources: [Business in Cameroon — Orange Money](https://www.businessincameroon.
 
 ## 5. Competition & Differentiation
 
-| Competitor | Model | Why Tamarun wins |
+| Competitor | Model | Why Kola wins |
 |---|---|---|
 | Paper notebook + cash (the real competitor) | Free, trusted, familiar | We keep the ritual, remove the disputes; freemium entry costs nothing |
 | Raw MoMo/OM transfers to treasurer | Already used informally | No ledger, no group visibility, no rules engine — we sit on top of MoMo, not against it |
@@ -180,9 +180,9 @@ Sources: [Business in Cameroon — Orange Money](https://www.businessincameroon.
 | MaTontine (Senegal) and francophone analogues | Tontine + credit scoring | Not present in CEMAC; we own the Cameroon trust networks first |
 | MFIs / cooperative credit unions (CamCCUL etc.) | Formal savings | Partners, not competitors — we feed them scored borrowers (§6.5) |
 
-**Moat:** the group's entire financial history and constitution lives in Tamarun.
+**Moat:** the group's entire financial history and constitution lives in Kola.
 Switching costs grow every meeting. Network effects are *intra-group* (one president
-onboards 30 members) and *inter-group* (members belong to 2–3 groups and carry Tamarun
+onboards 30 members) and *inter-group* (members belong to 2–3 groups and carry Kola
 between them).
 
 ---
@@ -221,13 +221,13 @@ seed; the conversion trigger is MoMo collection and the trouble fund.
 ### 6.4 Funeral microinsurance commission — Year 2
 
 - Group-level funeral/life microinsurance distributed in-app, underwritten by a licensed
-  Cameroonian insurer. Typical premium FCFA 500–1,500/member/month; **Tamarun takes
+  Cameroonian insurer. Typical premium FCFA 500–1,500/member/month; **Kola takes
   15–25% distribution commission.** Insurers badly want this channel — they cannot
   reach njangi houses; we are *inside* them.
 
 ### 6.5 Credit-scoring & MFI referrals — Year 2–3
 
-- With member consent, Tamarun's contribution history becomes a credit score. Licensed
+- With member consent, Kola's contribution history becomes a credit score. Licensed
   MFIs and credit unions pay **a referral fee (1–2% of loan value)** for pre-scored
   borrowers. We never lend our own money; we monetize the data exhaust of discipline
   that today earns members nothing.
@@ -244,13 +244,13 @@ seed; the conversion trigger is MoMo collection and the trouble fund.
 This is the part most fintechs get wrong. The plan:
 
 **Phase 1 (launch): Pure software + licensed payment partners.**
-- Tamarun is a SaaS/ledger company. All money flows **directly between member wallets and
+- Kola is a SaaS/ledger company. All money flows **directly between member wallets and
   the group's own MoMo/OM merchant or collection account** via a licensed payment
   aggregator (e.g., Maviance/Smobilpay, CinetPay, or direct MTN/Orange API agreements).
-- Tamarun never takes custody of funds → outside the perimeter of BEAC Regulation
+- Kola never takes custody of funds → outside the perimeter of BEAC Regulation
   No. 04/18/CEMAC on payment services and COBAC's e-money rules.
 - Trouble-fund balances sit in the group's own account at their existing MFI/credit
-  union or in a group MoMo account — Tamarun is the ledger and orchestrator.
+  union or in a group MoMo account — Kola is the ledger and orchestrator.
 
 **Phase 2 (scale): Payment establishment license or MFI partnership.**
 - Once volumes justify it (~Year 3), either obtain a **payment institution
@@ -278,7 +278,7 @@ One converted president = 30–40 members onboarded at once. CAC is therefore me
 1. **"Trouble fund first" pitch.** Lead with the 48-hour funeral payout story, not with
    "fintech." Demo: trigger a mock levy, watch 30 phones buzz at once. This sells itself
    at any meeting.
-2. **Field ambassadors ("Tamarun Reps")** — commissioned agents recruited from respected
+2. **Field ambassadors ("Kola Reps")** — commissioned agents recruited from respected
    meeting members, paid FCFA 5,000 per activated paying group + 5% of Year-1
    subscription. Same playbook that built MoMo's agent network.
 3. **Beachheads:** Douala (Akwa, Bonabéri markets), Yaoundé, Bafoussam (the Bamiléké
@@ -288,15 +288,15 @@ One converted president = 30–40 members onboarded at once. CAC is therefore me
    cultural & development associations (Laakam, Nweh, Moghamo unions…), market traders'
    associations, teachers' and drivers' cooperatives.
 5. **Diaspora pull:** market in WhatsApp/Facebook groups of Cameroonian associations in
-   the US/Europe. Diaspora members *push their home groups onto Tamarun* because they're
+   the US/Europe. Diaspora members *push their home groups onto Kola* because they're
    the ones being cheated by opacity. Diaspora = highest-ARPU users and free distribution.
 6. **Radio + sponsorship**, not Facebook ads: community radio in local languages,
    sponsoring death celebrations' public address ("trouble fund paid in 48 hours by
-   Tamarun") — dark but extremely effective social proof in context.
+   Kola") — dark but extremely effective social proof in context.
 
 ### 8.2 Trust-building (the real product)
 
-- **Public ledger guarantee:** "Even Tamarun cannot delete a line."
+- **Public ledger guarantee:** "Even Kola cannot delete a line."
 - Local incorporation, local faces, office in Douala — not a faceless foreign app.
 - Endorsements from known meeting federations and a few celebrity association presidents.
 - A no-questions data-export: groups can leave anytime with their full books (paradoxically
@@ -368,7 +368,7 @@ Nigeria/Ghana diaspora corridors.
 | Telco API costs/reliability; telcos copy the idea | Multi-aggregator redundancy; our moat is the constitution/ledger/social layer telcos won't build; pursue telco partnership before rivalry |
 | Anglophone-crisis instability in NW/SW beachheads | Lead with Douala/Yaoundé/Bafoussam + diaspora; NW/SW via diaspora-driven remote groups |
 | Groups try the app, revert to the notebook | Trouble-fund levy + SMS receipts are habit-forming hooks; ambassador attends the first 3 meetings; free tier removes price excuse |
-| A fraud incident inside a group gets blamed on the app | Append-only ledger + receipts make Tamarun the *proof*, not the culprit; PR playbook ready |
+| A fraud incident inside a group gets blamed on the app | Append-only ledger + receipts make Kola the *proof*, not the culprit; PR playbook ready |
 | Regulatory reclassification (custody creep) | Phase-1 architecture keeps funds in group-owned accounts; compliance lead from Day 1 |
 | Cash culture inertia | Never penalize cash; monetize SaaS + the flows that are already digital |
 
@@ -388,5 +388,5 @@ Nigeria/Ghana diaspora corridors.
 ### One-line investment thesis
 
 > Cameroonians already run a multi-hundred-billion-FCFA shadow banking system on trust
-> and notebooks. Tamarun doesn't ask them to change what they do — it makes what they
+> and notebooks. Kola doesn't ask them to change what they do — it makes what they
 > already do impossible to cheat, and takes a sliver of the flow for the service.

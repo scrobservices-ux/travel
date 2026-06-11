@@ -1,2 +1,2 @@
-# Derived packaging artifacts (rebuild: zip -q tamarun-app.zip app/* README.md Tamarun.html)
-tamarun-app.zip
+# Derived packaging artifacts (rebuild: zip -q kola-app.zip app/* README.md Kola.html)
+kola-app.zip

@@ -3,23 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tamarun — Njangi Ledger</title>
+<title>Kola — Njangi · Tontine · Trouble Fund</title>
+<meta name="description" content="Break kola. Build trust. The digital book for your njangi house.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <header id="topbar">
-  <div class="brand">
-    <span class="logo">T</span>
+  <div class="brand" onclick="App.goHome()">
+    <span class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/><path d="M12 3v18M5.5 6.5l13 11M18.5 6.5l-13 11"/>
+      </svg>
+    </span>
     <div>
-      <h1>Tamarun</h1>
-      <p>Njangi · Tontine · Trouble Fund</p>
+      <h1>Kola</h1>
+      <p>Break kola · Build trust</p>
     </div>
   </div>
   <div class="topbar-right">
     <select id="langSelect" title="Receipt language" onchange="App.setLang(this.value)">
-      <option value="en">Receipts: English</option>
-      <option value="fr">Reçus : Français</option>
-      <option value="pcm">Receipts: Pidgin</option>
+      <option value="en">Receipts · English</option>
+      <option value="fr">Reçus · Français</option>
+      <option value="pcm">Receipts · Pidgin</option>
     </select>
   </div>
 </header>
@@ -27,12 +35,12 @@
 <div id="layout">
   <aside id="sidebar">
     <div class="sidebar-head">
-      <h2>Groups</h2>
+      <h2>Your houses</h2>
       <button class="btn small" onclick="App.showNewGroup()">+ New</button>
     </div>
     <ul id="groupList"></ul>
     <div class="sidebar-foot">
-      <button class="btn ghost small" onclick="App.exportAll()">Backup (JSON)</button>
+      <button class="btn ghost small" onclick="App.exportAll()">Backup</button>
       <label class="btn ghost small file-btn">Restore
         <input type="file" accept="application/json" onchange="App.importAll(this)">
       </label>
