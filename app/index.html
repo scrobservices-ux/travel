@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tamarun — Njangi Ledger</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header id="topbar">
+  <div class="brand">
+    <span class="logo">T</span>
+    <div>
+      <h1>Tamarun</h1>
+      <p>Njangi · Tontine · Trouble Fund</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <select id="langSelect" title="Receipt language" onchange="App.setLang(this.value)">
+      <option value="en">Receipts: English</option>
+      <option value="fr">Reçus : Français</option>
+      <option value="pcm">Receipts: Pidgin</option>
+    </select>
+  </div>
+</header>
+
+<div id="layout">
+  <aside id="sidebar">
+    <div class="sidebar-head">
+      <h2>Groups</h2>
+      <button class="btn small" onclick="App.showNewGroup()">+ New</button>
+    </div>
+    <ul id="groupList"></ul>
+    <div class="sidebar-foot">
+      <button class="btn ghost small" onclick="App.exportAll()">Backup (JSON)</button>
+      <label class="btn ghost small file-btn">Restore
+        <input type="file" accept="application/json" onchange="App.importAll(this)">
+      </label>
+    </div>
+  </aside>
+
+  <main id="main"></main>
+</div>
+
+<div id="modalOverlay" class="hidden" onclick="if(event.target===this)App.closeModal()">
+  <div id="modalBox"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

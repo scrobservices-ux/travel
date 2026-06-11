@@ -19,7 +19,7 @@ haven't proven.**
 
 | Need | Lean solution | Cost |
 |---|---|---|
-| Ledger | Google Sheet per group, view-link shared to members; or a free Airtable base | FCFA 0 |
+| Ledger | **The Tamarun MVP app in [`app/`](app/)** — offline, runs in any phone browser, handles 5 or 200 members; Google Sheet as fallback | FCFA 0 |
 | Member receipts & reminders | WhatsApp Business app (free) sent manually; SMS via a bulk-SMS reseller for non-WhatsApp members | ~FCFA 15–25K/mo |
 | Digital contributions | The group opens its **own MoMo/OM merchant or collection number** (group-owned — important for trust *and* it keeps you regulatory-clean) | FCFA 0 setup |
 | Cash contributions | Recorded in the sheet at the meeting; member gets a WhatsApp receipt same evening | FCFA 0 |
