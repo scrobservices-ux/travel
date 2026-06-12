@@ -49,12 +49,13 @@ export default async function InvoicesPage() {
               <th className="p-4 text-right">{t.vat}</th>
               <th className="p-4 text-right">{t.total}</th>
               <th className="p-4">{t.status}</th>
+              <th className="p-4"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink/10">
             {(invoices ?? []).length === 0 && (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-ink-muted">
+                <td colSpan={8} className="p-8 text-center text-ink-muted">
                   {t.empty}
                 </td>
               </tr>
@@ -76,6 +77,16 @@ export default async function InvoicesPage() {
                   <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium capitalize", STATUS_STYLES[inv.status])}>
                     {inv.status}
                   </span>
+                </td>
+                <td className="p-4 text-right">
+                  <a
+                    href={`/api/invoices/${inv.id}/facturx`}
+                    target="_blank"
+                    rel="noopener"
+                    className="rounded-full border border-ink/15 px-3 py-1 text-xs text-brass-dark hover:border-brass"
+                  >
+                    {t.pdf} ↓
+                  </a>
                 </td>
               </tr>
             ))}

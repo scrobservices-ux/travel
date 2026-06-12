@@ -117,8 +117,19 @@ The invoicing agent applies all of this automatically — you just say
 "facture Müller GmbH (DE, VAT DE123…) pour 2 000 € de conseil" and it produces a
 correct reverse-charge invoice.
 
-Roadmap for deeper FR/EU: e-invoicing (Factur-X / Chorus Pro for the 2026–2027
-French B2B mandate), OSS for EU B2C, full French UI translation.
+**Factur-X e-invoices.** Every invoice can be exported as a **Factur-X** PDF
+(`/api/invoices/:id/facturx`, “Factur-X ↓” on the Invoices page): a human-readable
+PDF with the **EN 16931 CII XML embedded** as `factur-x.xml`
+(`src/lib/invoice/`). VAT treatment maps to the correct EN 16931 category codes
+(S / AE / G / E). *Gap to close for the French mandate:* full PDF/A-3 conformance
+(output intent + Factur-X XMP) via a post-process — the embedded XML & attachment
+relationship already follow the spec.
+
+**Languages.** French by default, English via the in-app switcher
+(`src/i18n/`, cookie `orderly_locale`). Covers the landing page and the whole app.
+
+Roadmap for deeper FR/EU: Chorus Pro / PPF transmission for the 2026–2027 French
+B2B mandate, OSS for EU B2C.
 
 ## Multi-tenancy & selling instances
 
