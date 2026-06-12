@@ -2,6 +2,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/tenant";
 import { formatDate } from "@/lib/utils";
 import { getDict } from "@/i18n/server";
+import { DocumentUpload } from "@/components/app/DocumentUpload";
 
 export default async function DocumentsPage() {
   const supabase = createServerSupabase();
@@ -15,8 +16,13 @@ export default async function DocumentsPage() {
 
   return (
     <div>
-      <h1 className="font-display text-3xl font-semibold">{t.title}</h1>
-      <p className="mt-2 text-ink-muted">{t.sub}</p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-semibold">{t.title}</h1>
+          <p className="mt-2 text-ink-muted">{t.sub}</p>
+        </div>
+        <DocumentUpload />
+      </div>
 
       <div className="mt-8 grid gap-4">
         {(docs ?? []).length === 0 && (

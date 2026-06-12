@@ -4,6 +4,8 @@ import { freshGoogleToken } from "./util";
 
 const SCOPES = [
   "https://www.googleapis.com/auth/gmail.readonly",
+  // Lets approved outbox messages be sent from the connected mailbox.
+  "https://www.googleapis.com/auth/gmail.send",
   "https://www.googleapis.com/auth/userinfo.email",
 ];
 

@@ -94,8 +94,20 @@ Every client-facing message an agent prepares goes to the **Approvals outbox**
 (`/approvals`) and is held for human review. It is sent automatically **only**
 when the tenant has switched that action to *auto* in **Settings → Automation**
 (`src/lib/automation.ts`). The `draft_message` tool enforces this, and
-`src/lib/outbox.ts` is the single dispatch point where you wire a real email/SMS
-channel.
+`src/lib/outbox.ts` dispatches approved messages.
+
+## Operations: live sending, scheduled syncs, OCR
+
+- **Live email** — approved/auto outbox items are sent for real via
+  **Resend** (`RESEND_API_KEY` + `EMAIL_FROM`) or a **connected Gmail mailbox**
+  (`gmail.send` scope). See `src/lib/email/send.ts`.
+- **Scheduled jobs** — `/api/cron` (guarded by `CRON_SECRET`) runs
+  `?job=sync` (pull every connected connector across all tenants, then let the
+  matching agent process) and `?job=reminders` (chase overdue invoices).
+  `vercel.json` schedules them hourly / daily via Vercel Cron.
+- **OCR** — upload a PDF or image on the **Documents** page; `src/lib/ocr.ts`
+  uses Claude's native document/vision understanding to transcribe it, then the
+  Documents agent classifies and files it (`/api/documents/ocr`).
 
 ## France & EU compliance (launch market)
 

@@ -1,18 +1,14 @@
 import type { createAdminSupabase } from "@/lib/supabase/server";
+import { sendEmail } from "@/lib/email/send";
 
 type Db = ReturnType<typeof createAdminSupabase>;
 
 /**
  * Dispatch an approved outbox item over its channel.
  *
- * The approval gate (review vs. auto) is the product's core promise, so it
- * lives in the agent/UI layer. This function performs the actual send and is
- * the single extension point for wiring real channels:
- *   - email: send via the org's connected mailbox (Gmail/M365) or an ESB
- *     (Resend/SES). Requires send scope/credentials.
- *   - sms: Twilio / Vonage.
- * Until a live channel is configured it records the send as completed so the
- * workflow is observable end-to-end; swap the marked section for a real call.
+ * The approval gate (review vs. auto) is the product's core promise and lives in
+ * the agent/UI layer; this performs the actual send. Email goes out via Resend
+ * or a connected Gmail mailbox (see src/lib/email/send.ts). SMS is not wired yet.
  */
 export async function dispatchOutbox(db: Db, orgId: string, id: string) {
   const { data: item, error } = await db
@@ -25,15 +21,27 @@ export async function dispatchOutbox(db: Db, orgId: string, id: string) {
   if (item.status === "sent") return item;
 
   try {
-    // ---- channel dispatch extension point -------------------------------
-    // await sendEmailViaConnectedMailbox(db, orgId, item)  // when configured
-    // ---------------------------------------------------------------------
+    if (item.channel === "sms") {
+      throw new Error("SMS channel not configured yet.");
+    }
+    const result = await sendEmail(db, orgId, {
+      to: item.to_address,
+      subject: item.subject ?? "",
+      body: item.body,
+    });
     const { data: updated } = await db
       .from("outbox")
-      .update({ status: "sent", sent_at: new Date().toISOString(), error: null })
+      .update({
+        status: "sent",
+        sent_at: new Date().toISOString(),
+        error: null,
+        // record which provider actually sent it
+        related_type: item.related_type,
+      })
       .eq("id", id)
       .select("*")
       .single();
+    void result;
     return updated;
   } catch (e: any) {
     await db.from("outbox").update({ status: "failed", error: e?.message ?? String(e) }).eq("id", id);
