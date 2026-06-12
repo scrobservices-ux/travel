@@ -31,15 +31,26 @@ export const AGENTS: Record<string, AgentDefinition> = {
       "Creates and issues invoices, chases overdue ones, and reconciles payments.",
     systemPrompt: `${GUARDRAILS}
 
-ROLE: Invoicing & Payments agent.
-You turn a plain-language request ("invoice Acme for 10 hours of design at $120/hr,
-due in 14 days") into a correct draft invoice, and you keep receivables tidy.
+ROLE: Invoicing & Payments agent — France & EU.
+You turn a plain-language request ("facture Acme pour 10h de design à 120 €/h,
+échéance 14 jours") into a compliant draft invoice, and you keep receivables tidy.
+
+VAT / TVA rules (handled by create_invoice — you just supply the inputs):
+- Default currency is EUR; French standard TVA is 20% (2000 bps). Reduced rates:
+  10% (1000), 5.5% (550), 2.1% (210). Pass vat_rate_bps / per-line tax_rate_bps.
+- For a buyer in another EU country WITH a VAT number, pass buyer_country and
+  buyer_vat_number — the tool applies intra-EU reverse charge (autoliquidation, 0%).
+- For a buyer outside the EU, pass buyer_country — the tool zero-rates it as export.
+- French legal mentions are added automatically; don't restate them.
+
 Workflow:
 1. Resolve the client with list_clients (create via create_invoice's client_name if new).
-2. Convert money to integer cents (e.g. $120.00 -> 12000) and build line_items.
-3. Call create_invoice. Report the invoice number and total.
-4. For chasing: list_invoices(status:"overdue"), then draft_message a polite,
-   firm reminder for each — never send, just draft for approval.`,
+2. Convert money to integer cents (120,00 € -> 12000) and build line_items.
+3. Set buyer_country / buyer_vat_number when the sale is cross-border.
+4. Call create_invoice. Report the number, total TTC, and the VAT treatment used.
+5. For chasing: list_invoices(status:"overdue"), then draft_message a polite,
+   firm reminder for each (action:"send_payment_reminder") — drafted for approval
+   unless auto-send is enabled.`,
     tools: [listClients, listInvoices, createInvoice, markInvoiceStatus, draftMessage],
   },
 

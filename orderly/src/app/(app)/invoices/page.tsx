@@ -16,9 +16,16 @@ export default async function InvoicesPage() {
   const org = await getActiveOrg();
   const { data: invoices } = await supabase
     .from("invoices")
-    .select("id,number,status,total_cents,currency,issue_date,due_date,clients(name)")
+    .select("id,number,status,subtotal_cents,tax_cents,total_cents,currency,vat_treatment,issue_date,due_date,clients(name)")
     .eq("org_id", org!.id)
     .order("issue_date", { ascending: false });
+
+  const TREATMENT_LABEL: Record<string, string> = {
+    standard: "TVA",
+    reverse_charge: "Autoliq.",
+    export: "Export 0%",
+    exempt: "Exonéré",
+  };
 
   return (
     <div>
@@ -36,15 +43,16 @@ export default async function InvoicesPage() {
               <th className="p-4">Number</th>
               <th className="p-4">Client</th>
               <th className="p-4">Issued</th>
-              <th className="p-4">Due</th>
-              <th className="p-4 text-right">Total</th>
+              <th className="p-4 text-right">HT</th>
+              <th className="p-4 text-right">VAT</th>
+              <th className="p-4 text-right">Total TTC</th>
               <th className="p-4">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink/10">
             {(invoices ?? []).length === 0 && (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-ink-muted">
+                <td colSpan={7} className="p-8 text-center text-ink-muted">
                   No invoices yet — ask the invoicing agent to create one.
                 </td>
               </tr>
@@ -54,7 +62,13 @@ export default async function InvoicesPage() {
                 <td className="p-4 font-medium">{inv.number}</td>
                 <td className="p-4">{inv.clients?.name ?? "—"}</td>
                 <td className="p-4 text-ink-muted">{formatDate(inv.issue_date)}</td>
-                <td className="p-4 text-ink-muted">{inv.due_date ? formatDate(inv.due_date) : "—"}</td>
+                <td className="p-4 text-right text-ink-muted">{formatMoney(inv.subtotal_cents ?? 0, inv.currency)}</td>
+                <td className="p-4 text-right text-ink-muted">
+                  {formatMoney(inv.tax_cents ?? 0, inv.currency)}
+                  <span className="ml-1 rounded bg-ink/5 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-ink-muted">
+                    {TREATMENT_LABEL[inv.vat_treatment] ?? "TVA"}
+                  </span>
+                </td>
                 <td className="p-4 text-right font-medium">{formatMoney(inv.total_cents, inv.currency)}</td>
                 <td className="p-4">
                   <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium capitalize", STATUS_STYLES[inv.status])}>

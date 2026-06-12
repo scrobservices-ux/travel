@@ -13,15 +13,19 @@ export function getStripe(): Stripe {
   return _stripe;
 }
 
+// Prices in EUR (France/EU launch). HT — VAT added at checkout per local rules.
+export const CURRENCY = "EUR";
+export const CURRENCY_SYMBOL = "€";
+
 export const PLANS = {
   starter: {
     name: "Starter",
     priceId: process.env.STRIPE_PRICE_STARTER,
     blurb: "For solo operators and very small teams getting their admin in order.",
-    monthly: 49,
+    monthly: 39,
     features: [
       "1 connected business",
-      "Invoicing agent",
+      "Invoicing agent (French TVA & EU reverse charge)",
       "Up to 200 documents / mo",
       "Email support",
     ],
@@ -30,7 +34,7 @@ export const PLANS = {
     name: "Growth",
     priceId: process.env.STRIPE_PRICE_GROWTH,
     blurb: "For growing SMBs that want every repetitive task handled.",
-    monthly: 149,
+    monthly: 129,
     popular: true,
     features: [
       "All four agents (invoicing, books, docs, scheduling)",
@@ -43,9 +47,9 @@ export const PLANS = {
     name: "Scale",
     priceId: process.env.STRIPE_PRICE_SCALE,
     blurb: "For multi-entity businesses and agencies running many books.",
-    monthly: 399,
+    monthly: 349,
     features: [
-      "Multiple business entities",
+      "Multiple legal entities",
       "Custom agent workflows",
       "Audit exports & SSO",
       "Dedicated onboarding",

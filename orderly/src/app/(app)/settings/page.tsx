@@ -5,6 +5,7 @@ import { AUTOMATABLE_ACTIONS, getPolicy } from "@/lib/automation";
 import { CONNECTOR_LIST } from "@/connectors/registry";
 import { ConnectionsPanel } from "@/components/app/ConnectionsPanel";
 import { AutomationPanel } from "@/components/app/AutomationPanel";
+import { TaxProfilePanel } from "@/components/app/TaxProfilePanel";
 
 export default async function SettingsPage() {
   const supabase = createServerSupabase();
@@ -30,6 +31,19 @@ export default async function SettingsPage() {
           <div><dt className="text-ink-muted">Plan</dt><dd className="font-medium">{PLANS[plan]?.name ?? plan}</dd></div>
           <div><dt className="text-ink-muted">Subscription</dt><dd className="font-medium capitalize">{org!.subscription_status ?? "trialing"}</dd></div>
         </dl>
+      </section>
+
+      <section className="rounded-2xl border border-ink/10 bg-white/60 p-6">
+        <h2 className="font-display text-lg font-semibold">Tax &amp; legal profile</h2>
+        <p className="mt-1 mb-4 text-sm text-ink-muted">
+          Your seller identity for compliant French/EU invoices — SIREN/SIRET, TVA number,
+          and default VAT rate. The invoicing agent uses these on every invoice.
+        </p>
+        <TaxProfilePanel
+          country={org!.country ?? "FR"}
+          currency={org!.currency ?? "EUR"}
+          profile={org!.tax_profile ?? {}}
+        />
       </section>
 
       <section className="rounded-2xl border border-ink/10 bg-white/60 p-6">

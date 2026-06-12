@@ -2,6 +2,13 @@ import { z } from "zod";
 import type { AgentTool } from "./types";
 import { isAuto, type AutomationAction } from "@/lib/automation";
 import { dispatchOutbox } from "@/lib/outbox";
+import {
+  determineTreatment,
+  computeInvoiceTax,
+  frenchLegalMentions,
+  isValidVatFormat,
+  type VatTreatment,
+} from "@/lib/tax/eu";
 
 /**
  * The shared tool library. Agents are granted subsets of these. Every handler
@@ -53,34 +60,45 @@ export const listInvoices: AgentTool = {
 const createInvoiceSchema = z.object({
   client_id: z.string().uuid().optional(),
   client_name: z.string().optional(),
-  currency: z.string().default("USD"),
+  currency: z.string().optional(),
   due_date: z.string().optional(),
+  // Buyer location drives VAT treatment (domestic / intra-EU reverse charge / export).
+  buyer_country: z.string().length(2).optional(),
+  buyer_vat_number: z.string().optional(),
+  // Default VAT rate in basis points (2000 = 20%). Falls back to the org default.
+  vat_rate_bps: z.number().int().optional(),
   line_items: z
     .array(
       z.object({
         description: z.string(),
         quantity: z.number().default(1),
         unit_cents: z.number().int(),
+        tax_rate_bps: z.number().int().optional(),
       }),
     )
     .min(1),
-  tax_cents: z.number().int().default(0),
   notes: z.string().optional(),
 });
 
 export const createInvoice: AgentTool = {
   name: "create_invoice",
   description:
-    "Create a draft invoice with line items. Amounts are in integer cents. " +
-    "Provide either client_id or client_name. The invoice number is generated automatically.",
+    "Create a compliant draft invoice (France/EU) with line items. Amounts are " +
+    "in integer cents; VAT rates in basis points (2000 = 20%). VAT is computed " +
+    "automatically: domestic TVA, intra-EU B2B reverse charge (autoliquidation) " +
+    "when a valid buyer VAT number is given, or VAT-exempt export outside the EU. " +
+    "Provide buyer_country (ISO-2) and buyer_vat_number for cross-border sales. " +
+    "French legal mentions are added automatically. Provide client_id or client_name.",
   input_schema: {
     type: "object",
     properties: {
       client_id: { type: "string" },
       client_name: { type: "string" },
-      currency: { type: "string", default: "USD" },
+      currency: { type: "string", description: "Defaults to the org currency (EUR)." },
       due_date: { type: "string", description: "ISO date, e.g. 2026-07-01" },
-      tax_cents: { type: "integer", default: 0 },
+      buyer_country: { type: "string", description: "Buyer country ISO-2, e.g. FR, DE, US." },
+      buyer_vat_number: { type: "string", description: "Buyer EU VAT number for B2B reverse charge." },
+      vat_rate_bps: { type: "integer", description: "Default VAT rate in bps (2000=20%, 1000=10%, 550=5.5%)." },
       notes: { type: "string" },
       line_items: {
         type: "array",
@@ -90,6 +108,7 @@ export const createInvoice: AgentTool = {
             description: { type: "string" },
             quantity: { type: "number", default: 1 },
             unit_cents: { type: "integer" },
+            tax_rate_bps: { type: "integer", description: "Per-line VAT rate; falls back to vat_rate_bps." },
           },
           required: ["description", "unit_cents"],
         },
@@ -99,6 +118,16 @@ export const createInvoice: AgentTool = {
   },
   run: async (rawInput, ctx) => {
     const input = createInvoiceSchema.parse(rawInput);
+
+    // Seller (org) tax/legal profile.
+    const { data: org } = await ctx.db
+      .from("organizations")
+      .select("country,currency,tax_profile")
+      .eq("id", ctx.orgId)
+      .single();
+    const sellerCountry = (org?.country ?? "FR").toUpperCase();
+    const taxProfile = (org?.tax_profile ?? {}) as Record<string, any>;
+    const currency = input.currency ?? org?.currency ?? "EUR";
 
     let clientId = input.client_id ?? null;
     if (!clientId && input.client_name) {
@@ -120,11 +149,41 @@ export const createInvoice: AgentTool = {
       }
     }
 
-    const subtotal = input.line_items.reduce(
-      (sum, li) => sum + Math.round(li.quantity * li.unit_cents),
-      0,
-    );
-    const total = subtotal + (input.tax_cents ?? 0);
+    // Determine VAT treatment from seller/buyer location + buyer VAT number.
+    const treatment: VatTreatment = determineTreatment({
+      sellerCountry,
+      buyerCountry: input.buyer_country,
+      buyerVatNumber: input.buyer_vat_number,
+    });
+
+    const defaultRate = input.vat_rate_bps ?? taxProfile.default_vat_rate_bps ?? 2000;
+    const lines = input.line_items.map((li) => ({
+      ...li,
+      amount_cents: Math.round(li.quantity * li.unit_cents),
+      tax_rate_bps: li.tax_rate_bps ?? defaultRate,
+    }));
+    const tax = computeInvoiceTax(lines, treatment);
+
+    const sellerSnapshot = {
+      legal_name: taxProfile.legal_name ?? null,
+      legal_form: taxProfile.legal_form ?? null,
+      siren: taxProfile.siren ?? null,
+      siret: taxProfile.siret ?? null,
+      vat_number: taxProfile.vat_number ?? null,
+      address: taxProfile.address ?? null,
+      country: sellerCountry,
+    };
+    const legalMentions =
+      sellerCountry === "FR"
+        ? frenchLegalMentions(
+            { ...taxProfile, vat_registered: taxProfile.vat_registered },
+            treatment,
+          )
+        : treatment === "reverse_charge"
+          ? "Reverse charge — VAT to be accounted for by the recipient (Art. 196 EU VAT Directive)."
+          : treatment === "export"
+            ? "Zero-rated export outside the EU."
+            : "";
 
     // Generate next invoice number for this org.
     const { count } = await ctx.db
@@ -139,30 +198,41 @@ export const createInvoice: AgentTool = {
         org_id: ctx.orgId,
         client_id: clientId,
         number,
-        currency: input.currency,
+        currency,
         due_date: input.due_date ?? null,
-        subtotal_cents: subtotal,
-        tax_cents: input.tax_cents ?? 0,
-        total_cents: total,
+        subtotal_cents: tax.subtotal_cents,
+        tax_cents: tax.tax_cents,
+        total_cents: tax.total_cents,
+        tax_rate_bps: defaultRate,
+        vat_treatment: treatment,
+        buyer_country: input.buyer_country ?? null,
+        buyer_vat_number: input.buyer_vat_number ?? null,
+        legal_mentions: legalMentions || null,
+        seller_snapshot: sellerSnapshot,
         notes: input.notes ?? null,
         status: "draft",
       })
-      .select("id,number,total_cents,currency,status")
+      .select("id,number,subtotal_cents,tax_cents,total_cents,currency,vat_treatment,status")
       .single();
     if (error) throw new Error(error.message);
 
     await ctx.db.from("invoice_line_items").insert(
-      input.line_items.map((li) => ({
+      lines.map((li) => ({
         org_id: ctx.orgId,
         invoice_id: invoice.id,
         description: li.description,
         quantity: li.quantity,
         unit_cents: li.unit_cents,
-        amount_cents: Math.round(li.quantity * li.unit_cents),
+        amount_cents: li.amount_cents,
+        tax_rate_bps: li.tax_rate_bps,
       })),
     );
 
-    return invoice;
+    return {
+      ...invoice,
+      vat_number_valid:
+        treatment === "reverse_charge" ? isValidVatFormat(input.buyer_vat_number) : undefined,
+    };
   },
 };
 

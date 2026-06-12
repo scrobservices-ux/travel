@@ -176,10 +176,11 @@ export default function LandingPage() {
           <Reveal delay={120}>
             <ul className="space-y-4">
               {[
+                "EU data residency · GDPR / RGPD-aligned",
+                "French TVA, EU reverse charge & compliant invoices built in",
                 "Per-tenant isolation with row-level security",
                 "Full audit trail of every agent action",
                 "Human-in-the-loop on all client communication",
-                "Bank-grade encryption in transit and at rest",
               ].map((f) => (
                 <li key={f} className="flex items-start gap-3 rounded-xl border border-ink/10 bg-white/50 p-5">
                   <span className="mt-0.5 text-brass-dark">✓</span>
@@ -225,8 +226,8 @@ export default function LandingPage() {
                       {plan.blurb}
                     </p>
                     <div className="mt-6 flex items-end gap-1">
-                      <span className="font-display text-5xl font-semibold">${plan.monthly}</span>
-                      <span className={`mb-2 text-sm ${popular ? "text-ivory/60" : "text-ink-muted"}`}>/mo</span>
+                      <span className="font-display text-5xl font-semibold">{plan.monthly}&nbsp;€</span>
+                      <span className={`mb-2 text-sm ${popular ? "text-ivory/60" : "text-ink-muted"}`}>/mo · HT</span>
                     </div>
                     <ul className={`mt-6 flex-1 space-y-3 text-sm ${popular ? "text-ivory/80" : "text-ink-muted"}`}>
                       {plan.features.map((f) => (

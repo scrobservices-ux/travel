@@ -54,7 +54,8 @@ npm install
 # Create the database, in order:
 #   1) supabase/schema.sql
 #   2) supabase/002_connectors_and_automation.sql
-#   3) supabase/seed.sql   (optional demo data)
+#   3) supabase/003_france_eu_tax.sql
+#   4) supabase/seed.sql   (optional demo data)
 # Paste into the Supabase SQL editor, or psql "$DATABASE_URL" -f <file>
 
 npm run dev                      # http://localhost:3000
@@ -95,6 +96,29 @@ when the tenant has switched that action to *auto* in **Settings → Automation*
 (`src/lib/automation.ts`). The `draft_message` tool enforces this, and
 `src/lib/outbox.ts` is the single dispatch point where you wire a real email/SMS
 channel.
+
+## France & EU compliance (launch market)
+
+The platform defaults to **France/EU**: currency **EUR**, locale **fr-FR**, and a
+real VAT engine (`src/lib/tax/eu.ts`):
+
+- French **TVA** rates (20 / 10 / 5.5 / 2.1 %).
+- Automatic **treatment selection**: domestic TVA, **intra-EU B2B reverse charge
+  (autoliquidation, 0%)** when a valid buyer VAT number is supplied, and
+  **VAT-exempt export** outside the EU.
+- EU **VAT number** format validation + optional live **VIES** check.
+- Mandatory **French legal mentions** (pénalités de retard, indemnité €40,
+  autoliquidation / exonération wording) added to every invoice.
+- Per-business **tax & legal profile** (SIREN/SIRET, TVA number, legal form,
+  default rate) in **Settings → Tax & legal profile**, frozen onto each invoice
+  as an immutable `seller_snapshot`.
+
+The invoicing agent applies all of this automatically — you just say
+"facture Müller GmbH (DE, VAT DE123…) pour 2 000 € de conseil" and it produces a
+correct reverse-charge invoice.
+
+Roadmap for deeper FR/EU: e-invoicing (Factur-X / Chorus Pro for the 2026–2027
+French B2B mandate), OSS for EU B2C, full French UI translation.
 
 ## Multi-tenancy & selling instances
 
