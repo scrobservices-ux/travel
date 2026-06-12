@@ -2,9 +2,11 @@ import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/tenant";
 import { formatMoney, formatDate } from "@/lib/utils";
+import { getDict } from "@/i18n/server";
 
 export default async function DashboardPage() {
   const supabase = createServerSupabase();
+  const t = getDict().dashboard;
   const org = await getActiveOrg();
   const orgId = org!.id;
 
@@ -20,15 +22,15 @@ export default async function DashboardPage() {
   const collected = (paid ?? []).reduce((s, r) => s + (r.total_cents ?? 0), 0);
 
   const stats = [
-    { label: "Collected", value: formatMoney(collected) },
-    { label: "Open invoices", value: String(openInvoices ?? 0) },
-    { label: "Docs to process", value: String(docsPending ?? 0) },
+    { label: t.collected, value: formatMoney(collected) },
+    { label: t.openInvoices, value: String(openInvoices ?? 0) },
+    { label: t.docsToProcess, value: String(docsPending ?? 0) },
   ];
 
   return (
     <div>
-      <h1 className="font-display text-3xl font-semibold">Good to see you 👋</h1>
-      <p className="mt-2 text-ink-muted">Here&apos;s what your agents have been keeping in order.</p>
+      <h1 className="font-display text-3xl font-semibold">{t.hello}</h1>
+      <p className="mt-2 text-ink-muted">{t.sub}</p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         {stats.map((s) => (
@@ -40,12 +42,12 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mt-10 flex items-center justify-between">
-        <h2 className="font-display text-xl font-semibold">Recent agent activity</h2>
-        <Link href="/agents" className="text-sm text-brass-dark hover:underline">Run an agent →</Link>
+        <h2 className="font-display text-xl font-semibold">{t.recent}</h2>
+        <Link href="/agents" className="text-sm text-brass-dark hover:underline">{t.runAgent}</Link>
       </div>
       <div className="mt-4 divide-y divide-ink/10 rounded-2xl border border-ink/10 bg-white/60">
         {(recentRuns ?? []).length === 0 && (
-          <div className="p-6 text-sm text-ink-muted">No agent runs yet. Head to Agents to put one to work.</div>
+          <div className="p-6 text-sm text-ink-muted">{t.noRuns}</div>
         )}
         {(recentRuns ?? []).map((r) => (
           <div key={r.id} className="flex items-center justify-between p-4 text-sm">

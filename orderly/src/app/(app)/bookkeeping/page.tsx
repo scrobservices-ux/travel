@@ -1,9 +1,11 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/tenant";
 import { formatMoney, formatDate } from "@/lib/utils";
+import { getDict } from "@/i18n/server";
 
 export default async function BookkeepingPage() {
   const supabase = createServerSupabase();
+  const t = getDict().bookkeeping;
   const org = await getActiveOrg();
   const { data: txns } = await supabase
     .from("transactions")
@@ -17,18 +19,18 @@ export default async function BookkeepingPage() {
 
   return (
     <div>
-      <h1 className="font-display text-3xl font-semibold">Bookkeeping</h1>
+      <h1 className="font-display text-3xl font-semibold">{t.title}</h1>
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-ink/10 bg-white/60 p-6">
-          <div className="text-sm text-ink-muted">Income</div>
+          <div className="text-sm text-ink-muted">{t.income}</div>
           <div className="mt-2 font-display text-2xl font-semibold text-sage">{formatMoney(income)}</div>
         </div>
         <div className="rounded-2xl border border-ink/10 bg-white/60 p-6">
-          <div className="text-sm text-ink-muted">Expenses</div>
+          <div className="text-sm text-ink-muted">{t.expenses}</div>
           <div className="mt-2 font-display text-2xl font-semibold text-brass-dark">{formatMoney(expense)}</div>
         </div>
         <div className="rounded-2xl border border-ink/10 bg-white/60 p-6">
-          <div className="text-sm text-ink-muted">Net</div>
+          <div className="text-sm text-ink-muted">{t.net}</div>
           <div className="mt-2 font-display text-2xl font-semibold">{formatMoney(income - expense)}</div>
         </div>
       </div>
@@ -37,16 +39,16 @@ export default async function BookkeepingPage() {
         <table className="w-full text-sm">
           <thead className="border-b border-ink/10 text-left text-xs uppercase tracking-widest text-ink-muted">
             <tr>
-              <th className="p-4">Date</th>
-              <th className="p-4">Description</th>
-              <th className="p-4">Category</th>
-              <th className="p-4">Confidence</th>
-              <th className="p-4 text-right">Amount</th>
+              <th className="p-4">{t.date}</th>
+              <th className="p-4">{t.description}</th>
+              <th className="p-4">{t.category}</th>
+              <th className="p-4">{t.confidence}</th>
+              <th className="p-4 text-right">{t.amount}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink/10">
             {(txns ?? []).length === 0 && (
-              <tr><td colSpan={5} className="p-8 text-center text-ink-muted">No transactions yet — the bookkeeping agent will fill this in.</td></tr>
+              <tr><td colSpan={5} className="p-8 text-center text-ink-muted">{t.empty}</td></tr>
             )}
             {(txns ?? []).map((t) => (
               <tr key={t.id} className="hover:bg-ink/[0.02]">

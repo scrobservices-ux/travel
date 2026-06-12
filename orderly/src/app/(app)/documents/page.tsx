@@ -1,9 +1,11 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/tenant";
 import { formatDate } from "@/lib/utils";
+import { getDict } from "@/i18n/server";
 
 export default async function DocumentsPage() {
   const supabase = createServerSupabase();
+  const t = getDict().documents;
   const org = await getActiveOrg();
   const { data: docs } = await supabase
     .from("documents")
@@ -13,13 +15,13 @@ export default async function DocumentsPage() {
 
   return (
     <div>
-      <h1 className="font-display text-3xl font-semibold">Documents</h1>
-      <p className="mt-2 text-ink-muted">Everything read, classified and filed by the documents agent.</p>
+      <h1 className="font-display text-3xl font-semibold">{t.title}</h1>
+      <p className="mt-2 text-ink-muted">{t.sub}</p>
 
       <div className="mt-8 grid gap-4">
         {(docs ?? []).length === 0 && (
           <div className="rounded-2xl border border-dashed border-ink/20 bg-white/40 p-10 text-center text-ink-muted">
-            No documents yet. Upload files or connect your inbox, then let the documents agent process them.
+            {t.empty}
           </div>
         )}
         {(docs ?? []).map((d) => (

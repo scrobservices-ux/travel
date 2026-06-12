@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/tenant";
 import { formatMoney, formatDate, cn } from "@/lib/utils";
+import { getDict } from "@/i18n/server";
 
 const STATUS_STYLES: Record<string, string> = {
   draft: "bg-ink/10 text-ink-muted",
@@ -13,6 +14,7 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default async function InvoicesPage() {
   const supabase = createServerSupabase();
+  const t = getDict().invoices;
   const org = await getActiveOrg();
   const { data: invoices } = await supabase
     .from("invoices")
@@ -30,9 +32,9 @@ export default async function InvoicesPage() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-3xl font-semibold">Invoices</h1>
+        <h1 className="font-display text-3xl font-semibold">{t.title}</h1>
         <Link href="/agents" className="rounded-full bg-ink px-5 py-2 text-sm text-ivory hover:bg-ink-soft">
-          New via agent
+          {t.newViaAgent}
         </Link>
       </div>
 
@@ -40,20 +42,20 @@ export default async function InvoicesPage() {
         <table className="w-full text-sm">
           <thead className="border-b border-ink/10 text-left text-xs uppercase tracking-widest text-ink-muted">
             <tr>
-              <th className="p-4">Number</th>
-              <th className="p-4">Client</th>
-              <th className="p-4">Issued</th>
+              <th className="p-4">{t.number}</th>
+              <th className="p-4">{t.client}</th>
+              <th className="p-4">{t.issued}</th>
               <th className="p-4 text-right">HT</th>
-              <th className="p-4 text-right">VAT</th>
-              <th className="p-4 text-right">Total TTC</th>
-              <th className="p-4">Status</th>
+              <th className="p-4 text-right">{t.vat}</th>
+              <th className="p-4 text-right">{t.total}</th>
+              <th className="p-4">{t.status}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink/10">
             {(invoices ?? []).length === 0 && (
               <tr>
                 <td colSpan={7} className="p-8 text-center text-ink-muted">
-                  No invoices yet — ask the invoicing agent to create one.
+                  {t.empty}
                 </td>
               </tr>
             )}

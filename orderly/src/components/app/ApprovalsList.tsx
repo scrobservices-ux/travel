@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useDict } from "@/i18n/client";
 
 interface OutboxItem {
   id: string;
@@ -17,6 +18,7 @@ interface OutboxItem {
 export function ApprovalsList({ initial }: { initial: OutboxItem[] }) {
   const [items, setItems] = useState(initial);
   const [busy, setBusy] = useState<string | null>(null);
+  const t = useDict().approvals;
 
   async function act(id: string, action: "approve" | "discard") {
     setBusy(id);
@@ -35,7 +37,7 @@ export function ApprovalsList({ initial }: { initial: OutboxItem[] }) {
   if (items.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-ink/20 bg-white/40 p-10 text-center text-ink-muted">
-        Nothing waiting for review. When an agent prepares a message, it lands here for your approval.
+        {t.empty}
       </div>
     );
   }
@@ -58,14 +60,14 @@ export function ApprovalsList({ initial }: { initial: OutboxItem[] }) {
                 disabled={busy === item.id}
                 className="rounded-full border border-ink/15 px-4 py-1.5 text-sm hover:border-ink/40 disabled:opacity-50"
               >
-                Discard
+                {t.discard}
               </button>
               <button
                 onClick={() => act(item.id, "approve")}
                 disabled={busy === item.id}
                 className="rounded-full bg-ink px-4 py-1.5 text-sm text-ivory hover:bg-ink-soft disabled:opacity-50"
               >
-                {busy === item.id ? "…" : "Approve & send"}
+                {busy === item.id ? "…" : t.approve}
               </button>
             </div>
           </div>

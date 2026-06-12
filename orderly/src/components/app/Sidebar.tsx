@@ -3,20 +3,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-
-const NAV = [
-  { href: "/dashboard", label: "Overview", glyph: "◧" },
-  { href: "/agents", label: "Agents", glyph: "✦" },
-  { href: "/approvals", label: "Approvals", glyph: "✓" },
-  { href: "/invoices", label: "Invoices", glyph: "₣" },
-  { href: "/bookkeeping", label: "Bookkeeping", glyph: "∑" },
-  { href: "/documents", label: "Documents", glyph: "❧" },
-  { href: "/scheduling", label: "Scheduling", glyph: "◷" },
-  { href: "/settings", label: "Settings", glyph: "⚙" },
-];
+import { useDict } from "@/i18n/client";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export function Sidebar({ orgName }: { orgName: string }) {
   const pathname = usePathname();
+  const t = useDict().appNav;
+  const NAV = [
+    { href: "/dashboard", label: t.overview, glyph: "◧" },
+    { href: "/agents", label: t.agents, glyph: "✦" },
+    { href: "/approvals", label: t.approvals, glyph: "✓" },
+    { href: "/invoices", label: t.invoices, glyph: "₣" },
+    { href: "/bookkeeping", label: t.bookkeeping, glyph: "∑" },
+    { href: "/documents", label: t.documents, glyph: "❧" },
+    { href: "/scheduling", label: t.scheduling, glyph: "◷" },
+    { href: "/settings", label: t.settings, glyph: "⚙" },
+  ];
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-ink/10 bg-white/50 p-4">
       <Link href="/dashboard" className="px-3 py-2 font-display text-xl font-semibold">
@@ -41,6 +43,9 @@ export function Sidebar({ orgName }: { orgName: string }) {
           );
         })}
       </nav>
+      <div className="mt-auto px-3 pt-4">
+        <LanguageSwitcher />
+      </div>
     </aside>
   );
 }

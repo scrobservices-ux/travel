@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useDict } from "@/i18n/client";
 
 interface ConnectorMeta {
   provider: string;
@@ -24,7 +25,8 @@ export function ConnectionsPanel({
 }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
-  const byProvider = Object.fromEntries(connections.map((c) => [c.provider, c]));
+  const tc = useDict().common;
+  const byProvider = Object.fromEntries(connections.map((x) => [x.provider, x]));
 
   async function connect(provider: string) {
     setBusy(provider);
@@ -74,7 +76,7 @@ export function ConnectionsPanel({
                   <span className="font-medium">{c.label}</span>
                   {connected && (
                     <span className="rounded-full bg-sage/15 px-2 py-0.5 text-xs text-sage">
-                      Connected{conn?.external_account ? ` · ${conn.external_account}` : ""}
+                      {tc.connected}{conn?.external_account ? ` · ${conn.external_account}` : ""}
                     </span>
                   )}
                 </div>
@@ -87,7 +89,7 @@ export function ConnectionsPanel({
                     disabled={busy === c.provider}
                     className="rounded-full bg-ink px-4 py-1.5 text-sm text-ivory hover:bg-ink-soft disabled:opacity-50"
                   >
-                    {busy === c.provider ? "Syncing…" : "Sync now"}
+                    {busy === c.provider ? tc.syncing : tc.syncNow}
                   </button>
                 ) : (
                   <button
@@ -95,7 +97,7 @@ export function ConnectionsPanel({
                     disabled={busy === c.provider}
                     className="rounded-full border border-ink/15 px-4 py-1.5 text-sm hover:border-brass disabled:opacity-50"
                   >
-                    {busy === c.provider ? "…" : "Connect"}
+                    {busy === c.provider ? "…" : tc.connect}
                   </button>
                 )}
               </div>

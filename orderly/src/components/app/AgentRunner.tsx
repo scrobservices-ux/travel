@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useDict } from "@/i18n/client";
 
 const AGENTS = [
-  { key: "invoicing", label: "Invoicing & Payments", example: "Invoice Acme Co for 10 hours of design work at $120/hour, due in 14 days." },
-  { key: "bookkeeping", label: "Bookkeeping & Expenses", example: "Record a $54.20 expense for 'Figma subscription' and categorize it." },
-  { key: "documents", label: "Documents & Email", example: "Summarize and classify the latest uploaded document." },
-  { key: "scheduling", label: "Scheduling & Clients", example: "Draft reminder messages for everyone with an appointment this week." },
+  { key: "invoicing", label: "Facturation & Paiements", example: "Facture Acme Co pour 10 heures de design à 120 €/h, échéance dans 14 jours." },
+  { key: "bookkeeping", label: "Comptabilité & Dépenses", example: "Enregistre une dépense de 54,20 € « abonnement Figma » et catégorise-la." },
+  { key: "documents", label: "Documents & Email", example: "Résume et classe le dernier document importé." },
+  { key: "scheduling", label: "Agenda & Clients", example: "Rédige des rappels pour tous les rendez-vous de cette semaine." },
 ] as const;
 
 interface RunStep {
@@ -25,6 +26,7 @@ export function AgentRunner() {
   const [summary, setSummary] = useState<string | null>(null);
   const [steps, setSteps] = useState<RunStep[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const t = useDict().agentsPage;
 
   const current = AGENTS.find((a) => a.key === agent)!;
 
@@ -82,19 +84,15 @@ export function AgentRunner() {
           disabled={loading}
           className="mt-3 w-full rounded-full bg-ink py-3 text-sm font-medium text-ivory transition hover:bg-ink-soft disabled:opacity-50"
         >
-          {loading ? "Working…" : "Run agent"}
+          {loading ? t.working : t.run}
         </button>
-        <p className="mt-2 text-xs text-ink-muted">
-          Tip: leave blank to run the example task.
-        </p>
+        <p className="mt-2 text-xs text-ink-muted">{t.tip}</p>
       </div>
 
       <div className="rounded-2xl border border-ink/10 bg-white/60 p-6">
-        <h3 className="font-display text-lg font-semibold">Run trace</h3>
+        <h3 className="font-display text-lg font-semibold">{t.trace}</h3>
         {!summary && !error && steps.length === 0 && (
-          <p className="mt-3 text-sm text-ink-muted">
-            The agent&apos;s reasoning and every tool it calls will appear here, fully auditable.
-          </p>
+          <p className="mt-3 text-sm text-ink-muted">{t.tracePlaceholder}</p>
         )}
         {error && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
@@ -120,7 +118,7 @@ export function AgentRunner() {
 
         {summary && (
           <div className="mt-5 rounded-xl bg-ink p-4 text-sm text-ivory">
-            <div className="mb-1 text-xs uppercase tracking-widest text-brass-light">Summary</div>
+            <div className="mb-1 text-xs uppercase tracking-widest text-brass-light">{t.summary}</div>
             {summary}
           </div>
         )}

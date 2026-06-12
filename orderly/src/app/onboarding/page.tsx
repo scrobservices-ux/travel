@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDict } from "@/i18n/client";
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const t = useDict().onboarding;
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,14 +30,12 @@ export default function OnboardingPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-weave px-6">
       <div className="w-full max-w-md rounded-2xl border border-ink/10 bg-white/80 p-8 shadow-xl shadow-ink/5">
-        <h1 className="font-display text-2xl font-semibold">Name your business</h1>
-        <p className="mt-2 text-sm text-ink-muted">
-          We&apos;ll spin up a private, isolated instance just for it. You can invite your team later.
-        </p>
+        <h1 className="font-display text-2xl font-semibold">{t.title}</h1>
+        <p className="mt-2 text-sm text-ink-muted">{t.sub}</p>
         <form onSubmit={submit} className="mt-6 space-y-3">
           <input
             required
-            placeholder="e.g. Acme Studio"
+            placeholder={t.placeholder}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full rounded-lg border border-ink/15 bg-white px-4 py-2.5 text-sm outline-none focus:border-brass"
@@ -45,7 +45,7 @@ export default function OnboardingPage() {
             disabled={loading}
             className="w-full rounded-full bg-ink py-3 text-sm font-medium text-ivory transition hover:bg-ink-soft disabled:opacity-50"
           >
-            {loading ? "Creating…" : "Create my workspace"}
+            {loading ? t.creating : t.create}
           </button>
         </form>
       </div>

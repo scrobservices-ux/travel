@@ -1,9 +1,11 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/tenant";
 import { ApprovalsList } from "@/components/app/ApprovalsList";
+import { getDict } from "@/i18n/server";
 
 export default async function ApprovalsPage() {
   const supabase = createServerSupabase();
+  const t = getDict().approvals;
   const org = await getActiveOrg();
   const { data: items } = await supabase
     .from("outbox")
@@ -14,12 +16,8 @@ export default async function ApprovalsPage() {
 
   return (
     <div>
-      <h1 className="font-display text-3xl font-semibold">Approvals</h1>
-      <p className="mt-2 max-w-2xl text-ink-muted">
-        Everything your agents prepared, waiting on you. Outbound messages are held
-        here for review by default — they only send automatically for actions you&apos;ve
-        switched to auto in Settings.
-      </p>
+      <h1 className="font-display text-3xl font-semibold">{t.title}</h1>
+      <p className="mt-2 max-w-2xl text-ink-muted">{t.sub}</p>
       <div className="mt-8">
         <ApprovalsList initial={items ?? []} />
       </div>
