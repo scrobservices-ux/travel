@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Contrat de Prestation de Services – SCROB SERVICES / Domaine De La Prade</title>
+<style>
+  :root{
+    --ink:#16242B;
+    --muted:#5C6B73;
+    --line:#D9E2E4;
+    --teal:#0E6E6B;
+    --teal-deep:#0A4F4D;
+    --green:#27AE74;
+    --bg-soft:#F4F8F8;
+  }
+
+  @page{
+    size:A4;
+    margin:24mm 18mm 22mm 18mm;
+    @top-left{
+      content: element(runhead);
+    }
+    @bottom-left{
+      content:"Confidentiel — SCROB SERVICES / Domaine De La Prade";
+      font-family:'Helvetica Neue',Arial,sans-serif;
+      font-size:7.5pt;
+      color:#8A979D;
+    }
+    @bottom-right{
+      content:"Page " counter(page) " / " counter(pages);
+      font-family:'Helvetica Neue',Arial,sans-serif;
+      font-size:7.5pt;
+      color:#8A979D;
+    }
+  }
+  @page:first{
+    margin-top:16mm;
+    @top-left{ content:none; }
+  }
+
+  *{ box-sizing:border-box; }
+  html{ -weasy-hyphens:auto; }
+  body{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    color:var(--ink);
+    font-size:10.2pt;
+    line-height:1.55;
+    margin:0;
+  }
+
+  /* ---------- Running header (pages 2+) ---------- */
+  .runhead{
+    position:running(runhead);
+    width:100%;
+    font-size:8pt;
+    color:var(--muted);
+    border-bottom:1px solid var(--line);
+    padding-bottom:4pt;
+  }
+  .runhead .rh-brand{
+    font-weight:700;
+    letter-spacing:.14em;
+    color:var(--teal-deep);
+  }
+  .runhead .rh-sub{ color:#9AA7AC; }
+
+  /* ---------- Logo ---------- */
+  .logo{ display:flex; align-items:center; gap:13px; }
+  .logo .mark{ flex:0 0 auto; }
+  .logo .word{ line-height:1; }
+  .logo .word .name{
+    font-size:25pt;
+    font-weight:800;
+    letter-spacing:.16em;
+    color:var(--teal-deep);
+  }
+  .logo .word .name .o{ color:var(--green); }
+  .logo .word .svc{
+    margin-top:5px;
+    font-size:9pt;
+    font-weight:600;
+    letter-spacing:.46em;
+    color:var(--teal);
+    padding-left:3px;
+  }
+
+  /* ---------- Letterhead ---------- */
+  .letterhead{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    padding-bottom:14px;
+    border-bottom:2.5px solid var(--teal-deep);
+  }
+  .letterhead .contact{
+    text-align:right;
+    font-size:8pt;
+    color:var(--muted);
+    line-height:1.7;
+    padding-top:6px;
+  }
+  .letterhead .contact .tagline{
+    font-weight:700;
+    color:var(--teal);
+    letter-spacing:.04em;
+    font-size:8.5pt;
+  }
+
+  /* ---------- Title block ---------- */
+  .doc-title{
+    margin:26px 0 4px;
+    text-align:center;
+  }
+  .doc-title .kicker{
+    display:inline-block;
+    font-size:8pt;
+    letter-spacing:.34em;
+    font-weight:700;
+    color:var(--green);
+    text-transform:uppercase;
+    margin-bottom:9px;
+  }
+  .doc-title h1{
+    font-size:19pt;
+    margin:0;
+    color:var(--ink);
+    letter-spacing:.01em;
+    font-weight:800;
+  }
+  .doc-title .subtitle{
+    margin-top:7px;
+    font-size:10.5pt;
+    color:var(--muted);
+    font-weight:500;
+  }
+  .ref-bar{
+    margin:16px auto 4px;
+    display:flex;
+    justify-content:center;
+    gap:26px;
+    font-size:8.3pt;
+    color:var(--muted);
+  }
+  .ref-bar b{ color:var(--teal-deep); letter-spacing:.02em; }
+
+  /* ---------- Parties cards ---------- */
+  .preamble{ margin:22px 0 6px; }
+  h2.section{
+    font-size:8.5pt;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--green);
+    font-weight:700;
+    margin:0 0 12px;
+    text-align:center;
+  }
+  .parties{
+    display:flex;
+    gap:14px;
+  }
+  .party{
+    flex:1;
+    background:var(--bg-soft);
+    border:1px solid var(--line);
+    border-left:3px solid var(--teal);
+    border-radius:7px;
+    padding:13px 15px;
+  }
+  .party .role{
+    font-size:7.6pt;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--green);
+    font-weight:700;
+    margin-bottom:5px;
+  }
+  .party .pname{
+    font-size:11pt;
+    font-weight:800;
+    color:var(--teal-deep);
+    margin-bottom:7px;
+  }
+  .party dl{ margin:0; font-size:8.6pt; line-height:1.5; }
+  .party dl .row{ display:flex; gap:6px; margin-bottom:1.5px; }
+  .party dl .k{ color:var(--muted); flex:0 0 86px; }
+  .party dl .v{ color:var(--ink); font-weight:500; }
+  .together{
+    text-align:center;
+    font-size:9pt;
+    color:var(--muted);
+    margin:13px 0 2px;
+    font-style:italic;
+  }
+
+  /* ---------- Articles ---------- */
+  .article{ margin-top:17px; }
+  .article h3{
+    font-size:11pt;
+    color:var(--teal-deep);
+    margin:0 0 7px;
+    padding-bottom:5px;
+    border-bottom:1px solid var(--line);
+    font-weight:800;
+  }
+  .article h3 .num{
+    color:var(--green);
+    font-weight:800;
+    margin-right:7px;
+  }
+  .article h4{
+    font-size:9.6pt;
+    color:var(--teal);
+    margin:11px 0 4px;
+    font-weight:700;
+  }
+  .article p{ margin:0 0 8px; text-align:justify; }
+  .article ul{ margin:4px 0 9px; padding-left:0; list-style:none; }
+  .article ul li{
+    position:relative;
+    padding-left:17px;
+    margin-bottom:3.5px;
+    text-align:justify;
+  }
+  .article ul li::before{
+    content:"";
+    position:absolute;
+    left:2px; top:6px;
+    width:5px; height:5px;
+    background:var(--green);
+    border-radius:50%;
+  }
+  .article ul li b{ color:var(--teal-deep); }
+
+  .buildings{
+    display:flex; flex-wrap:wrap; gap:7px;
+    margin:9px 0 4px;
+  }
+  .buildings .chip{
+    background:#fff;
+    border:1px solid var(--teal);
+    color:var(--teal-deep);
+    border-radius:20px;
+    padding:3px 13px;
+    font-size:8.6pt;
+    font-weight:600;
+  }
+
+  /* ---------- Finance table ---------- */
+  .fin{
+    width:100%;
+    border-collapse:collapse;
+    margin:8px 0 10px;
+    font-size:9.6pt;
+  }
+  .fin th, .fin td{
+    padding:8px 13px;
+    border-bottom:1px solid var(--line);
+    text-align:left;
+  }
+  .fin thead th{
+    background:var(--teal-deep);
+    color:#fff;
+    font-size:8pt;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    font-weight:700;
+  }
+  .fin td.amt{ text-align:right; font-variant-numeric:tabular-nums; }
+  .fin tr.total td{
+    background:var(--bg-soft);
+    font-weight:800;
+    color:var(--teal-deep);
+    font-size:10.4pt;
+    border-bottom:none;
+  }
+  .fin .lbl-strong{ font-weight:600; }
+
+  .callout{
+    background:var(--bg-soft);
+    border:1px solid var(--line);
+    border-left:3px solid var(--green);
+    border-radius:6px;
+    padding:9px 14px;
+    font-size:9pt;
+    margin:9px 0;
+  }
+
+  /* ---------- Signatures ---------- */
+  .sign-intro{ margin-top:18px; }
+  .signatures{
+    display:flex;
+    gap:22px;
+    margin-top:14px;
+    page-break-inside:avoid;
+  }
+  .sig{
+    flex:1;
+    border:1px solid var(--line);
+    border-top:3px solid var(--teal-deep);
+    border-radius:7px;
+    padding:13px 16px 18px;
+  }
+  .sig .for{
+    font-size:7.8pt;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--green);
+    font-weight:700;
+    margin-bottom:3px;
+  }
+  .sig .who{ font-weight:800; color:var(--teal-deep); font-size:10pt; }
+  .sig .role{ font-size:8.4pt; color:var(--muted); margin-bottom:4px; }
+  .sig .meta{ font-size:8.2pt; color:var(--muted); margin-top:10px; line-height:1.9; }
+  .sig .mention{ font-size:7.4pt; color:#9AA7AC; font-style:italic; margin-top:4px; }
+  .sig .sigbox{
+    margin-top:9px;
+    height:58px;
+    border:1px dashed #BFCDD0;
+    border-radius:5px;
+    background:repeating-linear-gradient(0deg,transparent,transparent 17px,#EEF3F3 17px,#EEF3F3 18px);
+  }
+
+  .keep{ page-break-inside:avoid; }
+</style>
+</head>
+<body>
+
+<!-- Running header for pages 2+ -->
+<div class="runhead">
+  <table style="width:100%; border:0;"><tr>
+    <td style="border:0; padding:0;"><span class="rh-brand">SCROB&nbsp;SERVICES</span> &nbsp;<span class="rh-sub">Contrat de Prestation de Services</span></td>
+    <td style="border:0; padding:0; text-align:right;" class="rh-sub">Domaine De La Prade · Réf. DEVIS&nbsp;N°39</td>
+  </tr></table>
+</div>
+
+<!-- ===== LETTERHEAD ===== -->
+<div class="letterhead">
+  <div class="logo">
+    <svg class="mark" width="58" height="58" viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#0E6E6B"/>
+          <stop offset="1" stop-color="#27AE74"/>
+        </linearGradient>
+      </defs>
+      <rect x="1.5" y="1.5" width="55" height="55" rx="15" fill="url(#g)"/>
+      <!-- sparkle / shine -->
+      <path d="M29 13 L32.1 24.4 L43.5 27.5 L32.1 30.6 L29 42 L25.9 30.6 L14.5 27.5 L25.9 24.4 Z" fill="#FFFFFF"/>
+      <circle cx="41.5" cy="15.5" r="3.1" fill="#FFFFFF" opacity="0.92"/>
+      <circle cx="16.5" cy="40.5" r="2.2" fill="#FFFFFF" opacity="0.85"/>
+    </svg>
+    <div class="word">
+      <div class="name">SCR<span class="o">O</span>B</div>
+      <div class="svc">SERVICES</div>
+    </div>
+  </div>
+  <div class="contact">
+    <div class="tagline">Nettoyage Professionnel</div>
+    SCROB SERVICES — SAS au capital de 1 000,00 €<br>
+    1 Rue des Blés, 95470 Saint-Witz<br>
+    SIREN 934 000 894 · SIRET 934 000 894 00014<br>
+    TVA intracommunautaire : FR&nbsp;69&nbsp;934&nbsp;000&nbsp;894 · APE 8121Z
+  </div>
+</div>
+
+<!-- ===== TITLE ===== -->
+<div class="doc-title">
+  <span class="kicker">Contrat de Prestation de Services</span>
+  <h1>Entretien Hebdomadaire d'Immeubles<br>& Gestion des Déchets</h1>
+  <div class="subtitle">Résidence « Domaine De La Prade » — 95500 Gonesse</div>
+</div>
+<div class="ref-bar">
+  <span>Référence : <b>CONTRAT&nbsp;SCROB&nbsp;/&nbsp;DLP&nbsp;—&nbsp;DEVIS&nbsp;N°39</b></span>
+  <span>Prise d'effet : <b>26&nbsp;juin&nbsp;2025</b></span>
+  <span>Durée : <b>Indéterminée</b></span>
+</div>
+
+<!-- ===== PARTIES ===== -->
+<div class="preamble">
+  <h2 class="section">Entre les soussignés</h2>
+  <div class="parties">
+    <div class="party">
+      <div class="role">Le Prestataire</div>
+      <div class="pname">SCROB SERVICES</div>
+      <dl>
+        <div class="row"><span class="k">Forme</span><span class="v">SAS au capital de 1 000,00 €</span></div>
+        <div class="row"><span class="k">Activité</span><span class="v">Nettoyage professionnel</span></div>
+        <div class="row"><span class="k">Représentée par</span><span class="v">M. Lionel JEZEH, Président</span></div>
+        <div class="row"><span class="k">Siège</span><span class="v">1 Rue des Blés, 95470 Saint-Witz</span></div>
+        <div class="row"><span class="k">SIREN</span><span class="v">934 000 894</span></div>
+        <div class="row"><span class="k">SIRET</span><span class="v">934 000 894 00014</span></div>
+      </dl>
+    </div>
+    <div class="party">
+      <div class="role">Le Client</div>
+      <div class="pname">Domaine De La Prade</div>
+      <dl>
+        <div class="row"><span class="k">Qualité</span><span class="v">Syndicat des copropriétaires</span></div>
+        <div class="row"><span class="k">Adresse</span><span class="v">10 Rue de Paris, 95500 Gonesse</span></div>
+        <div class="row"><span class="k">Représenté par</span><span class="v">Cabinet FONCIA Gonesse, syndic</span></div>
+        <div class="row"><span class="k">En qualité de</span><span class="v">Syndic de copropriété mandaté</span></div>
+      </dl>
+    </div>
+  </div>
+  <p class="together">Le Prestataire et le Client étant ci-après désignés individuellement une « Partie » et ensemble les « Parties ».</p>
+</div>
+
+<div class="callout">
+  <b>Préambule.</b> Le Client a confié au Prestataire l'entretien des parties communes et la gestion des déchets de la résidence « Domaine De La Prade ». Les Parties collaborent à ce titre depuis l'acceptation du devis n°&nbsp;39 en date du 26&nbsp;juin&nbsp;2025. Le présent contrat a pour objet de formaliser par écrit, et d'encadrer juridiquement, cette collaboration déjà en cours. Les Parties ont en conséquence convenu ce qui suit.
+</div>
+
+<!-- ===== ARTICLES ===== -->
+<div class="article keep">
+  <h3><span class="num">Art. 1</span>Objet du contrat</h3>
+  <p>Le présent contrat a pour objet de définir les conditions dans lesquelles SCROB SERVICES assure, pour le compte du Domaine De La Prade, les prestations d'entretien des parties communes et de gestion des déchets portant sur les sept (7) immeubles de la résidence, à savoir :</p>
+  <div class="buildings">
+    <span class="chip">Tilleul</span>
+    <span class="chip">Saule</span>
+    <span class="chip">Ormeau</span>
+    <span class="chip">Acacia Droite</span>
+    <span class="chip">Acacia Gauche</span>
+    <span class="chip">Érable Droite</span>
+    <span class="chip">Érable Gauche</span>
+  </div>
+  <p>Le présent contrat formalise la collaboration engagée entre les Parties à la suite de l'acceptation du devis n°&nbsp;39 en date du 26&nbsp;juin&nbsp;2025, lequel demeure annexé au présent contrat et en fait partie intégrante.</p>
+</div>
+
+<div class="article keep">
+  <h3><span class="num">Art. 2</span>Description des prestations</h3>
+
+  <h4>2.1 — Entretien hebdomadaire des immeubles <span style="font-weight:500;color:var(--muted)">(une intervention par semaine et par immeuble)</span></h4>
+  <ul>
+    <li>Nettoyage des cages d'escalier : paliers, marches, rampes et interrupteurs ;</li>
+    <li>Nettoyage des halls d'entrée : sols, boîtes aux lettres et plinthes ;</li>
+    <li>Nettoyage des sous-sols et des parties communes des entrées de caves ;</li>
+    <li>Nettoyage des locaux poubelles ;</li>
+    <li>Entretien des vitres des parties communes ;</li>
+    <li>Nettoyage extérieur : ramassage des papiers et autres déchets (le lundi matin) ;</li>
+    <li>Changement des sacs poubelle une fois par semaine.</li>
+  </ul>
+
+  <h4>2.2 — Gestion des déchets <span style="font-weight:500;color:var(--muted)">(cinq jours par semaine)</span></h4>
+  <ul>
+    <li>Sortie et rentrée des conteneurs à déchets <b>cinq (5) jours par semaine</b>, les <b>mercredi, jeudi, vendredi, dimanche et lundi</b>, selon le calendrier de collecte en vigueur sur la commune ;</li>
+    <li>Nettoyage des conteneurs à déchets une (1) fois par mois ;</li>
+    <li>Remplacement des sacs poubelle selon les besoins.</li>
+  </ul>
+  <p>Les prestations sont réalisées dans le respect des standards de qualité de la profession. En cas de jour férié coïncidant avec une intervention, celle-ci est adaptée au calendrier de collecte communal.</p>
+</div>
+
+<div class="article keep">
+  <h3><span class="num">Art. 3</span>Durée du contrat</h3>
+  <p>Le présent contrat prend effet à compter du <b>26 juin 2025</b>, date d'acceptation du devis n°&nbsp;39 et de début effectif de la collaboration. Il est conclu pour une <b>durée indéterminée</b>. Chacune des Parties peut y mettre fin dans les conditions prévues à l'Article&nbsp;9.</p>
+</div>
+
+<div class="article keep">
+  <h3><span class="num">Art. 4</span>Conditions financières</h3>
+  <p>En contrepartie des prestations décrites à l'Article&nbsp;2, le Client s'engage à verser à SCROB SERVICES une rémunération mensuelle forfaitaire fixée comme suit :</p>
+  <table class="fin">
+    <thead>
+      <tr><th>Désignation</th><th style="text-align:right">Montant</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="lbl-strong">Montant mensuel HT</td><td class="amt">1 690,00 €</td></tr>
+      <tr><td>TVA (20 %)</td><td class="amt">338,00 €</td></tr>
+      <tr class="total"><td>Total mensuel TTC</td><td class="amt">2 028,00 €</td></tr>
+    </tbody>
+  </table>
+  <p>Soit un montant mensuel de mille six cent quatre-vingt-dix euros hors taxes (1&nbsp;690,00&nbsp;€ HT), correspondant à un total de deux mille vingt-huit euros toutes taxes comprises (2&nbsp;028,00&nbsp;€ TTC).</p>
+</div>
+
+<div class="article keep">
+  <h3><span class="num">Art. 5</span>Facturation et modalités de paiement</h3>
+  <p>SCROB SERVICES adresse au Client une facture mensuelle. Le règlement est effectué par virement bancaire dans un délai de <b>trente (30) jours</b> à compter de la date d'émission de la facture.</p>
+  <p>Conformément aux articles L.&nbsp;441-10 et D.&nbsp;441-5 du Code de commerce, tout retard de paiement entraîne de plein droit, et sans qu'un rappel soit nécessaire, l'application d'une <b>pénalité de retard au taux de 11,13&nbsp;%</b> ainsi qu'une <b>indemnité forfaitaire de 40&nbsp;€</b> pour frais de recouvrement, sans préjudice de tout autre recours. Aucun escompte n'est accordé pour règlement anticipé.</p>
+</div>
+
+<div class="article keep">
+  <h3><span class="num">Art. 6</span>Révision tarifaire</h3>
+  <p>Les tarifs pourront être révisés une (1) fois par an, à la date anniversaire du contrat, d'un commun accord entre les Parties, notamment en cas d'évolution significative du périmètre des prestations, de l'indice du coût horaire du travail (ICHT-IME) ou du SMIC. Toute révision fera l'objet d'un avenant écrit signé des deux Parties.</p>
+</div>
+
+<div class="article keep">
+  <h3><span class="num">Art. 7</span>Obligations des Parties</h3>
+  <h4>7.1 — SCROB SERVICES s'engage à :</h4>
+  <ul>
+    <li>Réaliser les prestations avec professionnalisme et selon les standards de qualité du secteur ;</li>
+    <li>Mettre à disposition le personnel qualifié nécessaire à l'exécution des prestations ;</li>
+    <li>Souscrire et maintenir les assurances de responsabilité civile professionnelle requises ;</li>
+    <li>Respecter les règles d'hygiène et de sécurité en vigueur ;</li>
+    <li>Assumer l'ensemble de ses obligations sociales et fiscales en qualité d'employeur.</li>
+  </ul>
+  <h4>7.2 — Le Client s'engage à :</h4>
+  <ul>
+    <li>Fournir l'accès aux parties communes et aux locaux nécessaires à l'exécution des prestations ;</li>
+    <li>Mettre à disposition les points d'eau et l'électricité nécessaires aux interventions ;</li>
+    <li>Communiquer toute information utile au bon déroulement des interventions ;</li>
+    <li>Régler les factures dans les délais convenus à l'Article&nbsp;5.</li>
+  </ul>
+</div>
+
+<div class="article keep">
+  <h3><span class="num">Art. 8</span>Personnel, indépendance et non-sollicitation</h3>
+  <p>Le personnel affecté à l'exécution des prestations demeure placé sous la seule autorité hiérarchique, le contrôle et la responsabilité de SCROB SERVICES, qui en assure la gestion administrative, sociale et salariale. Aucun lien de subordination n'existe entre ce personnel et le Client.</p>
+  <p>Pendant la durée du contrat et durant les douze (12) mois suivant son terme, le Client s'interdit de solliciter ou d'embaucher, directement ou indirectement, tout salarié de SCROB SERVICES affecté à l'exécution des prestations, sauf accord écrit préalable du Prestataire.</p>
+</div>
+
+<div class="article keep">
+  <h3><span class="num">Art. 9</span>Résiliation</h3>
+  <p>Chacune des Parties peut mettre fin au présent contrat en notifiant sa décision à l'autre Partie par lettre recommandée avec accusé de réception, moyennant le respect d'un préavis de <b>trois (3) mois</b>.</p>
+  <p>En cas de manquement grave de l'une des Parties à ses obligations, et après mise en demeure restée sans effet pendant trente (30) jours, le contrat pourra être résilié de plein droit, sans préavis et sans indemnité, sans préjudice des dommages et intérêts qui pourraient être réclamés.</p>
+</div>
+
+<div class="article keep">
+  <h3><span class="num">Art. 10</span>Assurances et responsabilité</h3>
+  <p>SCROB SERVICES déclare être titulaire d'une police d'assurance de responsabilité civile professionnelle couvrant l'ensemble des risques liés à l'exécution des prestations objet du présent contrat. Une attestation d'assurance en cours de validité pourra être fournie sur simple demande du Client.</p>
+  <p>La responsabilité de SCROB SERVICES ne saurait être engagée en cas de dommage résultant d'un défaut d'accès aux locaux, d'une information erronée communiquée par le Client ou d'un cas de force majeure.</p>
+</div>
+
+<div class="article keep">
+  <h3><span class="num">Art. 11</span>Sous-traitance</h3>
+  <p>SCROB SERVICES peut recourir à la sous-traitance pour tout ou partie des prestations, sous réserve d'en informer le Client. SCROB SERVICES demeure, en toute hypothèse, seul responsable de la bonne exécution des prestations à l'égard du Client.</p>
+</div>
+
+<div class="article keep">
+  <h3><span class="num">Art. 12</span>Force majeure</h3>
+  <p>Aucune des Parties ne pourra être tenue responsable d'un manquement à ses obligations résultant d'un cas de force majeure au sens de l'article 1218 du Code civil et de la jurisprudence des tribunaux français. La Partie empêchée en informe l'autre dans les meilleurs délais. Si l'empêchement se prolonge au-delà de soixante (60) jours, chacune des Parties pourra résilier le contrat de plein droit, sans indemnité.</p>
+</div>
+
+<div class="article keep">
+  <h3><span class="num">Art. 13</span>Confidentialité</h3>
+  <p>Les Parties s'engagent à conserver la confidentialité de toute information échangée dans le cadre de l'exécution du présent contrat, y compris après son terme, et à ne pas la divulguer à des tiers sans l'accord préalable et écrit de l'autre Partie.</p>
+</div>
+
+<div class="article keep">
+  <h3><span class="num">Art. 14</span>Protection des données personnelles</h3>
+  <p>Les Parties s'engagent à traiter les données personnelles échangées dans le cadre du présent contrat conformément au Règlement (UE) 2016/679 (RGPD) et à la loi n°&nbsp;78-17 du 6 janvier 1978 modifiée. Les données collectées le sont aux seules fins de l'exécution du contrat et ne sont conservées que pendant la durée strictement nécessaire à cette finalité.</p>
+</div>
+
+<div class="article keep">
+  <h3><span class="num">Art. 15</span>Loi applicable et règlement des litiges</h3>
+  <p>Le présent contrat est régi par le droit français. En cas de différend relatif à sa validité, son interprétation ou son exécution, les Parties s'engagent à rechercher une solution amiable avant tout recours judiciaire. À défaut d'accord dans un délai de trente (30) jours, le litige sera soumis aux tribunaux compétents du ressort du siège du Prestataire.</p>
+</div>
+
+<!-- ===== SIGNATURES ===== -->
+<div class="sign-intro keep">
+  <h3 style="font-size:11pt;color:var(--teal-deep);border-bottom:1px solid var(--line);padding-bottom:5px;font-weight:800;">Signatures</h3>
+  <p style="margin-top:9px;">Fait à Saint-Witz, le <b>26 juin 2025</b>, en deux (2) exemplaires originaux, un pour chacune des Parties.</p>
+  <div class="signatures">
+    <div class="sig">
+      <div class="for">Pour le Prestataire</div>
+      <div class="who">SCROB SERVICES</div>
+      <div class="role">M. Lionel JEZEH, Président</div>
+      <div class="sigbox"></div>
+      <div class="mention">Signature précédée de la mention « Lu et approuvé »</div>
+    </div>
+    <div class="sig">
+      <div class="for">Pour le Client</div>
+      <div class="who">Domaine De La Prade</div>
+      <div class="role">Cabinet FONCIA Gonesse, syndic</div>
+      <div class="meta">Nom et fonction&nbsp;: ............................................</div>
+      <div class="sigbox"></div>
+      <div class="mention">Signature précédée de la mention « Lu et approuvé »</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
