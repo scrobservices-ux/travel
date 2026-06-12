@@ -1,15 +1,28 @@
+import { createServerSupabase } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/tenant";
 import { PLANS, type PlanKey } from "@/lib/stripe";
+import { AUTOMATABLE_ACTIONS, getPolicy } from "@/lib/automation";
+import { CONNECTOR_LIST } from "@/connectors/registry";
+import { ConnectionsPanel } from "@/components/app/ConnectionsPanel";
+import { AutomationPanel } from "@/components/app/AutomationPanel";
 
 export default async function SettingsPage() {
+  const supabase = createServerSupabase();
   const org = await getActiveOrg();
   const plan = (org!.plan ?? "starter") as PlanKey;
 
+  const { data: connections } = await supabase
+    .from("connections")
+    .select("provider,status,external_account,last_synced_at")
+    .eq("org_id", org!.id);
+
+  const policy = getPolicy(org!);
+
   return (
-    <div>
+    <div className="space-y-6">
       <h1 className="font-display text-3xl font-semibold">Settings</h1>
 
-      <section className="mt-8 rounded-2xl border border-ink/10 bg-white/60 p-6">
+      <section className="rounded-2xl border border-ink/10 bg-white/60 p-6">
         <h2 className="font-display text-lg font-semibold">Organization</h2>
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
           <div><dt className="text-ink-muted">Name</dt><dd className="font-medium">{org!.name}</dd></div>
@@ -19,27 +32,39 @@ export default async function SettingsPage() {
         </dl>
       </section>
 
-      <section className="mt-6 rounded-2xl border border-ink/10 bg-white/60 p-6">
+      <section className="rounded-2xl border border-ink/10 bg-white/60 p-6">
+        <h2 className="font-display text-lg font-semibold">Connections</h2>
+        <p className="mt-1 mb-4 text-sm text-ink-muted">
+          Connect your tools so the agents have data to work with. Orderly only ever reads what it needs.
+        </p>
+        <ConnectionsPanel connectors={CONNECTOR_LIST} connections={connections ?? []} />
+      </section>
+
+      <section className="rounded-2xl border border-ink/10 bg-white/60 p-6">
+        <h2 className="font-display text-lg font-semibold">Automation</h2>
+        <p className="mt-1 mb-4 text-sm text-ink-muted">
+          By default Orderly prepares actions for your review. Turn on auto for anything you trust the agents to do on their own.
+        </p>
+        <AutomationPanel actions={[...AUTOMATABLE_ACTIONS]} policy={policy} />
+      </section>
+
+      <section className="rounded-2xl border border-ink/10 bg-white/60 p-6">
         <h2 className="font-display text-lg font-semibold">Billing</h2>
         <p className="mt-2 text-sm text-ink-muted">
           Manage your plan and payment method. Each business is billed for its own instance.
         </p>
-        <form action="/api/stripe/checkout" method="post" className="mt-4 flex flex-wrap gap-3">
+        <div className="mt-4 flex flex-wrap gap-3">
           {(Object.keys(PLANS) as PlanKey[]).map((k) => (
-            <button
+            <span
               key={k}
-              formAction={`/api/stripe/checkout`}
-              name="plan"
-              value={k}
-              className="rounded-full border border-ink/15 px-5 py-2 text-sm hover:border-brass disabled:opacity-50"
-              disabled={k === plan}
+              className={`rounded-full border px-5 py-2 text-sm ${k === plan ? "border-brass bg-brass/10 text-brass-dark" : "border-ink/15 text-ink-muted"}`}
             >
-              {k === plan ? `Current: ${PLANS[k].name}` : `Switch to ${PLANS[k].name}`}
-            </button>
+              {PLANS[k].name} · ${PLANS[k].monthly}/mo{k === plan ? " (current)" : ""}
+            </span>
           ))}
-        </form>
+        </div>
         <p className="mt-3 text-xs text-ink-muted">
-          (Wire this form to a small client action that POSTs JSON to /api/stripe/checkout and redirects to the returned URL.)
+          Upgrade via Checkout — POST the plan key to <code>/api/stripe/checkout</code> and redirect to the returned URL.
         </p>
       </section>
     </div>

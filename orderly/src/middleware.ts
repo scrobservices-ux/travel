@@ -41,6 +41,7 @@ export async function middleware(req: NextRequest) {
     req.nextUrl.pathname.startsWith("/documents") ||
     req.nextUrl.pathname.startsWith("/scheduling") ||
     req.nextUrl.pathname.startsWith("/agents") ||
+    req.nextUrl.pathname.startsWith("/approvals") ||
     req.nextUrl.pathname.startsWith("/settings");
 
   if (isAppArea && !user) {

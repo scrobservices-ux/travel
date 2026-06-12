@@ -35,7 +35,7 @@ export async function runAgent(args: RunAgentArgs): Promise<RunAgentResult> {
   const { agentKey, orgId, task, trigger = "manual" } = args;
   const agent = getAgent(agentKey);
   const db = createAdminSupabase();
-  const ctx: ToolContext = { orgId, db };
+  const ctx: ToolContext = { orgId, db, agentKey };
 
   // Open a run row up front so an in-progress run is observable.
   const { data: runRow, error: runErr } = await db

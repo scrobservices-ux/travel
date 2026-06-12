@@ -16,6 +16,8 @@ export interface ToolContext {
   orgId: string;
   /** Service-role Supabase client. Always filter by ctx.orgId. */
   db: ReturnType<typeof import("@/lib/supabase/server").createAdminSupabase>;
+  /** Which agent is running — recorded on anything the tools create. */
+  agentKey?: string;
 }
 
 /** Definition of one of Orderly's specialist agents. */

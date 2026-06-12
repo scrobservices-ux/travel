@@ -51,8 +51,11 @@ cd orderly
 cp .env.example .env.local      # fill in Supabase, Anthropic, Stripe keys
 npm install
 
-# Create the database: paste supabase/schema.sql (then seed.sql) into the
-# Supabase SQL editor, or psql "$DATABASE_URL" -f supabase/schema.sql
+# Create the database, in order:
+#   1) supabase/schema.sql
+#   2) supabase/002_connectors_and_automation.sql
+#   3) supabase/seed.sql   (optional demo data)
+# Paste into the Supabase SQL editor, or psql "$DATABASE_URL" -f <file>
 
 npm run dev                      # http://localhost:3000
 ```
@@ -65,6 +68,33 @@ npm run dev                      # http://localhost:3000
 ## How the agents work
 
 See [`ARCHITECTURE.md`](./ARCHITECTURE.md). In short: each agent is a system prompt + a set of tenant-scoped tools. The runtime (`src/agents/core/runtime.ts`) runs a Claude tool-use loop, executes each tool against the active org's data only, and records every step to the `agent_runs` table so the business has a complete, reviewable trail. Outbound client messages are always *drafted* for human approval, never sent silently.
+
+## Connectors (data in)
+
+Connect a tenant's tools so the agents have something to work on. Each connector
+(`src/connectors/`) implements a common interface — an optional OAuth flow plus a
+`sync()` that pulls provider data into the tenant's tables, after which the
+matching agent processes it:
+
+| Connector | Pulls | Feeds | Then runs |
+|---|---|---|---|
+| **Gmail** | recent inbox messages | `documents` (kind: email) | Documents agent |
+| **Google Calendar** | upcoming events | `appointments` | Scheduling agent |
+| **Bank feed** | transactions (via aggregator/CSV) | `transactions` | Bookkeeping agent |
+| **Document upload** | extracted text (`/api/documents/upload`) | `documents` | Documents agent |
+
+OAuth tokens live on the `connections` table and are only ever handled
+server-side. Add a connector by implementing the `Connector` interface and
+registering it in `src/connectors/registry.ts`.
+
+## Automation & approvals (human-in-the-loop by default)
+
+Every client-facing message an agent prepares goes to the **Approvals outbox**
+(`/approvals`) and is held for human review. It is sent automatically **only**
+when the tenant has switched that action to *auto* in **Settings → Automation**
+(`src/lib/automation.ts`). The `draft_message` tool enforces this, and
+`src/lib/outbox.ts` is the single dispatch point where you wire a real email/SMS
+channel.
 
 ## Multi-tenancy & selling instances
 

@@ -1,5 +1,7 @@
 import { z } from "zod";
 import type { AgentTool } from "./types";
+import { isAuto, type AutomationAction } from "@/lib/automation";
+import { dispatchOutbox } from "@/lib/outbox";
 
 /**
  * The shared tool library. Agents are granted subsets of these. Every handler
@@ -277,8 +279,10 @@ export const listUpcomingAppointments: AgentTool = {
 export const draftMessage: AgentTool = {
   name: "draft_message",
   description:
-    "Compose a client-facing message (email/SMS body) and return it for human review. " +
-    "Does NOT send — Orderly keeps a human in the loop for outbound comms by default.",
+    "Compose a client-facing message and place it in the Approvals outbox. By " +
+    "default it is queued for human review and NOT sent. It is only sent " +
+    "automatically when the org has explicitly enabled auto-send for the given " +
+    "`action`. Always set `action` when the message corresponds to one.",
   input_schema: {
     type: "object",
     properties: {
@@ -286,11 +290,54 @@ export const draftMessage: AgentTool = {
       to: { type: "string" },
       subject: { type: "string" },
       body: { type: "string" },
+      action: {
+        type: "string",
+        enum: ["send_invoice", "send_payment_reminder", "send_appointment_reminder"],
+        description: "The kind of message, used to check the org's auto-send policy.",
+      },
+      related_type: { type: "string", description: "invoice | appointment | document" },
+      related_id: { type: "string" },
     },
     required: ["channel", "body"],
   },
-  // Pure: returns the draft to the run result. Sending is a separate, gated action.
-  run: async (input) => ({ drafted: true, ...input }),
+  run: async (input, ctx) => {
+    // Look up the tenant's automation policy. Default is review-before-send.
+    const { data: org } = await ctx.db
+      .from("organizations")
+      .select("automation")
+      .eq("id", ctx.orgId)
+      .single();
+    const action = input.action as AutomationAction | undefined;
+    const auto = action ? isAuto(org ?? {}, action) : false;
+
+    const { data: item, error } = await ctx.db
+      .from("outbox")
+      .insert({
+        org_id: ctx.orgId,
+        channel: input.channel ?? "email",
+        to_address: input.to ?? null,
+        subject: input.subject ?? null,
+        body: input.body,
+        status: auto ? "approved" : "draft",
+        related_type: input.related_type ?? null,
+        related_id: input.related_id ?? null,
+        agent: ctx.agentKey ?? null,
+        created_by: "agent",
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+
+    if (auto) {
+      await dispatchOutbox(ctx.db, ctx.orgId, item.id);
+      return { outbox_id: item.id, status: "sent", note: "Auto-send is enabled for this action." };
+    }
+    return {
+      outbox_id: item.id,
+      status: "queued_for_review",
+      note: "Drafted and placed in Approvals. A human must approve before it sends.",
+    };
+  },
 };
 
 export const ALL_TOOLS: Record<string, AgentTool> = Object.fromEntries(
