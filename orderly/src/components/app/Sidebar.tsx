@@ -14,6 +14,7 @@ export function Sidebar({ orgName }: { orgName: string }) {
     { href: "/agents", label: t.agents, glyph: "✦" },
     { href: "/approvals", label: t.approvals, glyph: "✓" },
     { href: "/invoices", label: t.invoices, glyph: "₣" },
+    { href: "/received", label: t.received, glyph: "↧" },
     { href: "/bookkeeping", label: t.bookkeeping, glyph: "∑" },
     { href: "/documents", label: t.documents, glyph: "❧" },
     { href: "/scheduling", label: t.scheduling, glyph: "◷" },

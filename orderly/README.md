@@ -55,7 +55,9 @@ npm install
 #   1) supabase/schema.sql
 #   2) supabase/002_connectors_and_automation.sql
 #   3) supabase/003_france_eu_tax.sql
-#   4) supabase/seed.sql   (optional demo data)
+#   4) supabase/004_einvoicing.sql
+#   5) supabase/005_inbound_einvoices.sql
+#   6) supabase/seed.sql   (optional demo data)
 # Paste into the Supabase SQL editor, or psql "$DATABASE_URL" -f <file>
 
 npm run dev                      # http://localhost:3000
@@ -164,8 +166,23 @@ are tracked in `einvoice_submissions` and updated via the status webhook
 > adapters connect to your *contracted* PDP / Chorus Pro once credentials are
 > set; the EN 16931 payload (Factur-X) they send is already produced.
 
-Roadmap for deeper FR/EU: full e-reporting transmission (B2C + cross-border),
-PDP accreditation or partner selection, OSS for EU B2C.
+### Reception, e-reporting & directory readiness (no accreditation required)
+
+These cover the parts of the mandate that *don't* need PDP accreditation:
+
+- **Reception** (mandatory for all FR businesses from 1 Sept 2026): import a
+  supplier **Factur-X PDF or CII/UBL XML** on the **Received** page — Orderly
+  extracts the embedded XML, parses supplier / number / dates / HT-TVA-TTC
+  (`src/lib/einvoicing/parse.ts`), files it in `received_invoices`, and can
+  record it as an expense. `POST /api/einvoicing/inbound`.
+- **E-reporting** (B2C + cross-border): export the period's reportable sales as
+  CSV/JSON — `GET /api/einvoicing/ereporting` (`ereporting.ts`). Preparing the
+  data needs no accreditation; only transmission to the platform does.
+- **Directory readiness**: SIREN/SIRET **Luhn validation** (`src/lib/tax/fr.ts`)
+  on the tax profile, so routing keys are correct.
+
+Roadmap for deeper FR/EU: transmission of the e-reporting dataset, PDP
+accreditation or partner selection, OSS for EU B2C.
 
 ## Multi-tenancy & selling instances
 

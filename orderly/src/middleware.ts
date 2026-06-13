@@ -37,6 +37,7 @@ export async function middleware(req: NextRequest) {
   const isAppArea =
     req.nextUrl.pathname.startsWith("/dashboard") ||
     req.nextUrl.pathname.startsWith("/invoices") ||
+    req.nextUrl.pathname.startsWith("/received") ||
     req.nextUrl.pathname.startsWith("/bookkeeping") ||
     req.nextUrl.pathname.startsWith("/documents") ||
     req.nextUrl.pathname.startsWith("/scheduling") ||

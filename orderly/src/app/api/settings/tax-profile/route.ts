@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/tenant";
 import { isValidVatFormat, normalizeVat } from "@/lib/tax/eu";
+import { isValidSiren, isValidSiret } from "@/lib/tax/fr";
 
 export const runtime = "nodejs";
 
@@ -43,6 +44,12 @@ export async function POST(req: NextRequest) {
     if (!isValidVatFormat(profileFields.vat_number)) {
       return NextResponse.json({ error: "VAT number format looks invalid." }, { status: 400 });
     }
+  }
+  if (profileFields.siren && !isValidSiren(profileFields.siren)) {
+    return NextResponse.json({ error: "SIREN is invalid (must be 9 digits, Luhn check)." }, { status: 400 });
+  }
+  if (profileFields.siret && !isValidSiret(profileFields.siret)) {
+    return NextResponse.json({ error: "SIRET is invalid (must be 14 digits, Luhn check)." }, { status: 400 });
   }
 
   const nextProfile = { ...(org.tax_profile ?? {}), ...profileFields };
