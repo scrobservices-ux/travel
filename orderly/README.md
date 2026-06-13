@@ -140,8 +140,32 @@ relationship already follow the spec.
 **Languages.** French by default, English via the in-app switcher
 (`src/i18n/`, cookie `orderly_locale`). Covers the landing page and the whole app.
 
-Roadmap for deeper FR/EU: Chorus Pro / PPF transmission for the 2026–2027 French
-B2B mandate, OSS for EU B2C.
+### E-invoicing transmission (2026/2027 mandate)
+
+Orderly routes each invoice to the correct French channel (`src/lib/einvoicing/`):
+
+| Recipient | Channel | Notes |
+|---|---|---|
+| French business (B2B) | **PDP** (accredited partner platform) | the mandate's B2B channel |
+| French public sector (B2G) | **Chorus Pro** (via PISTE) | existing B2G portal |
+| French individual (B2C) | — | **e-reporting** only |
+| EU / export | — | **e-reporting** only |
+
+Routing + recipient classification: `routing.ts`. Adapters: `adapters/pdp.ts`
+(generic, config-driven REST) and `adapters/chorusPro.ts` (PISTE OAuth + deposit).
+Transmit from the Invoices page ("Transmit") → `POST /api/invoices/:id/transmit`;
+life-cycle statuses (déposée → reçue → approuvée → encaissée, or refusée/rejetée)
+are tracked in `einvoice_submissions` and updated via the status webhook
+`POST /api/einvoicing/webhook`.
+
+> **Important:** the **PPF is the national directory/concentrator, not a send
+> endpoint** — businesses transmit through an **accredited PDP**. Orderly is not
+> itself a PDP (that requires DGFiP/AFNOR accreditation, a legal step). These
+> adapters connect to your *contracted* PDP / Chorus Pro once credentials are
+> set; the EN 16931 payload (Factur-X) they send is already produced.
+
+Roadmap for deeper FR/EU: full e-reporting transmission (B2C + cross-border),
+PDP accreditation or partner selection, OSS for EU B2C.
 
 ## Multi-tenancy & selling instances
 

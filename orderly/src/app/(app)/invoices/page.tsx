@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/tenant";
 import { formatMoney, formatDate, cn } from "@/lib/utils";
 import { getDict } from "@/i18n/server";
+import { TransmitButton } from "@/components/app/TransmitButton";
 
 const STATUS_STYLES: Record<string, string> = {
   draft: "bg-ink/10 text-ink-muted",
@@ -18,7 +19,7 @@ export default async function InvoicesPage() {
   const org = await getActiveOrg();
   const { data: invoices } = await supabase
     .from("invoices")
-    .select("id,number,status,subtotal_cents,tax_cents,total_cents,currency,vat_treatment,issue_date,due_date,clients(name)")
+    .select("id,number,status,subtotal_cents,tax_cents,total_cents,currency,vat_treatment,einvoice_status,issue_date,due_date,clients(name)")
     .eq("org_id", org!.id)
     .order("issue_date", { ascending: false });
 
@@ -49,13 +50,14 @@ export default async function InvoicesPage() {
               <th className="p-4 text-right">{t.vat}</th>
               <th className="p-4 text-right">{t.total}</th>
               <th className="p-4">{t.status}</th>
+              <th className="p-4">{t.efacture}</th>
               <th className="p-4"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink/10">
             {(invoices ?? []).length === 0 && (
               <tr>
-                <td colSpan={8} className="p-8 text-center text-ink-muted">
+                <td colSpan={9} className="p-8 text-center text-ink-muted">
                   {t.empty}
                 </td>
               </tr>
@@ -77,6 +79,9 @@ export default async function InvoicesPage() {
                   <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium capitalize", STATUS_STYLES[inv.status])}>
                     {inv.status}
                   </span>
+                </td>
+                <td className="p-4">
+                  <TransmitButton invoiceId={inv.id} status={inv.einvoice_status ?? "draft"} />
                 </td>
                 <td className="p-4 text-right">
                   <a
