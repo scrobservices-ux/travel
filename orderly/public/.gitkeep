@@ -1,0 +1,1 @@
+# keeps the public/ dir in git so the Docker build can COPY it

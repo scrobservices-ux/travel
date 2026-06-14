@@ -68,6 +68,32 @@ npm run dev                      # http://localhost:3000
 2. **Anthropic API key** — for the agent runtime.
 3. **Stripe** — create three recurring prices and put their ids in `.env.local`; point a webhook at `/api/stripe/webhook`.
 
+## Self-hosting (no Vercel, same quality)
+
+Next.js runs anywhere Node runs — Vercel is optional. The repo ships a
+production **Dockerfile** + **docker-compose.yml** using Next.js `standalone`
+output (verified to boot and serve).
+
+```bash
+cp .env.example .env.local        # your keys
+docker compose up -d --build      # → http://localhost:3000
+```
+
+Put **Nginx or Caddy** in front for your domain + automatic HTTPS. Good hosts:
+**OVHcloud / Scaleway** (French — best for RGPD data residency), Hetzner, Fly.io,
+Render, Railway, or your own VM/Kubernetes. For full EU control you can also
+**self-host Supabase** (Docker) instead of the managed service.
+
+**Scheduled jobs without Vercel Cron:** point a system cron / systemd timer at
+the cron endpoint, e.g.:
+
+```cron
+0 * * * *  curl -s -H "Authorization: Bearer $CRON_SECRET" https://your-host/api/cron?job=sync
+0 8 * * *  curl -s -H "Authorization: Bearer $CRON_SECRET" https://your-host/api/cron?job=reminders
+```
+
+(`vercel.json` is only used if you *do* deploy on Vercel; it's ignored elsewhere.)
+
 ## How the agents work
 
 See [`ARCHITECTURE.md`](./ARCHITECTURE.md). In short: each agent is a system prompt + a set of tenant-scoped tools. The runtime (`src/agents/core/runtime.ts`) runs a Claude tool-use loop, executes each tool against the active org's data only, and records every step to the `agent_runs` table so the business has a complete, reviewable trail. Outbound client messages are always *drafted* for human approval, never sent silently.
