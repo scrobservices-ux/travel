@@ -17,23 +17,6 @@ export async function middleware(req: NextRequest) {
   const slug = slugFromHost(req.headers.get("host"));
   if (slug) res.headers.set("x-org-slug", slug);
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => req.cookies.getAll(),
-        setAll: (toSet: CookieToSet[]) => {
-          toSet.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
-        },
-      },
-    },
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const isAppArea =
     req.nextUrl.pathname.startsWith("/dashboard") ||
     req.nextUrl.pathname.startsWith("/invoices") ||
@@ -44,6 +27,33 @@ export async function middleware(req: NextRequest) {
     req.nextUrl.pathname.startsWith("/agents") ||
     req.nextUrl.pathname.startsWith("/approvals") ||
     req.nextUrl.pathname.startsWith("/settings");
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // Without Supabase configured we can't authenticate. Keep the public site
+  // (landing, login, signup) working anyway; only gate the app area.
+  if (!supabaseUrl || !supabaseKey) {
+    if (isAppArea) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+    return res;
+  }
+
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll: () => req.cookies.getAll(),
+      setAll: (toSet: CookieToSet[]) => {
+        toSet.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
+      },
+    },
+  });
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (isAppArea && !user) {
     const url = req.nextUrl.clone();
