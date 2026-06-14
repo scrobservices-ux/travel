@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Float, Environment } from "@react-three/drei";
+import { Float } from "@react-three/drei";
 import { useMemo, useRef, Suspense } from "react";
 import * as THREE from "three";
 
@@ -39,10 +39,15 @@ function Cloth() {
   return (
     <group rotation={[-0.55, -0.25, 0.15]}>
       <mesh ref={mesh} geometry={geom}>
+        {/* No env map on purpose — fully self-contained, no external HDR fetch.
+            Lighting alone carries the brass sheen so the page never depends on
+            a CDN asset to render. */}
         <meshStandardMaterial
           color="#b08d57"
-          roughness={0.35}
-          metalness={0.75}
+          roughness={0.3}
+          metalness={0.45}
+          emissive="#3a2c16"
+          emissiveIntensity={0.25}
           side={THREE.DoubleSide}
         />
       </mesh>
@@ -63,13 +68,13 @@ export default function TextileScene() {
       aria-hidden
     >
       <Suspense fallback={null}>
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[4, 6, 5]} intensity={1.6} color="#fff6e6" />
-        <directionalLight position={[-5, -2, 2]} intensity={0.5} color="#5b6b58" />
+        <ambientLight intensity={0.7} />
+        <directionalLight position={[4, 6, 5]} intensity={2.1} color="#fff1d6" />
+        <directionalLight position={[-5, -2, 2]} intensity={0.7} color="#8a9a82" />
+        <pointLight position={[0, 0, 4]} intensity={0.8} color="#f3e4c8" />
         <Float speed={1.1} rotationIntensity={0.18} floatIntensity={0.4}>
           <Cloth />
         </Float>
-        <Environment preset="sunset" />
       </Suspense>
     </Canvas>
   );
