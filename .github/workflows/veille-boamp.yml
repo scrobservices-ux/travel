@@ -1,0 +1,63 @@
+name: Veille appels d'offres nettoyage (BOAMP)
+
+# Surveillance quotidienne des marchés publics de nettoyage / propreté
+# pour SCROB SERVICES (zone 95 / 60 / 77 / 93), via l'API open data du BOAMP.
+#
+# ⚠️ Les workflows planifiés (schedule) ne s'exécutent QUE depuis la branche
+# par défaut du dépôt. Pour activer la veille automatique, fusionnez ce fichier
+# dans la branche par défaut (main). En attendant, lancez-le à la main via
+# l'onglet Actions → "Run workflow" (workflow_dispatch).
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # tous les jours à 06:00 UTC (~08:00 Paris)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write   # pour committer le rapport du jour
+  issues: write     # pour ouvrir l'issue de notification
+
+concurrency:
+  group: veille-boamp
+  cancel-in-progress: false
+
+jobs:
+  veille:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Lancer la veille BOAMP
+        id: veille
+        run: python3 veille/boamp_veille.py
+
+      - name: Ouvrir une issue si nouveaux avis
+        if: steps.veille.outputs.new_count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "🧽 Veille nettoyage — ${{ steps.veille.outputs.new_count }} nouvel(le)s appel(s) d'offres ($(date +%d/%m/%Y))" \
+            --body-file veille/nouveaux.md \
+            --label "veille" || \
+          gh issue create \
+            --title "🧽 Veille nettoyage — ${{ steps.veille.outputs.new_count }} nouvel(le)s appel(s) d'offres ($(date +%d/%m/%Y))" \
+            --body-file veille/nouveaux.md
+
+      - name: Archiver le rapport du jour
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add veille/derniers-resultats.md veille/nouveaux.md veille/_seen.json
+          if git diff --cached --quiet; then
+            echo "Aucun changement à committer."
+          else
+            git commit -m "Veille BOAMP nettoyage — rapport du $(date +%Y-%m-%d)"
+            git push
+          fi
