@@ -3,3 +3,7 @@ kola-app.zip
 kola-netlify.zip
 kola-cpanel.zip
 index-for-cpanel.html
+
+# Python bytecode cache (veille script)
+__pycache__/
+*.pyc
