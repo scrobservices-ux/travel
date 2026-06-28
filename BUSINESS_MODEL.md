@@ -168,6 +168,34 @@ Sources: [Business in Cameroon — Orange Money](https://www.businessincameroon.
   model is social/ethnic/professional; stranger-matching is how fintech tontines die.
   Existing groups only.
 
+### 4.5 Njangi models — the product roadmap (and the tiering ladder)
+
+Cameroonians run njangis in many shapes. Each model is a "house type" Kola can support;
+together they form both a product roadmap and the basis for tiering (simple = free,
+complex = paid). Built today: **✅**. Designed/next: **▢**.
+
+| Model | How it works | Who relates to it | Build | Tier |
+|---|---|---|---|---|
+| **Basic rotating njangi** ✅ | Fixed monthly amount; the pot rotates to one member each sitting | Everyone — the default njangi | Done | Start (free) |
+| **Trouble / funeral fund** ✅ | Standing fund + one-tap emergency levy; fast payout | Every family & meeting | Done | Start (free) |
+| **Savings caisse + member loans** ✅ | 25% of each contribution saved; lends to members at 2%/mo | Traders, associations, "loan njangi" | Done | Standard |
+| **Multi-year roll-over savings** ✅ | Year-end: each member cashes out or rolls their stake forward | Long-running investment-minded houses | Done | Elite |
+| **Bidding / auction njangi (enchère)** ▢ | Each round members bid a discount for the pot; the discount is shared to the others as interest | **Bamiléké heartland** — deeply familiar, sophisticated | Medium | Elite |
+| **Pure savings club ("December / Christmas njangi")** ▢ | No rotation; everyone saves, one big share-out before Christmas / school resumption | Women's groups, salary earners | Easy | Standard |
+| **Daily collector ("asusu" / tontine journalière)** ▢ | Fixed daily deposit to a collector for ~31 days; member gets ~30 back, collector keeps a day as fee | **Market buyam-sellam** | Easy | Standard |
+| **Goal / project njangi** ▢ | Group saves toward a named target (land, zinc, school fees, equipment); pays out on schedule or at goal | Families, youth, cooperatives | Easy | Standard |
+| **Asset / bulk-buy njangi ("njangi for things")** ▢ | The pot buys physical items in rotation — bags of rice, zinc, plates, "kaba" fabric, furniture | **Women's groups** especially | Medium | Standard |
+| **Ceremony fund ("born-house / marriage njangi")** ▢ | Reciprocal contributions for members' weddings, births, celebrations — "you helped me, I help you" | Villages, family unions | Medium | Standard |
+
+**Recommendation on what to build next:** the **daily-collector** and **pure-savings
+("December njangi")** models are the cheapest to add and unlock two huge, distinct
+segments — market traders (daily) and salaried women's groups (Christmas). The
+**bidding/auction njangi** is the prestige feature for the Bamiléké tontine heartland and
+the strongest Elite differentiator, but it's more complex; build it once the first paid
+groups validate the savings caisse. The **asset/bulk-buy** model is the sleeper hit with
+women's groups and pairs naturally with merchant partnerships later (a supplier delivers
+the rice/zinc the njangi bought).
+
 ---
 
 ## 5. Competition & Differentiation
@@ -204,9 +232,23 @@ Three named tiers, all renewed yearly at the share-out (live in the app's **Plan
 
 | Tier | Price | Includes |
 |---|---|---|
-| **Kola Start** | **Free forever** (renew free each year) | 1 house, ≤ 15 members, full core ledger, trouble fund, receipts, cash recording |
-| **Kola Standard** | **FCFA 24,000/year** (~$40, ≈ 2,000/mo) | Unlimited members, MoMo/OM collection, fines engine, reports & CSV, priority support |
-| **Kola Elite** | **FCFA 100,000/year** (~$165) | Everything + multiple funds per house, advanced exports & analytics, Elite badge, diaspora-ready — for high-value houses |
+| **Kola Start** | **Free forever** (renew free each year) | 1 house, ≤ 15 members, **basic rotating njangi**, trouble fund, receipts, cash recording |
+| **Kola Standard** | **FCFA 24,000/year** (~$40, ≈ 2,000/mo) | Unlimited members, **savings caisse + member loans at interest**, fines engine, reports & CSV, priority support |
+| **Kola Elite** | **FCFA 100,000/year** (~$165) | Everything + **multi-year roll-over savings (members stay or cash out)**, advanced exports & analytics, Elite badge, diaspora-ready — for high-value houses |
+
+**Complexity is the tiering ladder.** The free Start tier is the *basic njangi* every
+Cameroonian already knows — a rotating pot and a trouble fund. The more sophisticated a
+house's money gets, the higher the tier:
+
+- **Basic rotating njangi + trouble fund → Start (free).** The entry point. Costs nothing,
+  so there is no reason not to digitize the notebook.
+- **Common savings caisse that lends to members at 2%/month → Standard.** The moment a
+  house runs a shared, interest-bearing fund, the stakes (and the disputes a clean ledger
+  prevents) are high enough to justify a paid plan.
+- **Multi-year roll-over savings → Elite.** At year-end each member chooses to cash out or
+  roll their balance (savings + interest share) into next year's caisse; the engine carries
+  each member's stake forward and keeps the interest split representative across years. This
+  is the most complex njangi to run on paper and the most valuable to get right — Elite.
 
 **Tiering by fund size (the user's instinct, built in):** Kola inspects the money flowing
 through a house (contribution size, trouble-fund levies, standing balance) and

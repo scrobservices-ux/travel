@@ -535,7 +535,7 @@ const LEGACY_KEY = "tamarun_v1"; // pre-rename data is migrated silently
 
 let state = load();
 // Transient UI state (not persisted)
-let ui = { tab: "dashboard", sittingId: null, levyId: null, newType: "family" };
+let ui = { tab: "dashboard", sittingId: null, levyId: null, newType: "family", shareChoice: {} };
 
 function load() {
   try {
@@ -708,6 +708,13 @@ const I18N = {
     savings_pct_label: "Common savings — % of each contribution (0 = off)",
     loan_rate_label: "Loan interest — % per month",
     no_savings_yet: "No savings in the caisse yet.",
+    carried_in: "Carried in", this_cycle: "This year", your_stake: "Stake",
+    cash_out: "Cash out", roll_over: "Roll over & stay", staying: "Staying", taking: "Taking out",
+    choose_each: "Each member can take their money or roll it over to next year. Tap a member to switch.",
+    close_cycle: "Close year & apply choices", cycle_closed: "Year closed. Money rolled over stays in the caisse for next year.",
+    feat_savings: "Savings caisse & member loans", feat_rollover: "Multi-year roll-over savings",
+    savings_premium: "The savings & loans caisse is a Standard / Elite feature. Upgrade to switch it on — your basic njangi stays free.",
+    rollover_premium_note: "Members all cash out at year-end. Multi-year roll-over (members can stay) is a Kola Elite feature.",
   },
 
   fr: {
@@ -848,6 +855,13 @@ const I18N = {
     savings_pct_label: "Épargne commune — % de chaque cotisation (0 = aucune)",
     loan_rate_label: "Intérêt de prêt — % par mois",
     no_savings_yet: "Aucune épargne dans la caisse pour l'instant.",
+    carried_in: "Reporté", this_cycle: "Cette année", your_stake: "Mise",
+    cash_out: "Retirer", roll_over: "Reporter & rester", staying: "Reste", taking: "Retire",
+    choose_each: "Chaque membre peut retirer son argent ou le reporter à l'année suivante. Touchez un membre pour basculer.",
+    close_cycle: "Clôturer l'année & appliquer", cycle_closed: "Année clôturée. L'argent reporté reste dans la caisse pour l'an prochain.",
+    feat_savings: "Caisse d'épargne & prêts aux membres", feat_rollover: "Épargne reportable sur plusieurs années",
+    savings_premium: "La caisse épargne & prêts est une fonction Standard / Elite. Passez à un forfait supérieur pour l'activer — votre njangi de base reste gratuit.",
+    rollover_premium_note: "Tous les membres retirent en fin d'année. Le report pluriannuel (les membres peuvent rester) est une fonction Kola Elite.",
   },
 
   pcm: {
@@ -988,6 +1002,13 @@ const I18N = {
     savings_pct_label: "Common savings — % of every contribution (0 = off)",
     loan_rate_label: "Loan interest — % per month",
     no_savings_yet: "No savings for di caisse yet.",
+    carried_in: "Weh carry come", this_cycle: "Dis year", your_stake: "Stake",
+    cash_out: "Take comot", roll_over: "Roll over & stay", staying: "E stay", taking: "E take comot",
+    choose_each: "Every member fit take e money or roll am over for next year. Touch member make e change.",
+    close_cycle: "Close di year & apply", cycle_closed: "Year don close. Money weh dem roll over di stay for caisse for next year.",
+    feat_savings: "Savings caisse & member loan", feat_rollover: "Multi-year roll-over savings",
+    savings_premium: "Di savings & loan caisse na Standard / Elite feature. Upgrade make e on — ya basic njangi remain free.",
+    rollover_premium_note: "Everybody di take comot for year-end. Multi-year roll-over (member fit stay) na Kola Elite feature.",
   },
 };
 
@@ -1192,6 +1213,32 @@ function caisseCash(g) {
 // Total equity of the caisse: deposits + interest earned, minus what's been shared out.
 function caisseValue(g) { return caisseDeposits(g) + interestEarned(g) - savingsPaidOut(g); }
 function loanMemberId(g, loanId) { const l = (g.loans || []).find(x => x.id === loanId); return l ? l.memberId : null; }
+
+// --- savings cycles (roll-over / cash-out) ---
+// A "cycle" is usually one year. Deposits since cycleStart count toward this
+// cycle's stake; carried[memberId] is what a member rolled over from before.
+function cycleStart(g) { return g.cycleStartTs || 0; }
+function thisCycleDeposits(g, mId) {
+  const r = savingsRate(g);
+  return g.transactions
+    .filter(t => (t.type === "contribution" || t.type === "reversal-contribution") && t.memberId === mId && t.ts >= cycleStart(g))
+    .reduce((s, t) => s + t.amount * r, 0);
+}
+function carriedOf(g, mId) { return (g.carried && g.carried[mId]) || 0; }
+function memberStake(g, mId) { return carriedOf(g, mId) + thisCycleDeposits(g, mId); }
+function totalStake(g) { return activeMembers(g).reduce((s, m) => s + memberStake(g, m.id), 0); }
+function interestThisCycle(g) {
+  return g.transactions.filter(t => t.type === "loan-interest-paid" && t.ts >= cycleStart(g)).reduce((s, t) => s + t.amount, 0);
+}
+// What a member is entitled to at year-end: their stake + pro-rata interest share.
+function entitlement(g, mId) {
+  const ts = totalStake(g), st = memberStake(g, mId);
+  return st + (ts > 0 ? interestThisCycle(g) * st / ts : 0);
+}
+
+// --- tier gates ---
+function canSavings(g) { return planStatus(g).effective.premium; }              // Standard or Elite
+function isEliteActive(g) { const ps = planStatus(g); return ps.plan.key === "elite" && ps.status === "active"; }
 function troubleBalance(g) {
   return g.transactions
     .filter(t => ["levy-payment", "reversal-levy", "trouble-payout"].includes(t.type))
@@ -1647,12 +1694,19 @@ function viewSavings(g) {
     </tr>`;
   }).join("");
 
-  // year-end share-out preview
+  // year-end share-out / roll-over preview (cycle-aware)
+  const elite = isEliteActive(g);
+  const tStake = totalStake(g), Ic = interestThisCycle(g);
   const shareRows = activeMembers(g).map(m => {
-    const dep = memberDeposits(g, m.id);
-    if (dep <= 0) return "";
-    const share = D > 0 ? I * dep / D : 0;
-    return `<tr><td>${esc(m.name)}</td><td class="num">${fmt(dep)}</td><td class="num">${fmt(share)}</td><td class="num"><b>${fmt(dep + share)}</b></td></tr>`;
+    const stake = memberStake(g, m.id);
+    if (stake <= 0) return "";
+    const ent = entitlement(g, m.id);
+    const intShare = ent - stake;
+    const choice = ui.shareChoice[m.id] === "out" ? "out" : "roll";
+    const toggle = elite
+      ? `<td class="right"><button class="btn small ${choice === "out" ? "warn" : "ghost"}" onclick="App.toggleShare('${m.id}')">${choice === "out" ? t("taking") : t("staying")}</button></td>`
+      : "";
+    return `<tr><td>${esc(m.name)}</td><td class="num">${fmt(carriedOf(g, m.id))}</td><td class="num">${fmt(thisCycleDeposits(g, m.id))}</td><td class="num">${fmt(intShare)}</td><td class="num"><b>${fmt(ent)}</b></td>${toggle}</tr>`;
   }).join("");
 
   return `
@@ -1683,10 +1737,13 @@ function viewSavings(g) {
 
   <div class="card">
     <h3>${icon("users", 17)} ${t("year_end")}</h3>
-    <p class="muted">${t("shareout_intro")}</p>
+    <p class="muted">${elite ? t("choose_each") : t("shareout_intro")}</p>
+    ${!elite ? `<p class="muted" style="font-size:12.5px">${icon("crown", 13)} ${t("rollover_premium_note")}</p>` : ""}
     ${totalOnLoan(g) > 0 ? `<p class="pill gold" style="display:inline-block">${t("loans_note", { amt: fmt(totalOnLoan(g)) })}</p>` : ""}
-    ${shareRows ? `<div class="scrollwrap mt"><table><thead><tr><th>${t("member")}</th><th class="num">${t("deposits_col")}</th><th class="num">${t("interest_share")}</th><th class="num">${t("total_share")}</th></tr></thead><tbody>${shareRows}</tbody></table></div>
-      <button class="btn gold mt" onclick="App.recordShareout()">${icon("download", 15)} ${t("record_shareout")}</button>`
+    ${shareRows ? `<div class="scrollwrap mt"><table><thead><tr><th>${t("member")}</th><th class="num">${t("carried_in")}</th><th class="num">${t("this_cycle")}</th><th class="num">${t("interest_share")}</th><th class="num">${t("total_share")}</th>${elite ? "<th></th>" : ""}</tr></thead><tbody>${shareRows}</tbody></table></div>
+      ${elite
+        ? `<button class="btn gold mt" onclick="App.closeCycle(false)">${icon("download", 15)} ${t("close_cycle")}</button>`
+        : `<button class="btn gold mt" onclick="App.closeCycle(true)">${icon("download", 15)} ${t("record_shareout")}</button>`}`
       : `<p class="muted">${t("no_savings_yet")}</p>`}
   </div>`;
 }
@@ -1727,8 +1784,8 @@ function planCard(g, key) {
   const isCurrent = g.plan === key && (key === "start" ? true : ps.status === "active");
   const featList = {
     start: ["feat_core_ledger", "feat_upto15", "feat_one_house", "feat_trouble"],
-    standard: ["feat_unlimited", "feat_trouble", "feat_reports", "feat_priority"],
-    elite: ["feat_unlimited", "feat_multi", "feat_advanced", "feat_priority", "feat_elite_badge"],
+    standard: ["feat_unlimited", "feat_savings", "feat_reports", "feat_priority"],
+    elite: ["feat_unlimited", "feat_savings", "feat_rollover", "feat_advanced", "feat_elite_badge"],
   }[key];
   const price = p.price === 0 ? t("free") : fmt(p.price) + " " + t("per_year");
   const suggested = key === "elite" && suggestElite(g) && g.plan !== "elite";
@@ -1853,7 +1910,7 @@ const App = {
 
   tab(t) { ui.tab = t; render(); },
   goHome() { render(); },
-  selectGroup(id) { state.activeGroupId = id; ui = { tab: "dashboard", sittingId: null, levyId: null, newType: ui.newType }; save(); render(); },
+  selectGroup(id) { state.activeGroupId = id; ui = { tab: "dashboard", sittingId: null, levyId: null, newType: ui.newType, shareChoice: {} }; save(); render(); },
   selectSitting(id) { ui.sittingId = id; render(); },
   selectLevy(id) { ui.levyId = id; render(); },
   setLang(l) { state.lang = l; save(); render(); },
@@ -1913,10 +1970,13 @@ const App = {
       validUntil: new Date(Date.now() + YEAR_MS).toISOString(), // free year from creation
       subHistory: [],
     };
+    const wantedSavings = g.savingsRate;
+    if (wantedSavings > 0 && !canSavings(g)) g.savingsRate = 0; // premium feature; new houses start on free Start
     state.groups.push(g);
     state.activeGroupId = g.id;
     ui.tab = "members"; ui.sittingId = null; ui.levyId = null;
     save(); this.closeModal(); render();
+    if (wantedSavings > 0 && !canSavings(g)) this.showPaywall("savings");
   },
 
   setGroupType(key) { const g = activeGroup(); g.type = key; save(); render(); },
@@ -1928,7 +1988,17 @@ const App = {
     g.frequency = document.getElementById("gFrequency").value;
     g.fineLate = Number(document.getElementById("gFine").value) || 0;
     const sv = document.getElementById("gSavings");
-    if (sv) g.savingsRate = Math.max(0, Math.min(90, Number(sv.value) || 0)) / 100;
+    const wantSavings = sv ? Math.max(0, Math.min(90, Number(sv.value) || 0)) / 100 : savingsRate(g);
+    if (wantSavings > 0 && !canSavings(g)) {
+      // Savings caisse is a paid (Standard/Elite) feature — basic njangi stays free.
+      g.savingsRate = 0;
+      const lr0 = document.getElementById("gLoanRate");
+      if (lr0) g.loanRate = Math.max(0, Number(lr0.value) || 0) / 100;
+      if (!g.loans) g.loans = [];
+      save(); render();
+      return this.showPaywall("savings");
+    }
+    g.savingsRate = wantSavings;
     const lr = document.getElementById("gLoanRate");
     if (lr) g.loanRate = Math.max(0, Number(lr.value) || 0) / 100;
     if (!g.loans) g.loans = [];
@@ -2122,18 +2192,39 @@ const App = {
     this.closeModal(); render();
   },
 
-  recordShareout() {
+  toggleShare(mId) {
+    ui.shareChoice[mId] = (ui.shareChoice[mId] === "out") ? "roll" : "out";
+    render();
+  },
+
+  // Close the year. forceOut=true → everyone cashes out (Standard).
+  // forceOut=false → per-member choice from ui.shareChoice (Elite roll-over).
+  closeCycle(forceOut) {
     const g = activeGroup();
-    const D = caisseDeposits(g), I = interestEarned(g);
-    if (D <= 0) return alert(t("no_savings_yet"));
-    if (!confirm(t("record_shareout") + " ?")) return;
+    if (totalStake(g) <= 0) return alert(t("no_savings_yet"));
+    const choiceOf = m => forceOut ? "out" : (ui.shareChoice[m.id] === "out" ? "out" : "roll");
+    const cashNeeded = activeMembers(g).reduce((s, m) => s + (choiceOf(m) === "out" ? entitlement(g, m.id) : 0), 0);
+    if (cashNeeded > caisseCash(g) + 1 && !confirm(t("exceeds_cash", { cash: fmt(caisseCash(g)) }))) return;
+    if (!confirm((forceOut ? t("record_shareout") : t("close_cycle")) + " ?")) return;
+
+    const interestRec = interestThisCycle(g);
+    const newCarried = Object.assign({}, g.carried || {});
     for (const m of activeMembers(g)) {
-      const dep = memberDeposits(g, m.id);
-      if (dep <= 0) continue;
-      const total = dep + I * dep / D;
-      addTx(g, { type: "savings-payout", amount: -total, memberId: m.id, method: "MoMo/OM or cash", note: "Year-end savings share-out" });
+      const ent = entitlement(g, m.id);
+      if (choiceOf(m) === "out") {
+        if (ent > 0) addTx(g, { type: "savings-payout", amount: -ent, memberId: m.id, method: "MoMo/OM or cash", note: forceOut ? "Year-end share-out" : "Year-end cash-out" });
+        newCarried[m.id] = 0;
+      } else {
+        newCarried[m.id] = ent; // rolls over, no cash moves
+      }
     }
-    render(); alert(t("shareout_done"));
+    g.carried = newCarried;
+    g.cycleStartTs = Date.now();
+    g.cycles = g.cycles || [];
+    g.cycles.push({ date: todayISO(), interest: interestRec });
+    ui.shareChoice = {};
+    save(); render();
+    alert(forceOut ? t("shareout_done") : t("cycle_closed"));
   },
 
   /* receipts */
@@ -2228,7 +2319,7 @@ const App = {
 
   showPaywall(kind) {
     const g = activeGroup();
-    const msg = kind === "members" ? t("limit_members") : t("locked_msg");
+    const msg = kind === "members" ? t("limit_members") : kind === "savings" ? t("savings_premium") : t("locked_msg");
     openModal(`
       <h3>${icon("lock", 20)} ${t("locked_feature")}</h3>
       <p>${msg}</p>
