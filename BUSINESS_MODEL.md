@@ -230,11 +230,17 @@ monthly card-billing suffers.
 
 Three named tiers, all renewed yearly at the share-out (live in the app's **Plan** tab):
 
-| Tier | Price | Includes |
-|---|---|---|
-| **Kola Start** | **Free forever** (renew free each year) | 1 house, ≤ 15 members, **basic rotating njangi**, trouble fund, receipts, cash recording |
-| **Kola Standard** | **FCFA 24,000/year** (~$40, ≈ 2,000/mo) | Unlimited members, **savings caisse + member loans at interest**, fines engine, reports & CSV, priority support |
-| **Kola Elite** | **FCFA 100,000/year** (~$165) | Everything + **multi-year roll-over savings (members stay or cash out)**, advanced exports & analytics, Elite badge, diaspora-ready — for high-value houses |
+| Tier | Price | Njangi styles unlocked | Also includes |
+|---|---|---|---|
+| **Kola Start** | **Free forever** (renew free each year) | **Basic rotating njangi** | ≤ 15 members, trouble fund, receipts, cash recording |
+| **Kola Standard** | **FCFA 24,000/year** (~$40, ≈ 2,000/mo) | + **Savings/December njangi**, + **Daily collector (asusu)**, + savings caisse & member loans | Unlimited members, fines engine, reports & CSV, priority support |
+| **Kola Elite** | **FCFA 100,000/year** (~$165) | + **Bidding/auction njangi (enchère)**, + **multi-year roll-over savings** | Advanced exports & analytics, Elite badge, diaspora-ready — for high-value houses |
+
+Every house picks its **njangi style** (its money engine) at creation. The style is saved
+even on the free plan, but premium styles stay *functionally locked* (the tab shows an
+upgrade prompt) until the house is on the right tier — the members list and ledger always
+stay readable. This makes the upsell concrete: a treasurer sets up exactly the njangi they
+run, sees it, and upgrades to switch it on.
 
 **Complexity is the tiering ladder.** The free Start tier is the *basic njangi* every
 Cameroonian already knows — a rotating pot and a trouble fund. The more sophisticated a

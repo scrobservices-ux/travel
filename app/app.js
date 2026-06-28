@@ -17,7 +17,7 @@ const LEGACY_KEY = "tamarun_v1"; // pre-rename data is migrated silently
 
 let state = load();
 // Transient UI state (not persisted)
-let ui = { tab: "dashboard", sittingId: null, levyId: null, newType: "family", shareChoice: {} };
+let ui = { tab: "dashboard", sittingId: null, levyId: null, newType: "family", newStyle: "rotating", shareChoice: {} };
 
 function load() {
   try {
@@ -197,6 +197,27 @@ const I18N = {
     feat_savings: "Savings caisse & member loans", feat_rollover: "Multi-year roll-over savings",
     savings_premium: "The savings & loans caisse is a Standard / Elite feature. Upgrade to switch it on — your basic njangi stays free.",
     rollover_premium_note: "Members all cash out at year-end. Multi-year roll-over (members can stay) is a Kola Elite feature.",
+
+    // njangi styles (engines)
+    nj_style: "Njangi style", choose_style: "How does this njangi work?",
+    style_rotating: "Rotating pot", style_rotating_d: "Everyone pays the same; the pot goes to one member each turn. The classic njangi.",
+    style_savings: "Savings (December)", style_savings_d: "No rotation — everyone saves; one big share-out at year-end. The Christmas njangi.",
+    style_daily: "Daily collector", style_daily_d: "Members drop a fixed amount daily; the collector keeps one day as fee. Market asusu.",
+    style_auction: "Bidding njangi", style_auction_d: "Members bid a discount for the pot each turn; the discount is shared to the others. The Bamiléké enchère.",
+    style_premium: "That njangi style needs a higher plan. The basic rotating njangi is free.",
+    style_tier_start: "Free", style_tier_standard: "Standard", style_tier_elite: "Elite",
+    // daily collector
+    nav_daily: "Daily Collection", daily_amount: "Daily amount", period_days: "Days in the round", fee_days: "Collector fee (days)",
+    days_paid: "Days", saved: "Saved", to_receive: "To receive", collector_fee: "Collector fee",
+    add_day: "+1 day", pay_out_member: "Pay out", new_round: "Start new round", round_reset: "New round started.",
+    daily_intro: "Each member drops {amt}/day. After {days} days they receive {keep} days back; {fee} day(s) is the collector's fee.",
+    daily_collected: "Total collected", daily_members: "Savers",
+    // savings round
+    no_pot_note: "Pure-savings njangi — every contribution goes straight to the members' savings. Share out at year-end on the Savings tab.",
+    // auction
+    run_bidding: "Run the bidding", winning_bidder: "Winning bidder", winning_bid: "Winning bid (discount)",
+    award_pot: "Award the pot", auction_intro: "The highest discount wins the pot; the discount is shared equally to the members who did not win this round.",
+    already_won: "won", rebate: "Bidding rebate", pick_winner: "Pick the winner and the discount they bid.",
   },
 
   fr: {
@@ -344,6 +365,23 @@ const I18N = {
     feat_savings: "Caisse d'épargne & prêts aux membres", feat_rollover: "Épargne reportable sur plusieurs années",
     savings_premium: "La caisse épargne & prêts est une fonction Standard / Elite. Passez à un forfait supérieur pour l'activer — votre njangi de base reste gratuit.",
     rollover_premium_note: "Tous les membres retirent en fin d'année. Le report pluriannuel (les membres peuvent rester) est une fonction Kola Elite.",
+
+    nj_style: "Type de njangi", choose_style: "Comment fonctionne ce njangi ?",
+    style_rotating: "Cagnotte tournante", style_rotating_d: "Tout le monde paie pareil ; la cagnotte va à un membre à chaque tour. Le njangi classique.",
+    style_savings: "Épargne (Décembre)", style_savings_d: "Pas de rotation — tout le monde épargne ; un grand partage en fin d'année. Le njangi de Noël.",
+    style_daily: "Collecteur journalier", style_daily_d: "Les membres déposent un montant fixe chaque jour ; le collecteur garde un jour comme frais. L'asusu du marché.",
+    style_auction: "Njangi aux enchères", style_auction_d: "Les membres misent une remise pour la cagnotte ; la remise est partagée aux autres. L'enchère bamiléké.",
+    style_premium: "Ce type de njangi nécessite un forfait supérieur. Le njangi tournant de base est gratuit.",
+    style_tier_start: "Gratuit", style_tier_standard: "Standard", style_tier_elite: "Elite",
+    nav_daily: "Collecte journalière", daily_amount: "Montant journalier", period_days: "Jours par tour", fee_days: "Frais collecteur (jours)",
+    days_paid: "Jours", saved: "Épargné", to_receive: "À recevoir", collector_fee: "Frais collecteur",
+    add_day: "+1 jour", pay_out_member: "Payer", new_round: "Nouveau tour", round_reset: "Nouveau tour démarré.",
+    daily_intro: "Chaque membre dépose {amt}/jour. Après {days} jours il reçoit {keep} jours ; {fee} jour(s) est le frais du collecteur.",
+    daily_collected: "Total collecté", daily_members: "Épargnants",
+    no_pot_note: "Njangi d'épargne pure — chaque cotisation va directement à l'épargne des membres. Partage en fin d'année dans l'onglet Épargne.",
+    run_bidding: "Lancer les enchères", winning_bidder: "Gagnant de l'enchère", winning_bid: "Mise gagnante (remise)",
+    award_pot: "Attribuer la cagnotte", auction_intro: "La remise la plus élevée gagne la cagnotte ; la remise est partagée à parts égales aux membres qui n'ont pas gagné ce tour.",
+    already_won: "a gagné", rebate: "Remise d'enchère", pick_winner: "Choisissez le gagnant et la remise misée.",
   },
 
   pcm: {
@@ -491,6 +529,23 @@ const I18N = {
     feat_savings: "Savings caisse & member loan", feat_rollover: "Multi-year roll-over savings",
     savings_premium: "Di savings & loan caisse na Standard / Elite feature. Upgrade make e on — ya basic njangi remain free.",
     rollover_premium_note: "Everybody di take comot for year-end. Multi-year roll-over (member fit stay) na Kola Elite feature.",
+
+    nj_style: "Kana njangi", choose_style: "How dis njangi di work?",
+    style_rotating: "Rotating pot", style_rotating_d: "Everybody di pay same; di pot di go for one member each turn. Di classic njangi.",
+    style_savings: "Savings (December)", style_savings_d: "No rotation — everybody di save; one big share for end of year. Di Christmas njangi.",
+    style_daily: "Daily collector", style_daily_d: "Member dem di drop fix amount every day; di collector di keep one day as fee. Market asusu.",
+    style_auction: "Bidding njangi", style_auction_d: "Member dem di bid discount for di pot each turn; di discount di share for di others. Di Bamiléké enchère.",
+    style_premium: "Dat kana njangi need higher plan. Di basic rotating njangi na free.",
+    style_tier_start: "Free", style_tier_standard: "Standard", style_tier_elite: "Elite",
+    nav_daily: "Daily Collection", daily_amount: "Daily amount", period_days: "Days for di round", fee_days: "Collector fee (days)",
+    days_paid: "Days", saved: "Don save", to_receive: "Go collect", collector_fee: "Collector fee",
+    add_day: "+1 day", pay_out_member: "Pay out", new_round: "Start new round", round_reset: "New round don start.",
+    daily_intro: "Every member di drop {amt}/day. After {days} days dem di collect {keep} days; {fee} day(s) na di collector fee.",
+    daily_collected: "Total weh dem collect", daily_members: "Savers",
+    no_pot_note: "Pure-savings njangi — every contribution di go straight for di members savings. Share for end of year for di Savings tab.",
+    run_bidding: "Run di bidding", winning_bidder: "Weh win", winning_bid: "Winning bid (discount)",
+    award_pot: "Give di pot", auction_intro: "Di highest discount di win di pot; dem di share di discount equal for di members weh no win dis round.",
+    already_won: "don win", rebate: "Bidding rebate", pick_winner: "Pick weh win and di discount weh e bid.",
   },
 };
 
@@ -562,6 +617,27 @@ const TYPES = {
 };
 function typeLabel(key) { return t("t_" + key); }
 function typeDesc(key) { return t("t_" + key + "_d"); }
+
+/* ---------- njangi styles (the money engine) + tier gating ---------- */
+const STYLES = {
+  rotating: { tier: "start",    icon: "coins" },   // classic rotating pot (free)
+  savings:  { tier: "standard", icon: "bank" },    // December / pure savings
+  daily:    { tier: "standard", icon: "receipt" }, // asusu daily collector
+  auction:  { tier: "elite",    icon: "spark" },   // bidding / enchère
+};
+const TIER_RANK = { start: 0, standard: 1, elite: 2 };
+function styleOf(g) { return g.style && STYLES[g.style] ? g.style : "rotating"; }
+function styleLabel(key) { return t("style_" + key); }
+function styleDesc(key) { return t("style_" + key + "_d"); }
+// The plan a house effectively has right now (lapsed premium falls back to start).
+function houseTier(g) { return planStatus(g).effective.key; }
+function canStyle(g, sk) { return TIER_RANK[STYLES[sk].tier] <= TIER_RANK[houseTier(g)]; }
+function styleEntitled(g) { return canStyle(g, styleOf(g)); }
+function upgradeCard() {
+  return `<div class="card"><h3>${icon("lock", 17)} ${t("locked_feature")}</h3>
+    <p class="muted">${t("style_premium")}</p>
+    <button class="btn" onclick="App.tab('plan')">${icon("crown", 15)} ${t("see_plans")}</button></div>`;
+}
 
 const HERO_IMG = IMG("l-0yLU7ImzM"); // friends stacking hands together in a circle
 
@@ -655,9 +731,26 @@ function mainFundBalance(g) {
   const r = savingsRate(g);
   return g.transactions.reduce((s, t) => {
     if (t.type === "contribution" || t.type === "reversal-contribution") return s + t.amount * (1 - r);
-    if (t.type === "fine" || t.type === "payout") return s + t.amount;
+    if (t.type === "fine" || t.type === "payout" || t.type === "auction-rebate") return s + t.amount;
     return s;
   }, 0);
+}
+
+/* ---------- daily collector (asusu) ---------- */
+function dailyRound(g) { return g.dailyRound || 1; }
+function dailyDays(g, mId) {
+  return g.transactions.filter(t => t.type === "daily-deposit" && t.memberId === mId && t.round === dailyRound(g)).length;
+}
+function dailyPaidOut(g, mId) {
+  return g.transactions.some(t => t.type === "daily-payout" && t.memberId === mId && t.round === dailyRound(g));
+}
+function dailySaved(g, mId) { return dailyDays(g, mId) * (g.dailyAmount || 0); }
+function dailyToReceive(g, mId) {
+  const d = dailyDays(g, mId), fee = g.feeDays || 0;
+  return Math.max(0, d - fee) * (g.dailyAmount || 0);
+}
+function dailyTotalCollected(g) {
+  return g.transactions.filter(t => t.type === "daily-deposit" && t.round === dailyRound(g)).reduce((s, t) => s + t.amount, 0);
 }
 
 /* ---------- common savings caisse + member loans ---------- */
@@ -783,12 +876,15 @@ function render() {
   if (!g) { main.innerHTML = viewLanding(); return; }
 
   const ps = planStatus(g);
+  const style = styleOf(g);
   const tabs = [
     ["dashboard", t("nav_dashboard"), "grid"],
     ["members", `${t("nav_members")} · ${activeMembers(g).length}`, "users"],
-    ["sittings", t("nav_sittings"), "coins"],
+    ...(style === "daily" ? [["daily", t("nav_daily"), "receipt"]] : []),
+    ...(style === "rotating" || style === "auction" ? [["sittings", t("nav_sittings"), "coins"]] : []),
+    ...(style === "savings" ? [["sittings", t("contributions"), "coins"]] : []),
     ["trouble", t("nav_trouble"), "shield"],
-    ...(savingsRate(g) > 0 ? [["savings", t("nav_savings"), "bank"]] : []),
+    ...(savingsRate(g) > 0 && style !== "daily" ? [["savings", t("nav_savings"), "bank"]] : []),
     ["ledger", t("nav_ledger"), "book"],
     ["plan", t("nav_plan"), "crown"],
     ["settings", t("nav_settings"), "gear"],
@@ -806,6 +902,7 @@ function render() {
   else if (ui.tab === "sittings") html += viewSittings(g);
   else if (ui.tab === "trouble") html += viewTrouble(g);
   else if (ui.tab === "savings") html += viewSavings(g);
+  else if (ui.tab === "daily") html += viewDaily(g);
   else if (ui.tab === "ledger") html += viewLedger(g);
   else if (ui.tab === "plan") html += viewPlan(g);
   else if (ui.tab === "settings") html += viewSettings(g);
@@ -928,7 +1025,7 @@ function viewDashboard(g) {
       <div class="tc-icon" style="width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center">${icon(ty.icon, 20)}</div>
       <div>
         <h2>${esc(g.name)}</h2>
-        <span class="b-sub">${typeLabel(g.type)} · ${fmt(g.contribution)} ${t(freqKey(g.frequency))}</span>
+        <span class="b-sub">${styleLabel(styleOf(g))} · ${typeLabel(g.type)} · ${fmt(g.contribution)} ${t(freqKey(g.frequency))}</span>
       </div>
     </div>
   </div>
@@ -936,8 +1033,9 @@ function viewDashboard(g) {
     <div class="stat green"><div class="s-icon">${icon("coins", 20)}</div><div><div class="label">${t("main_fund")}</div><div class="value">${fmt(mainFundBalance(g))}</div></div></div>
     <div class="stat gold"><div class="s-icon">${icon("shield", 20)}</div><div><div class="label">${t("trouble_fund")}</div><div class="value">${fmt(troubleBalance(g))}</div></div></div>
     <div class="stat blue"><div class="s-icon">${icon("users", 20)}</div><div><div class="label">${t("active_members")}</div><div class="value">${activeMembers(g).length}</div></div></div>
-    <div class="stat terra"><div class="s-icon">${icon("heart", 20)}</div><div><div class="label">${t("next_pot")}</div><div class="value">${ben ? esc(ben.name) : "—"}</div></div></div>
-    ${savingsRate(g) > 0 ? `<div class="stat blue"><div class="s-icon">${icon("bank", 20)}</div><div><div class="label">${t("caisse_value")}</div><div class="value">${fmt(caisseValue(g))}</div></div></div>` : ""}
+    ${styleOf(g) === "savings" || styleOf(g) === "daily" ? "" : `<div class="stat terra"><div class="s-icon">${icon("heart", 20)}</div><div><div class="label">${t("next_pot")}</div><div class="value">${styleOf(g) === "auction" ? "?" : (ben ? esc(ben.name) : "—")}</div></div></div>`}
+    ${styleOf(g) === "daily" ? `<div class="stat terra"><div class="s-icon">${icon("receipt", 20)}</div><div><div class="label">${t("daily_collected")}</div><div class="value">${fmt(dailyTotalCollected(g))}</div></div></div>` : ""}
+    ${savingsRate(g) > 0 && styleOf(g) !== "daily" ? `<div class="stat blue"><div class="s-icon">${icon("bank", 20)}</div><div><div class="label">${t("caisse_value")}</div><div class="value">${fmt(caisseValue(g))}</div></div></div>` : ""}
   </div>
   <div class="card mt">
     <h3>${icon("book", 17)} ${t("recent_activity")}</h3>
@@ -955,6 +1053,8 @@ function txLabel(t) {
     "subscription": "Kola plan",
     "loan-disbursed": "Loan given", "loan-principal-repaid": "Loan principal",
     "loan-interest-paid": "Loan interest", "savings-payout": "Savings share-out",
+    "daily-deposit": "Daily deposit", "daily-payout": "Daily payout",
+    "auction-rebate": "Bidding rebate",
   }[t.type] || t.type;
 }
 
@@ -1003,6 +1103,7 @@ function viewMembers(g) {
 /* ----- sittings ----- */
 
 function viewSittings(g) {
+  if ((styleOf(g) === "savings" || styleOf(g) === "auction") && !styleEntitled(g)) return upgradeCard();
   const sittings = g.sittings.slice().reverse();
   const sel = g.sittings.find(s => s.id === ui.sittingId) || sittings[0] || null;
   if (sel) ui.sittingId = sel.id;
@@ -1045,14 +1146,19 @@ function viewSittings(g) {
     </tr>`;
   }).join("");
 
+  const style = styleOf(g);
+  const isSavingsStyle = style === "savings";
+  const isAuction = style === "auction";
+
   html += `
   <div class="statgrid">
-    <div class="stat green"><div class="s-icon">${icon("coins", 20)}</div><div><div class="label">${t("collected")}</div><div class="value">${fmt(sittingTotal(g, sel.id))}</div></div></div>
+    <div class="stat green"><div class="s-icon">${icon("coins", 20)}</div><div><div class="label">${t("collected")}</div><div class="value">${fmt(isSavingsStyle ? caisseDeposits(g) : sittingTotal(g, sel.id))}</div></div></div>
     <div class="stat blue"><div class="s-icon">${icon("users", 20)}</div><div><div class="label">${t("paid_up")}</div><div class="value">${paidCount} / ${members.length}</div></div></div>
-    <div class="stat gold"><div class="s-icon">${icon("heart", 20)}</div><div><div class="label">${t("pot_beneficiary")}</div><div class="value">${ben ? esc(ben.name) : "—"}</div></div></div>
+    ${isSavingsStyle ? "" : `<div class="stat gold"><div class="s-icon">${icon("heart", 20)}</div><div><div class="label">${t("pot_beneficiary")}</div><div class="value">${isAuction ? "?" : (ben ? esc(ben.name) : "—")}</div></div></div>`}
   </div>
   <div class="card mt">
     <h3>${icon("coins", 17)} ${t("contributions")} — ${fmt(g.contribution)} ${t("each")}</h3>
+    ${isSavingsStyle ? `<p class="muted">${t("no_pot_note")}</p>` : ""}
     ${searchBox(t("search_member"))}
     ${sel.closed ? `<p class="muted">${t("this_closed")}</p>` : `
     <div class="row-actions" style="justify-content:flex-start;margin-bottom:12px">
@@ -1063,7 +1169,20 @@ function viewSittings(g) {
       <table><thead><tr><th>${t("member")}</th><th>${t("status")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>
     </div>
   </div>
-  <div class="card">
+  ${isSavingsStyle ? `<div class="card">
+    <h3>${icon("bank", 17)} ${t("close_disburse")}</h3>
+    ${sel.closed ? `<span class="pill grey">${t("closed")}</span>`
+      : `<button class="btn ghost" onclick="App.closeSittingOnly('${sel.id}')">${t("close_no_payout")}</button>`}
+  </div>`
+  : isAuction ? `<div class="card">
+    <h3>${icon("spark", 17)} ${t("run_bidding")}</h3>
+    <p class="muted">${t("auction_intro")}</p>
+    <p class="muted">${t("pot_for")}: <b>${fmt(sittingTotal(g, sel.id))}</b></p>
+    ${sel.closed
+      ? `<span class="pill grey">${t("closed")}${sel.disbursedTo ? " — " + esc(memberName(g, sel.disbursedTo)) : ""}</span>`
+      : `<button class="btn gold" onclick="App.openAuction('${sel.id}')">${icon("spark", 15)} ${t("run_bidding")}</button>`}
+  </div>`
+  : `<div class="card">
     <h3>${icon("heart", 17)} ${t("close_disburse")}</h3>
     <p class="muted">${t("pot_for")}: <b>${fmt(sittingTotal(g, sel.id))}</b> → ${t("goes_to")} <b>${ben ? esc(ben.name) : "—"}</b>.</p>
     ${sel.closed
@@ -1072,7 +1191,7 @@ function viewSittings(g) {
            <button class="btn" ${ben ? "" : "disabled"} onclick="App.disburse('${sel.id}')">${t("disburse_btn")}</button>
            <button class="btn ghost" onclick="App.closeSittingOnly('${sel.id}')">${t("close_no_payout")}</button>
          </div>`}
-  </div>`;
+  </div>`}`;
   return html;
 }
 
@@ -1152,6 +1271,7 @@ function viewTrouble(g) {
 /* ----- savings & loans (optional caisse) ----- */
 
 function viewSavings(g) {
+  if (styleOf(g) === "savings" && !styleEntitled(g)) return upgradeCard();
   if (savingsRate(g) <= 0) {
     return `<div class="card"><h3>${icon("bank", 17)} ${t("nav_savings")}</h3>
       <p class="muted">${t("savings_off")}</p>
@@ -1230,6 +1350,47 @@ function viewSavings(g) {
   </div>`;
 }
 
+/* ----- daily collector (asusu) ----- */
+
+function viewDaily(g) {
+  if (!styleEntitled(g)) return upgradeCard();
+  const amt = g.dailyAmount || 0, days = g.periodDays || 31, fee = g.feeDays || 1;
+  const savers = activeMembers(g).filter(m => dailyDays(g, m.id) > 0).length;
+  const rows = activeMembers(g).map(m => {
+    const d = dailyDays(g, m.id);
+    const paid = dailyPaidOut(g, m.id);
+    return `
+    <tr data-search="${esc(m.name.toLowerCase())}" class="${paid ? "paid" : ""}">
+      <td>${esc(m.name)}</td>
+      <td class="num">${d} / ${days}</td>
+      <td class="num">${fmt(dailySaved(g, m.id))}</td>
+      <td class="num">${fmt(dailyToReceive(g, m.id))}</td>
+      <td class="right row-actions">
+        ${paid ? `<span class="pill green">${t("settled")}</span>`
+          : `<button class="btn small" onclick="App.addDay('${m.id}')">${t("add_day")}</button>
+             <button class="btn small gold" ${d > fee ? "" : "disabled"} onclick="App.payOutDaily('${m.id}')">${t("pay_out_member")}</button>`}
+      </td>
+    </tr>`;
+  }).join("");
+
+  return `
+  <div class="statgrid">
+    <div class="stat green"><div class="s-icon">${icon("coins", 20)}</div><div><div class="label">${t("daily_collected")}</div><div class="value">${fmt(dailyTotalCollected(g))}</div></div></div>
+    <div class="stat blue"><div class="s-icon">${icon("users", 20)}</div><div><div class="label">${t("daily_members")}</div><div class="value">${savers} / ${activeMembers(g).length}</div></div></div>
+  </div>
+  <p class="muted" style="margin:2px 4px 14px">${icon("receipt", 14)} ${t("daily_intro", { amt: fmt(amt), days: days, keep: days - fee, fee: fee })}</p>
+  <div class="card">
+    <h3>${icon("receipt", 17)} ${t("nav_daily")}</h3>
+    ${searchBox(t("search_member"))}
+    <div class="row-actions" style="justify-content:flex-start;margin-bottom:10px">
+      <button class="btn ghost small" onclick="App.newDailyRound()">${icon("plus", 13)} ${t("new_round")}</button>
+    </div>
+    <div class="scrollwrap">
+      <table><thead><tr><th>${t("member")}</th><th class="num">${t("days_paid")}</th><th class="num">${t("saved")}</th><th class="num">${t("to_receive")}</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+    </div>
+  </div>`;
+}
+
 /* ----- ledger ----- */
 
 function viewLedger(g) {
@@ -1265,9 +1426,9 @@ function planCard(g, key) {
   const ps = planStatus(g);
   const isCurrent = g.plan === key && (key === "start" ? true : ps.status === "active");
   const featList = {
-    start: ["feat_core_ledger", "feat_upto15", "feat_one_house", "feat_trouble"],
-    standard: ["feat_unlimited", "feat_savings", "feat_reports", "feat_priority"],
-    elite: ["feat_unlimited", "feat_savings", "feat_rollover", "feat_advanced", "feat_elite_badge"],
+    start: ["feat_core_ledger", "style_rotating", "feat_upto15", "feat_trouble"],
+    standard: ["feat_unlimited", "feat_savings", "style_savings", "style_daily", "feat_reports"],
+    elite: ["feat_unlimited", "style_auction", "feat_rollover", "feat_advanced", "feat_elite_badge"],
   }[key];
   const price = p.price === 0 ? t("free") : fmt(p.price) + " " + t("per_year");
   const suggested = key === "elite" && suggestElite(g) && g.plan !== "elite";
@@ -1349,10 +1510,16 @@ function viewSettings(g) {
         </select></label>
       <label class="field"><span>${t("late_fine")}</span><input type="number" id="gFine" value="${g.fineLate || 0}"></label>
     </div>
-    <div class="formrow">
+    ${styleOf(g) === "rotating" ? `<div class="formrow">
       <label class="field"><span>${t("savings_pct_label")}</span><input type="number" id="gSavings" value="${Math.round(savingsRate(g) * 100)}" min="0" max="90"></label>
       <label class="field"><span>${t("loan_rate_label")}</span><input type="number" id="gLoanRate" value="${+(loanRate(g) * 100).toFixed(2)}" min="0" step="0.5"></label>
-    </div>
+    </div>` : savingsRate(g) > 0 ? `<label class="field"><span>${t("loan_rate_label")}</span><input type="number" id="gLoanRate" value="${+(loanRate(g) * 100).toFixed(2)}" min="0" step="0.5"></label>` : ""}
+    ${styleOf(g) === "daily" ? `<div class="formrow">
+      <label class="field"><span>${t("daily_amount")}</span><input type="number" id="gDailyAmount" value="${g.dailyAmount || 0}"></label>
+      <label class="field"><span>${t("period_days")}</span><input type="number" id="gPeriodDays" value="${g.periodDays || 31}"></label>
+      <label class="field"><span>${t("fee_days")}</span><input type="number" id="gFeeDays" value="${g.feeDays || 1}"></label>
+    </div>` : ""}
+    <p class="muted" style="font-size:12.5px">${icon(STYLES[styleOf(g)].icon, 13)} ${t("nj_style")}: <b>${styleLabel(styleOf(g))}</b></p>
     <button class="btn" onclick="App.saveSettings()">${t("save_settings")}</button>
   </div>
   <div class="card">
@@ -1414,9 +1581,17 @@ const App = {
       <div class="pick-card ${ui.newType === key ? "sel" : ""}" data-type="${key}" onclick="App.pickType(this)">
         ${photo(TYPES[key].img)}<span>${typeLabel(key)}</span>
       </div>`).join("");
+    const styleCards = Object.keys(STYLES).map(key => `
+      <div class="style-card ${ui.newStyle === key ? "sel" : ""}" data-style="${key}" onclick="App.pickStyle(this)">
+        <div class="style-ic">${icon(STYLES[key].icon, 18)}</div>
+        <div class="style-body"><b>${styleLabel(key)}</b><span>${styleDesc(key)}</span></div>
+        <span class="tier-chip ${STYLES[key].tier}">${t("style_tier_" + STYLES[key].tier)}</span>
+      </div>`).join("");
     openModal(`
       <h3>${t("new_house")}</h3>
-      <p class="muted" style="margin-top:-8px">${t("what_kind")}</p>
+      <p class="muted" style="margin-top:-8px">${t("choose_style")}</p>
+      <div class="style-list">${styleCards}</div>
+      <p class="muted">${t("what_kind")}</p>
       <div class="pick-grid">${typeCards}</div>
       <label class="field"><span>${t("house_name")}</span><input type="text" id="ngName" placeholder="e.g. Mankon Family Njangi"></label>
       <div class="formrow">
@@ -1436,29 +1611,43 @@ const App = {
     el.classList.add("sel");
   },
 
+  pickStyle(el) {
+    ui.newStyle = el.getAttribute("data-style");
+    el.parentElement.querySelectorAll(".style-card").forEach(c => c.classList.remove("sel"));
+    el.classList.add("sel");
+  },
+
   createGroup() {
     const name = document.getElementById("ngName").value.trim();
     if (!name) return alert(t("give_name"));
     const g = {
-      id: uid(), name, type: ui.newType || "family",
+      id: uid(), name, type: ui.newType || "family", style: ui.newStyle || "rotating",
       contribution: Number(document.getElementById("ngContribution").value) || 0,
       frequency: document.getElementById("ngFrequency").value,
       fineLate: Number(document.getElementById("ngFine").value) || 0,
       savingsRate: Math.max(0, Math.min(90, Number(document.getElementById("ngSavings").value) || 0)) / 100,
       loanRate: 0.02,
+      // daily-collector defaults
+      dailyAmount: 1000, periodDays: 31, feeDays: 1,
       rotationMode: "fixed", rotationIndex: 0,
       members: [], rotation: [], sittings: [], levies: [], loans: [], transactions: [],
       plan: "start",
       validUntil: new Date(Date.now() + YEAR_MS).toISOString(), // free year from creation
       subHistory: [],
     };
+    // The style is saved as chosen; premium styles are *functionally* gated
+    // until the house is upgraded (the books are never locked, only the engine).
     const wantedSavings = g.savingsRate;
-    if (wantedSavings > 0 && !canSavings(g)) g.savingsRate = 0; // premium feature; new houses start on free Start
+    if (g.style === "savings") g.savingsRate = 1;              // pure-savings keeps 100%
+    else if (g.style !== "rotating") g.savingsRate = 0;       // daily/auction don't use the contribution caisse
+    else if (wantedSavings > 0 && !canSavings(g)) g.savingsRate = 0; // rotating caisse is premium
+    const styleBlocked = !canStyle(g, g.style);
     state.groups.push(g);
     state.activeGroupId = g.id;
-    ui.tab = "members"; ui.sittingId = null; ui.levyId = null;
+    ui.tab = styleBlocked ? "plan" : "members"; ui.sittingId = null; ui.levyId = null;
     save(); this.closeModal(); render();
-    if (wantedSavings > 0 && !canSavings(g)) this.showPaywall("savings");
+    if (styleBlocked) this.showPaywall("style");
+    else if (g.style === "rotating" && wantedSavings > 0 && !canSavings(g)) this.showPaywall("savings");
   },
 
   setGroupType(key) { const g = activeGroup(); g.type = key; save(); render(); },
@@ -1483,6 +1672,12 @@ const App = {
     g.savingsRate = wantSavings;
     const lr = document.getElementById("gLoanRate");
     if (lr) g.loanRate = Math.max(0, Number(lr.value) || 0) / 100;
+    const da = document.getElementById("gDailyAmount");
+    if (da) g.dailyAmount = Math.max(0, Number(da.value) || 0);
+    const pd = document.getElementById("gPeriodDays");
+    if (pd) g.periodDays = Math.max(1, Number(pd.value) || 31);
+    const fd = document.getElementById("gFeeDays");
+    if (fd) g.feeDays = Math.max(0, Number(fd.value) || 0);
     if (!g.loans) g.loans = [];
     save(); render();
   },
@@ -1597,6 +1792,68 @@ const App = {
     const g = activeGroup();
     g.sittings.find(x => x.id === sittingId).closed = true;
     save(); render();
+  },
+
+  /* daily collector (asusu) */
+  addDay(mId) {
+    const g = activeGroup();
+    addTx(g, { type: "daily-deposit", amount: g.dailyAmount || 0, memberId: mId, round: dailyRound(g), method: "cash", note: "Daily deposit" });
+    render();
+  },
+  payOutDaily(mId) {
+    const g = activeGroup();
+    if (dailyPaidOut(g, mId)) return;
+    const amt = dailyToReceive(g, mId);
+    addTx(g, { type: "daily-payout", amount: -amt, memberId: mId, round: dailyRound(g), method: "MoMo/OM or cash", note: "Daily collector payout" });
+    render();
+  },
+  newDailyRound() {
+    const g = activeGroup();
+    if (!confirm(t("new_round") + " ?")) return;
+    g.dailyRound = dailyRound(g) + 1;
+    save(); render(); alert(t("round_reset"));
+  },
+
+  /* auction / bidding njangi */
+  openAuction(sittingId) {
+    const g = activeGroup();
+    const pot = sittingTotal(g, sittingId);
+    let winners = g.auctionWinners || [];
+    let eligible = activeMembers(g).filter(m => !winners.includes(m.id));
+    if (!eligible.length) eligible = activeMembers(g); // everyone has won → new cycle of eligibility
+    openModal(`
+      <h3>${icon("spark", 20)} ${t("run_bidding")}</h3>
+      <p class="muted" style="margin-top:-6px">${t("pick_winner")} · ${t("pot_for")}: <b>${fmt(pot)}</b></p>
+      <label class="field"><span>${t("winning_bidder")}</span>
+        <select id="aucWinner">${eligible.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join("")}</select>
+      </label>
+      <label class="field"><span>${t("winning_bid")}</span><input type="number" id="aucBid" value="0" placeholder="0"></label>
+      <div class="row-actions" style="justify-content:flex-start">
+        <button class="btn gold" onclick="App.awardAuction('${sittingId}')">${icon("spark", 15)} ${t("award_pot")}</button>
+        <button class="btn ghost" onclick="App.closeModal()">${t("close")}</button>
+      </div>`);
+  },
+  awardAuction(sittingId) {
+    const g = activeGroup();
+    const winnerId = document.getElementById("aucWinner").value;
+    let bid = Number(document.getElementById("aucBid").value) || 0;
+    const pot = sittingTotal(g, sittingId);
+    if (bid < 0) bid = 0;
+    if (bid > pot) bid = pot;
+    // Winner takes the pot minus the discount they bid.
+    addTx(g, { type: "payout", memberId: winnerId, sittingId, amount: -(pot - bid), method: "MoMo/OM or cash", note: "Auction pot" });
+    // The discount is shared equally to everyone who did not win this round.
+    const others = activeMembers(g).filter(m => m.id !== winnerId);
+    if (bid > 0 && others.length) {
+      const rebate = bid / others.length;
+      for (const m of others) addTx(g, { type: "auction-rebate", memberId: m.id, sittingId, amount: -rebate, method: "cash", note: "Bidding rebate" });
+    }
+    const s = g.sittings.find(x => x.id === sittingId);
+    s.closed = true; s.disbursedTo = winnerId;
+    g.auctionWinners = g.auctionWinners || [];
+    if (!g.auctionWinners.includes(winnerId)) g.auctionWinners.push(winnerId);
+    if (g.auctionWinners.length >= activeMembers(g).length) g.auctionWinners = []; // reset cycle
+    save(); this.closeModal(); render();
   },
 
   /* trouble fund */
@@ -1801,7 +2058,7 @@ const App = {
 
   showPaywall(kind) {
     const g = activeGroup();
-    const msg = kind === "members" ? t("limit_members") : kind === "savings" ? t("savings_premium") : t("locked_msg");
+    const msg = kind === "members" ? t("limit_members") : kind === "savings" ? t("savings_premium") : kind === "style" ? t("style_premium") : t("locked_msg");
     openModal(`
       <h3>${icon("lock", 20)} ${t("locked_feature")}</h3>
       <p>${msg}</p>
