@@ -117,16 +117,15 @@ Blended, subscriptions are ~30–40% of revenue per active group; the rest is us
 
 ---
 
-## 8. What this changes in the app
+## 8. Live in the app ✅
 
-The app currently hard-codes flat prices (`Standard 24,000`, `Elite 100,000`). To adopt
-this proposal, the **Plan** tab's price should be computed as:
+This model is wired into the **Plan** tab:
 
-```
-price = clamp(perMember × activeMembers, floor, cap)
-```
-
-with `{ standard: {perMember:1000, floor:10000, cap:50000},
-        elite: {perMember:3500, floor:50000, cap:200000} }`,
-plus a monthly toggle and the Founding-Houses 50% flag. Small, contained change — ready to
-wire in on approval.
+- Price is computed `clamp(perMember × activeMembers, floor, cap)` from
+  `{ standard: {perMember:1000, floor:10000, cap:50000},
+     elite: {perMember:3500, floor:50000, cap:200000} }` — a 24-member house sees
+  *FCFA 24,000/year*, an 8-member house *10,000*, a 120-member house *50,000*.
+- An **Annual / Monthly** toggle (monthly = annual ÷ 12 × 1.25).
+- A **Founding House (−50%)** switch that halves the price and is recorded on the house.
+- The upgrade flow charges the exact computed amount and stores
+  `{plan, period, amount, members, ref}` in the house's subscription history.

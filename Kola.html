@@ -476,6 +476,20 @@ pre.receipt {
 .tier-chip.standard { background: var(--mint); color: var(--forest); }
 .tier-chip.elite { background: linear-gradient(135deg, var(--gold), #b97f15); color: #fff; }
 
+/* ---------- billing period toggle ---------- */
+.period-toggle { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.period-toggle > button {
+  border: 1.5px solid var(--line); background: #fff; color: var(--ink);
+  padding: 7px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: all .15s ease;
+}
+.period-toggle > button.on { background: var(--forest); color: #fff; border-color: var(--forest); }
+.founding-toggle {
+  display: inline-flex; align-items: center; gap: 6px; margin-left: auto;
+  font-size: 12.5px; color: var(--muted); cursor: pointer; font-weight: 600;
+}
+.founding-toggle input { width: auto; }
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
@@ -561,7 +575,7 @@ const LEGACY_KEY = "tamarun_v1"; // pre-rename data is migrated silently
 
 let state = load();
 // Transient UI state (not persisted)
-let ui = { tab: "dashboard", sittingId: null, levyId: null, newType: "family", newStyle: "rotating", shareChoice: {} };
+let ui = { tab: "dashboard", sittingId: null, levyId: null, newType: "family", newStyle: "rotating", shareChoice: {}, payPeriod: "annual" };
 
 function load() {
   try {
@@ -679,7 +693,10 @@ const I18N = {
     plan_start: "Kola Start", plan_start_tag: "Free forever",
     plan_standard: "Kola Standard", plan_standard_tag: "The everyday njangi",
     plan_elite: "Kola Elite", plan_elite_tag: "High-value houses",
-    per_year: "/ year", free: "Free",
+    per_year: "/ year", per_month: "/ month", free: "Free",
+    annual: "Annual", monthly: "Monthly", founding_house: "Founding House (−50%)",
+    founding_50: "Founding House −50%",
+    price_for_members: "{n} members × {per}/yr (floor & cap applied)",
     feat_core_ledger: "Core ledger & receipts", feat_upto15: "Up to 15 members",
     feat_one_house: "1 house", feat_trouble: "Trouble fund & levies",
     feat_unlimited: "Unlimited members", feat_reports: "Reports & CSV export",
@@ -851,7 +868,10 @@ const I18N = {
     plan_start: "Kola Start", plan_start_tag: "Gratuit pour toujours",
     plan_standard: "Kola Standard", plan_standard_tag: "Le njangi de tous les jours",
     plan_elite: "Kola Elite", plan_elite_tag: "Maisons de grande valeur",
-    per_year: "/ an", free: "Gratuit",
+    per_year: "/ an", per_month: "/ mois", free: "Gratuit",
+    annual: "Annuel", monthly: "Mensuel", founding_house: "Maison fondatrice (−50%)",
+    founding_50: "Maison fondatrice −50%",
+    price_for_members: "{n} membres × {per}/an (plancher & plafond appliqués)",
     feat_core_ledger: "Registre & reçus de base", feat_upto15: "Jusqu'à 15 membres",
     feat_one_house: "1 maison", feat_trouble: "Fonds de secours & levées",
     feat_unlimited: "Membres illimités", feat_reports: "Rapports & export CSV",
@@ -1015,7 +1035,10 @@ const I18N = {
     plan_start: "Kola Start", plan_start_tag: "Free forever",
     plan_standard: "Kola Standard", plan_standard_tag: "Di everyday njangi",
     plan_elite: "Kola Elite", plan_elite_tag: "Big-money njangi",
-    per_year: "/ year", free: "Free",
+    per_year: "/ year", per_month: "/ month", free: "Free",
+    annual: "Yearly", monthly: "Monthly", founding_house: "Founding House (−50%)",
+    founding_50: "Founding House −50%",
+    price_for_members: "{n} pipo × {per}/year (floor & cap dey)",
     feat_core_ledger: "Main book & receipt", feat_upto15: "Reach 15 pipo",
     feat_one_house: "1 njangi", feat_trouble: "Trouble fund & levy",
     feat_unlimited: "Pipo no get limit", feat_reports: "Report & CSV",
@@ -1107,13 +1130,33 @@ function t(key, vars) {
 
 const KOLA_MOMO = "6 7X XX XX XX"; // placeholder Kola collection number (set before launch)
 
+// Per-member annual pricing with a floor and a cap (see PRICING.md).
 const PLANS = {
-  start:    { key: "start",    price: 0,      maxMembers: 15,       premium: false },
-  standard: { key: "standard", price: 24000,  maxMembers: Infinity, premium: true },
-  elite:    { key: "elite",    price: 100000, maxMembers: Infinity, premium: true },
+  start:    { key: "start",    perMember: 0,    floor: 0,     cap: 0,      maxMembers: 15,       premium: false },
+  standard: { key: "standard", perMember: 1000, floor: 10000, cap: 50000,  maxMembers: Infinity, premium: true },
+  elite:    { key: "elite",    perMember: 3500, floor: 50000, cap: 200000, maxMembers: Infinity, premium: true },
 };
 
+const FOUNDING_DISCOUNT = 0.5;     // first 200 paying groups — 50% off, kept for life
+const MONTHLY_MARKUP = 1.25;       // monthly costs ~25% more than 1/12 of annual
+
 const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+const MONTH_MS = 31 * 24 * 60 * 60 * 1000;
+
+// Annual price for a plan given the house's size, floor/cap applied.
+function annualPrice(planKey, members) {
+  const p = PLANS[planKey];
+  if (!p || !p.premium) return 0;
+  const n = Math.max(1, members || 1);
+  return Math.min(p.cap, Math.max(p.floor, p.perMember * n));
+}
+// What this house pays now, for the chosen period, with founding discount.
+function planPrice(g, planKey, period) {
+  const base = annualPrice(planKey, activeMembers(g).length);
+  const annual = g.founding ? Math.round(base * (1 - FOUNDING_DISCOUNT)) : base;
+  if (period === "monthly") return Math.round(annual / 12 * MONTHLY_MARKUP);
+  return annual;
+}
 
 // Status of a house's subscription.
 function planStatus(g) {
@@ -1974,7 +2017,18 @@ function planCard(g, key) {
     standard: ["feat_unlimited", "feat_savings", "style_savings", "style_daily", "feat_reports"],
     elite: ["feat_unlimited", "style_auction", "feat_rollover", "feat_advanced", "feat_elite_badge"],
   }[key];
-  const price = p.price === 0 ? t("free") : fmt(p.price) + " " + t("per_year");
+  const period = ui.payPeriod || "annual";
+  const n = activeMembers(g).length;
+  let priceHtml;
+  if (key === "start") {
+    priceHtml = `<div class="plan-price">${t("free")}</div>`;
+  } else {
+    const amount = planPrice(g, key, period);
+    const full = period === "monthly" ? planPrice(g, key, "monthly") : annualPrice(key, n);
+    const discounted = g.founding;
+    priceHtml = `<div class="plan-price">${fmt(amount)} <span style="font-size:14px;color:var(--muted);font-weight:600">${period === "monthly" ? t("per_month") : t("per_year")}</span></div>
+      <div class="muted" style="font-size:11.5px;margin:-8px 0 12px">${t("price_for_members", { n: n, per: fmt(p.perMember) })}${discounted ? ` · <b style="color:var(--terra)">${t("founding_50")}</b>` : ""}</div>`;
+  }
   const suggested = key === "elite" && suggestElite(g) && g.plan !== "elite";
   let btn;
   if (isCurrent) btn = `<div class="plan-current">${icon("check", 15)} ${t("current")}</div>`;
@@ -1988,7 +2042,7 @@ function planCard(g, key) {
       <div class="plan-name">${icon(key === "elite" ? "crown" : key === "standard" ? "check" : "spark", 18)} ${t("plan_" + key)}</div>
       <div class="plan-tag">${t("plan_" + key + "_tag")}</div>
     </div>
-    <div class="plan-price">${price}</div>
+    ${priceHtml}
     <ul class="plan-feats">${featList.map(f => `<li>${icon("check", 14)} ${t(f)}</li>`).join("")}</ul>
     ${suggested ? `<p class="muted" style="font-size:12px">${t("suggested_why")}</p>` : ""}
     ${btn}
@@ -2014,7 +2068,12 @@ function viewPlan(g) {
         ? `<button class="btn ghost small" onclick="App.renewFree()">${icon("check", 14)} ${t("renew_free_btn")}</button>` : ""}
     </div>
   </div>
-  <p class="muted" style="margin:0 0 16px;padding:0 4px">${icon("spark", 14)} ${t("plan_pay_at_shareout")}</p>
+  <p class="muted" style="margin:0 0 12px;padding:0 4px">${icon("spark", 14)} ${t("plan_pay_at_shareout")}</p>
+  <div class="period-toggle">
+    <button class="${(ui.payPeriod || "annual") === "annual" ? "on" : ""}" onclick="App.setPeriod('annual')">${t("annual")}</button>
+    <button class="${ui.payPeriod === "monthly" ? "on" : ""}" onclick="App.setPeriod('monthly')">${t("monthly")}</button>
+    <label class="founding-toggle"><input type="checkbox" ${g.founding ? "checked" : ""} onclick="App.toggleFounding()"> ${t("founding_house")}</label>
+  </div>
   <div class="plan-grid">
     ${planCard(g, "start")}
     ${planCard(g, "standard")}
@@ -2556,6 +2615,9 @@ const App = {
 
   /* ---------- billing ---------- */
 
+  setPeriod(p) { ui.payPeriod = p; render(); },
+  toggleFounding() { const g = activeGroup(); g.founding = !g.founding; save(); render(); },
+
   switchPlan(key) {
     const g = activeGroup();
     g.plan = key;
@@ -2572,10 +2634,14 @@ const App = {
   },
 
   startPay(key) {
-    const p = PLANS[key];
+    const g = activeGroup();
+    const period = ui.payPeriod || "annual";
+    const amount = planPrice(g, key, period);
+    const n = activeMembers(g).length;
     openModal(`
       <h3>${icon(key === "elite" ? "crown" : "coins", 20)} ${t("pay_title")} ${t("plan_" + key)}</h3>
-      <div class="pay-amount">${fmt(p.price)} <span>${t("per_year")}</span></div>
+      <div class="pay-amount">${fmt(amount)} <span>${period === "monthly" ? t("per_month") : t("per_year")}</span></div>
+      <div class="muted" style="margin:-12px 0 14px">${t("price_for_members", { n: n, per: fmt(PLANS[key].perMember) })}${g.founding ? ` · <b style="color:var(--terra)">${t("founding_50")}</b>` : ""}</div>
       <label class="field"><span>${t("pay_to")}</span>
         <input type="text" value="${KOLA_MOMO}" readonly style="font-weight:700;letter-spacing:.04em">
       </label>
@@ -2589,13 +2655,13 @@ const App = {
 
   confirmPay(key) {
     const g = activeGroup();
-    const p = PLANS[key];
-    const ref = (document.getElementById("payRef").value || "").trim();
+    const period = ui.payPeriod || "annual";
+    const amount = planPrice(g, key, period);
+    const ref = (document.getElementById("payRef") ? document.getElementById("payRef").value || "" : "").trim();
     g.plan = key;
-    g.validUntil = new Date(Date.now() + YEAR_MS).toISOString();
+    g.validUntil = new Date(Date.now() + (period === "monthly" ? MONTH_MS : YEAR_MS)).toISOString();
     g.subHistory = g.subHistory || [];
-    g.subHistory.push({ date: todayISO(), plan: key, amount: p.price, ref, method: "MoMo/OM" });
-    // record on the ledger too, for transparency
+    g.subHistory.push({ date: todayISO(), plan: key, period, amount, members: activeMembers(g).length, ref, method: "MoMo/OM" });
     save(); this.closeModal(); render();
     alert(t("pay_recorded"));
   },
