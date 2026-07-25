@@ -42,6 +42,10 @@ function defaultSettings() {
     // Default per-deal overheads if a category has none
     defaultLogistics: 8,      // pickup / transport
     autoList: false,          // auto-move APPROVED deals straight to storefront
+    // Source priority — points added to a deal's opportunity score based on
+    // where it came from, so preferred channels rank first. Facebook
+    // Marketplace is boosted by default (more casual, more mispriced sellers).
+    sourcePriority: { "Facebook Marketplace": 15, "Leboncoin": 0 },
     // Live store (Stripe) — the customer website in ./store. Leave blank to
     // stay fully offline; set both to sync listed deals to the real shop.
     storeUrl: "",             // e.g. http://localhost:4242  (no trailing slash)
@@ -100,6 +104,12 @@ let ui = { tab: "console", filter: "all", search: "", editing: null };
 function save() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
 function nextId() { state.seq += 1; return "d" + state.seq; }
 function catOf(name) { return state.catalog.find(c => c.cat === name) || null; }
+
+/* Source priority: extra opportunity-score points for preferred channels.
+ * Applied live at ranking/display time so changing the weight re-ranks the
+ * whole pipeline immediately (no re-scan needed). */
+function sourceBoost(source) { return Number((state.settings.sourcePriority || {})[source] || 0); }
+function effScore(d) { return Math.max(0, Math.min(100, Math.round(d.econ.score + sourceBoost(d.source)))); }
 
 /* Deterministic timestamp helper (avoids Date.now noise in tests is not a
  * concern here — this is a live UI). */
@@ -198,14 +208,15 @@ const Agent = {
   scan(count) {
     const src = Sources.active();
     const raw = src.fetch(count || 12) || [];
-    let added = 0, rejected = 0, best = null;
+    let added = 0, rejected = 0, best = null, bestEff = -1;
     raw.forEach(listing => {
       const ev = this.evaluate(listing);
       if (ev.profitable) {
         const deal = this.toDeal(listing, ev);
         state.deals.unshift(deal);
         added++;
-        if (!best || ev.score > best.score) best = deal;
+        const eff = ev.score + sourceBoost(listing.source);
+        if (eff > bestEff) { best = deal; bestEff = eff; }
       } else {
         rejected++;
       }
@@ -528,7 +539,7 @@ function viewConsole() {
 function viewPipeline() {
   const order = { new: 0, approved: 1, listed: 2, sold: 3, archived: 4 };
   let deals = state.deals.slice().sort((a, b) =>
-    (order[a.status] - order[b.status]) || (b.econ.score - a.econ.score));
+    (order[a.status] - order[b.status]) || (effScore(b) - effScore(a)));
 
   if (ui.filter !== "all") deals = deals.filter(d => d.status === ui.filter);
   if (ui.search) {
@@ -555,8 +566,14 @@ function viewPipeline() {
 
 function dealCard(d) {
   const e = d.econ;
-  const scoreClass = e.score >= 70 ? "hot" : e.score >= 45 ? "warm" : "cool";
+  const sc = effScore(d);                     // score incl. source priority
+  const boost = sourceBoost(d.source);
+  const scoreClass = sc >= 70 ? "hot" : sc >= 45 ? "warm" : "cool";
   const badge = { new: "New", approved: "Approved", listed: "Listed", sold: "Sold", archived: "Archived" }[d.status];
+  const srcTag = boost > 0
+    ? `<span class="src-prio" title="Priority source: +${boost} to score">★ ${esc(d.source)}</span>`
+    : esc(d.source);
+  const scoreTitle = boost > 0 ? `Opportunity ${e.score} +${boost} priority` : "Opportunity score";
 
   const actions = [];
   if (d.status === "new") {
@@ -583,9 +600,9 @@ function dealCard(d) {
       <div class="deal-head">
         <div class="deal-title">${esc(d.title)}</div>
         <div class="deal-meta">${esc(d.cat)} · ${esc(d.condition)} · ${esc(d.location || "—")}</div>
-        <div class="deal-src">${esc(d.source)}</div>
+        <div class="deal-src">${srcTag}</div>
       </div>
-      <div class="score ${scoreClass}" title="Opportunity score">${e.score}</div>
+      <div class="score ${scoreClass}" title="${scoreTitle}">${sc}</div>
     </div>
     <div class="econ">
       <div><span>Buy</span><b>${money(d.asking)}</b></div>
@@ -607,7 +624,7 @@ function dealCard(d) {
 /* ---------- Storefront (the public-facing sale side) ---------- */
 function viewStore() {
   const listed = state.deals.filter(d => d.status === "listed")
-    .sort((a, b) => b.econ.score - a.econ.score);
+    .sort((a, b) => effScore(b) - effScore(a));
   const grid = listed.length ? listed.map(storeCard).join("")
     : `<div class="empty">Nothing listed yet. Approve deals in the <b>Pipeline</b> and they appear here for buyers.</div>`;
 
@@ -696,6 +713,12 @@ function viewSettings() {
       ${num("minProfitAbs", "Min net profit", S.minProfitAbs, 1, CUR_SYMBOL[S.currency])}
       <label class="fld chk"><input type="checkbox" id="autoList" ${S.autoList ? "checked" : ""}>
         <span>Auto-publish approved deals to the store</span></label>
+    </div>
+    <div class="card">
+      <h3>Source priority</h3>
+      <p class="sub" style="margin-bottom:12px">Points added to a deal's opportunity score by channel, so preferred sources rank first. Facebook Marketplace is prioritized by default.</p>
+      ${num("prioFb", "Facebook Marketplace", (S.sourcePriority || {})["Facebook Marketplace"] || 0, 1, "+ score")}
+      ${num("prioLbc", "Leboncoin", (S.sourcePriority || {})["Leboncoin"] || 0, 1, "+ score")}
     </div>
     <div class="card">
       <h3>Resale economics</h3>
@@ -815,6 +838,10 @@ function bindSettings() {
     S.autoList = $("#autoList").checked;
     S.storeUrl = ($("#storeUrl").value || "").trim();
     S.adminToken = ($("#adminToken").value || "").trim();
+    S.sourcePriority = Object.assign({}, S.sourcePriority, {
+      "Facebook Marketplace": parseFloat(g("prioFb")) || 0,
+      "Leboncoin": parseFloat(g("prioLbc")) || 0,
+    });
     document.querySelectorAll("[data-cat]").forEach(inp => {
       const c = state.catalog[+inp.dataset.cat];
       if (c) c[inp.dataset.k] = parseFloat(inp.value) || 0;
