@@ -1,0 +1,23 @@
+{
+  "name": "flipwise-store",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Flipwise storefront + Stripe Checkout backend for the marketplace arbitrage agent.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node test.js",
+    "seed": "node -e \"const fs=require('fs'),p=require('path');const src=p.join(__dirname,'data','products.sample.json');const dst=p.join(__dirname,'data','products.json');fs.copyFileSync(src,dst);console.log('Seeded',dst)\""
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "stripe": "^16.2.0"
+  },
+  "optionalDependencies": {
+    "dotenv": "^16.4.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

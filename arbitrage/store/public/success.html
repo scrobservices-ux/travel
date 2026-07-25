@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order confirmed — Flipwise Store</title>
+<link rel="stylesheet" href="store.css">
+</head>
+<body>
+<div class="center-card">
+  <div class="big">✅</div>
+  <h2>Thank you — order confirmed!</h2>
+  <p id="msg">We're preparing your item. A confirmation is on its way.</p>
+  <a class="btn" href="/">Back to the shop</a>
+</div>
+<script>
+(async function () {
+  const q = new URLSearchParams(location.search);
+  const id = q.get("id"), session = q.get("session"), mock = q.get("mock");
+  try {
+    const r = await fetch("/api/order?id=" + encodeURIComponent(id) + (session ? "&session=" + encodeURIComponent(session) : ""));
+    const { product } = await r.json();
+    if (product) {
+      document.getElementById("msg").textContent =
+        `Your “${product.title}” is confirmed` + (mock ? " (test mode — no real charge)." : ".");
+    }
+  } catch (e) { /* leave default message */ }
+})();
+</script>
+</body>
+</html>

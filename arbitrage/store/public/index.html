@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flipwise Store — checked second-hand gear</title>
+<meta name="description" content="Hand-picked, checked second-hand gear. Secure checkout with Stripe.">
+<meta name="theme-color" content="#0b1020">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23111a33'/%3E%3Cpath d='M6 15l4-5 3 3 5-6' fill='none' stroke='%233ddc84' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="store.css">
+</head>
+<body>
+<header class="nav">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 16l5-6 3.5 3.5L20 6"/><path d="M15 6h5v5"/>
+      </svg>
+    </span>
+    <div><h1>Flipwise Store</h1><p>Checked second-hand gear</p></div>
+  </div>
+  <div id="modeTag" class="mode-tag"></div>
+</header>
+
+<section class="hero">
+  <h2>Great gear, checked and ready.</h2>
+  <p>Every item is sourced, inspected and priced fair. Secure card checkout powered by Stripe.</p>
+  <div class="trust">
+    <span>🔒 Secure Stripe checkout</span>
+    <span>✅ Inspected before listing</span>
+    <span>↩︎ 14-day returns</span>
+  </div>
+</section>
+
+<main class="wrap">
+  <div id="grid" class="grid"><div class="loading">Loading the shop…</div></div>
+</main>
+
+<footer class="foot">
+  <span>© Flipwise Store</span><span class="dot">·</span>
+  <span>Payments secured by Stripe</span>
+</footer>
+
+<script src="store.js"></script>
+</body>
+</html>

@@ -42,6 +42,10 @@ function defaultSettings() {
     // Default per-deal overheads if a category has none
     defaultLogistics: 8,      // pickup / transport
     autoList: false,          // auto-move APPROVED deals straight to storefront
+    // Live store (Stripe) — the customer website in ./store. Leave blank to
+    // stay fully offline; set both to sync listed deals to the real shop.
+    storeUrl: "",             // e.g. http://localhost:4242  (no trailing slash)
+    adminToken: "",           // must match ADMIN_TOKEN on the store server
   };
 }
 
@@ -607,14 +611,31 @@ function viewStore() {
   const grid = listed.length ? listed.map(storeCard).join("")
     : `<div class="empty">Nothing listed yet. Approve deals in the <b>Pipeline</b> and they appear here for buyers.</div>`;
 
+  const connected = state.settings.storeUrl && state.settings.adminToken;
+  const bar = connected
+    ? `<div class="store-bar connected">
+         <span class="dot-on"></span> Connected to live store <code>${esc(state.settings.storeUrl)}</code>
+         <div class="row">
+           <button class="btn primary sm" id="syncStore">⇧ Sync ${listed.length} to live store</button>
+           <a class="btn ghost sm" href="${esc(state.settings.storeUrl)}" target="_blank" rel="noopener">Open live store ↗</a>
+         </div>
+       </div>`
+    : `<div class="store-bar">
+         <span class="dot-off"></span> Preview mode — buying is simulated here.
+         Connect a Stripe-backed store in <b>Settings → Live store</b> to sell for real.
+       </div>`;
+
   return `
   <section class="store-hero">
     <h2>Flipwise Store</h2>
     <p>Hand-picked second-hand gear, checked and ready. ${listed.length} item${listed.length === 1 ? "" : "s"} available.</p>
   </section>
+  ${bar}
   <div class="store-grid">${grid}</div>`;
 }
 function storeCard(d) {
+  const connected = state.settings.storeUrl && state.settings.adminToken;
+  const label = connected ? "Buy (Stripe) ↗" : "Buy now (demo)";
   return `
   <article class="product">
     <div class="p-img ${catClass(d.cat)}">${catGlyph(d.cat)}<span class="p-cond">${esc(d.condition)}</span></div>
@@ -622,9 +643,31 @@ function storeCard(d) {
       <div class="p-title">${esc(d.title)}</div>
       <div class="p-cat">${esc(d.cat)}</div>
       <div class="p-price">${money(d.listPrice)}</div>
-      <button class="btn primary block" data-act="buy" data-id="${d.id}">Buy now</button>
+      <button class="btn primary block" data-act="buy" data-id="${d.id}">${label}</button>
     </div>
   </article>`;
+}
+
+/* Push every listed deal to the live store's admin sync endpoint. */
+async function syncToStore() {
+  const S = state.settings;
+  if (!S.storeUrl || !S.adminToken) { toast("Set store URL + admin token in Settings first."); return; }
+  const products = state.deals.filter(d => d.status === "listed").map(d => ({
+    id: d.id, title: d.title, cat: d.cat, condition: d.condition,
+    price: d.listPrice, currency: S.currency, glyph: catGlyph(d.cat),
+  }));
+  try {
+    const res = await fetch(S.storeUrl.replace(/\/$/, "") + "/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-token": S.adminToken },
+      body: JSON.stringify({ products }),
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || ("Sync failed (" + res.status + ")")); return; }
+    toast(`Synced — ${data.added} new, ${data.updated} updated (${data.total} live)`);
+  } catch (e) {
+    toast("Could not reach the store: " + e.message);
+  }
 }
 
 /* ---------- Settings ---------- */
@@ -665,6 +708,14 @@ function viewSettings() {
         <select id="currency">
           ${["EUR", "USD", "GBP"].map(c => `<option ${S.currency === c ? "selected" : ""}>${c}</option>`).join("")}
         </select></label>
+    </div>
+    <div class="card">
+      <h3>Live store (Stripe)</h3>
+      <p class="sub" style="margin-bottom:12px">The customer website lives in <code>./store</code>. Run it, paste its URL and admin token here, then use <b>Sync to live store</b> on the Storefront tab. Buying then goes through real Stripe Checkout.</p>
+      <label class="fld"><span>Store URL <i>(no trailing slash)</i></span>
+        <input type="text" id="storeUrl" value="${esc(S.storeUrl)}" placeholder="http://localhost:4242"></label>
+      <label class="fld"><span>Admin token <i>(matches ADMIN_TOKEN)</i></span>
+        <input type="text" id="adminToken" value="${esc(S.adminToken)}" placeholder="paste the server's ADMIN_TOKEN"></label>
     </div>
   </div>
 
@@ -726,6 +777,10 @@ function bindDynamic() {
     if (grid) { render(); const sb = $("#searchBox"); if (sb) { sb.focus(); sb.setSelectionRange(sb.value.length, sb.value.length); } }
   };
 
+  // Storefront sync
+  const syncBtn = $("#syncStore");
+  if (syncBtn) syncBtn.onclick = syncToStore;
+
   // Deal + store actions (event delegation)
   document.querySelectorAll("[data-act]").forEach(b => b.onclick = () => {
     const id = b.dataset.id, act = b.dataset.act;
@@ -758,6 +813,8 @@ function bindSettings() {
     S.defaultLogistics = parseFloat(g("defaultLogistics")) || 0;
     S.currency = $("#currency").value;
     S.autoList = $("#autoList").checked;
+    S.storeUrl = ($("#storeUrl").value || "").trim();
+    S.adminToken = ($("#adminToken").value || "").trim();
     document.querySelectorAll("[data-cat]").forEach(inp => {
       const c = state.catalog[+inp.dataset.cat];
       if (c) c[inp.dataset.k] = parseFloat(inp.value) || 0;
@@ -812,10 +869,25 @@ function openImport() {
   };
 }
 
-function buyFlow(id) {
+async function buyFlow(id) {
   const d = dealById(id); if (!d) return;
+  const S = state.settings;
+  // Connected to a live Stripe store → start a real Checkout Session there.
+  if (S.storeUrl && S.adminToken) {
+    try {
+      const base = S.storeUrl.replace(/\/$/, "");
+      const res = await fetch(base + "/api/checkout", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: d.id }),
+      });
+      const data = await res.json();
+      if (data.url) { window.open(data.url, "_blank", "noopener"); return; }
+      toast(data.error || "Checkout unavailable — did you Sync to the live store first?");
+    } catch (e) { toast("Could not reach the store: " + e.message); }
+    return;
+  }
+  // Offline preview: simulate the sale and bank the profit locally.
   toast(`🛒 Order placed for “${d.title}” at ${money(d.listPrice)} (demo checkout)`);
-  // In a real store this hits your payment + fulfilment. Here we bank it.
   markSold(id);
 }
 

@@ -27,10 +27,36 @@ Check the engine: `node --check arbitrage/app.js`
 2. **Pipeline** → review each deal (buy price, estimated resale, list price, net
    profit, margin, opportunity score, expected days-to-sell). **Approve** the
    ones you want → **Publish to store**.
-3. **Storefront** → the public sale side. Listed items show your computed price
-   with a *Buy now* button. Mark a deal **sold** to bank the realized profit.
-4. **Settings** → tune the economics: fee %, fixed fee, margin/profit gates,
-   undercut, assumed haggle, per-category resale/refurb/logistics/demand.
+3. **Storefront** → the public sale side. Listed items show your computed
+   price. In preview mode the *Buy* button is simulated; once you connect the
+   **live store** (below) it starts a real Stripe Checkout. Mark a deal
+   **sold** to bank the realized profit.
+4. **Settings** → tune the economics (fee %, fixed fee, margin/profit gates,
+   undercut, assumed haggle, per-category resale/refurb/logistics/demand) and
+   connect the **live store** (URL + admin token).
+
+## Selling for real — the storefront website + Stripe
+
+The customer website with **real Stripe Checkout** lives in [`store/`](store/).
+It's a small Node/Express backend that serves the shop and creates Checkout
+Sessions server-side (so prices can't be tampered with client-side). It runs in
+**MOCK mode** with zero config (simulated checkout, no charges) and flips to
+**LIVE** the moment you add a Stripe key.
+
+```bash
+cd arbitrage/store
+npm install
+npm run seed     # optional sample products
+npm start        # → http://localhost:4242   (MOCK mode, no keys needed)
+```
+
+Then in this app: **Settings → Live store** → paste `http://localhost:4242` and
+the server's `ADMIN_TOKEN` → **Storefront → Sync to live store**. Your listed
+deals appear on the real shop; *Buy* opens Stripe Checkout. Full Stripe setup
+(keys, webhooks, deploy) is in [`store/README.md`](store/README.md).
+
+The two apps stay cleanly separated: the agent is offline-first and never needs
+a server; the store is only involved when you want real payments.
 
 ## The profitability model (what "the agent" actually computes)
 

@@ -1,0 +1,8 @@
+{
+  "products": [
+    { "id": "sample-1", "title": "iPhone 12 128GB", "cat": "Phones", "condition": "Good", "price": 219, "currency": "EUR", "glyph": "📱", "status": "available", "createdAt": "2026-01-01T00:00:00.000Z" },
+    { "id": "sample-2", "title": "MacBook Air M1", "cat": "Laptops", "condition": "Like new", "price": 549, "currency": "EUR", "glyph": "💻", "status": "available", "createdAt": "2026-01-01T00:00:00.000Z" },
+    { "id": "sample-3", "title": "Nintendo Switch OLED", "cat": "Game consoles", "condition": "Good", "price": 199, "currency": "EUR", "glyph": "🎮", "status": "available", "createdAt": "2026-01-01T00:00:00.000Z" },
+    { "id": "sample-4", "title": "VTT Rockrider", "cat": "Bikes", "condition": "Fair", "price": 189, "currency": "EUR", "glyph": "🚲", "status": "available", "createdAt": "2026-01-01T00:00:00.000Z" }
+  ]
+}
