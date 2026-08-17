@@ -342,3 +342,69 @@ fieldset legend{font-size:12px;font-weight:600;color:var(--text-subtle);padding:
   body{background:#fff;color:#000;font-size:11pt}
   .sec-bar{color:#000 !important;background:#eee !important;border-top:1px solid #999}
 }
+
+/* ---------- printable documents (Print & PDF centre) ---------- */
+#printable{--sheet-w:210mm;display:flex;flex-direction:column;gap:var(--s-300);align-items:center}
+#printable[data-paper="Letter"]{--sheet-w:216mm}
+.sheet{width:var(--sheet-w);min-height:280mm;background:#fff;color:#111;padding:16mm 14mm;
+  box-shadow:var(--elev-200);border-radius:2px;font-size:11pt;line-height:1.4}
+:root[data-theme="dark"] .sheet{box-shadow:0 0 0 1px var(--border), var(--elev-200)}
+.sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12mm;
+  border-bottom:1.5pt solid #111;padding-bottom:3mm;margin-bottom:5mm}
+.sheet-head h1{font-size:16pt;font-weight:700;letter-spacing:-.01em;color:#111}
+.sheet-sub{font-size:10pt;color:#444;margin-top:1mm}
+.sheet-org{text-align:right;font-size:10pt;color:#333}
+.sheet-org .small{font-size:8.5pt;color:#666}
+.sheet-foot{margin-top:6mm;padding-top:2mm;border-top:.5pt solid #999;font-size:8pt;color:#666}
+.p-h2{font-size:11.5pt;font-weight:700;margin:5mm 0 2mm;color:#111}
+.p-note{font-size:9.5pt;color:#444;margin-top:3mm;font-style:italic}
+.p-ol{padding-left:6mm;list-style:decimal}
+.p-ol li{margin-bottom:3mm}
+.p-ol .small,.sheet .small{font-size:9pt;color:#444}
+
+table.p-tbl{width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:2mm}
+table.p-tbl th{text-align:left;font-size:8pt;text-transform:uppercase;letter-spacing:.04em;
+  border-bottom:1pt solid #111;padding:1.5mm 2mm;color:#111}
+table.p-tbl td{padding:1.4mm 2mm;border-bottom:.4pt solid #ccc;vertical-align:top;color:#111}
+table.p-tbl td.num,table.p-tbl th.num{text-align:right;font-variant-numeric:tabular-nums}
+table.p-tbl tbody tr:nth-child(even){background:#f6f6f6}
+
+.p-parts{margin-top:1mm}
+.p-section{font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  background:#eee;color:#111;padding:1mm 2mm;margin-top:2mm;border-top:.5pt solid #999}
+.p-part{display:grid;grid-template-columns:16mm 1fr 52mm;gap:3mm;padding:1.2mm 2mm;
+  border-bottom:.4pt solid #ddd;font-size:9.5pt}
+.p-min{color:#555;font-size:8.5pt;font-variant-numeric:tabular-nums}
+.p-title{color:#111}
+.p-src{color:#666;font-size:8.5pt}
+.p-who{text-align:right;font-weight:600;color:#111}
+
+.p-slips{display:grid;grid-template-columns:1fr 1fr;gap:6mm}
+.p-slip{border:.8pt solid #111;border-radius:1mm;padding:4mm;min-height:52mm;display:flex;flex-direction:column}
+.p-slip-h{display:flex;justify-content:space-between;font-size:7.5pt;color:#555;
+  border-bottom:.4pt solid #bbb;padding-bottom:1.5mm;margin-bottom:2.5mm;gap:3mm}
+.p-slip-name{font-size:13pt;font-weight:700;margin-bottom:2.5mm;color:#111}
+.p-slip-kv{display:grid;grid-template-columns:22mm 1fr;gap:.8mm 2mm;font-size:9pt;margin:0}
+.p-slip-kv dt{color:#666}
+.p-slip-kv dd{margin:0;color:#111}
+.p-slip-note{margin-top:2.5mm;padding:2mm;background:#f4f4f4;border-left:1pt solid #777;font-size:8.5pt}
+.p-slip-foot{margin-top:auto;padding-top:2.5mm;font-size:7.5pt;color:#666}
+
+.p-cards{display:flex;flex-direction:column;gap:8mm}
+.p-card{border:.8pt solid #111;border-radius:1mm;padding:4mm}
+.p-card-h{display:flex;justify-content:space-between;font-size:11pt;border-bottom:.5pt solid #999;
+  padding-bottom:1.5mm;margin-bottom:1.5mm;color:#111}
+.p-card-meta{font-size:8.5pt;color:#555;margin-bottom:2mm}
+.p-card-tot{margin-top:2mm;font-size:9pt;font-weight:600;color:#111}
+
+@media print{
+  .no-print{display:none !important}
+  #printable{display:block;gap:0}
+  .sheet{width:auto;min-height:0;padding:0;box-shadow:none;border-radius:0;
+    break-after:page;page-break-after:always}
+  .sheet:last-child{break-after:auto;page-break-after:auto}
+  .p-slip,.p-card,tr{break-inside:avoid;page-break-inside:avoid}
+  table.p-tbl thead{display:table-header-group}
+  table.p-tbl tbody tr:nth-child(even){background:#f2f2f2 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .p-section{background:#eee !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}

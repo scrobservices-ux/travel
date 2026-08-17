@@ -25,6 +25,7 @@ var WRITE = {
   visits: 'shepherding.view',
   transactions: 'accounts.edit',
   announcements: 'announce.publish',
+  documents: 'files.manage',
   users: 'admin.manage',
   account: 'admin.manage',
   audit: null            // anyone signed in may append their own entries

@@ -1,0 +1,19 @@
+# Caddy fetches and renews the TLS certificate on its own — nothing to configure.
+{$DOMAIN} {
+	tls {$EMAIL}
+	encode gzip
+
+	# Uploaded congregation files can be several megabytes.
+	request_body {
+		max_size 30MB
+	}
+
+	reverse_proxy shepherd:8080 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-For {remote_host}
+	}
+
+	log {
+		output file /data/access.log
+	}
+}

@@ -281,6 +281,81 @@
       }).join(',');
     }).join('\n');
   };
+  /* Parse CSV, semicolon-CSV or tab-separated text (what you get when you copy
+     straight out of a spreadsheet). Returns {header:[], rows:[[]], delimiter}. */
+  U.parseDelimited = function (text) {
+    var clean = String(text || '').replace(/^﻿/, '').replace(/\r\n?/g, '\n').trim();
+    if (!clean) return { header: [], rows: [], delimiter: ',' };
+    var firstLine = clean.split('\n')[0];
+    var counts = { '\t': (firstLine.match(/\t/g) || []).length,
+      ';': (firstLine.match(/;/g) || []).length,
+      ',': (firstLine.match(/,/g) || []).length };
+    var delimiter = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; })[0];
+    if (!counts[delimiter]) delimiter = ',';
+
+    var rows = [], row = [], cell = '', quoted = false;
+    for (var i = 0; i < clean.length; i++) {
+      var ch = clean[i];
+      if (quoted) {
+        if (ch === '"' && clean[i + 1] === '"') { cell += '"'; i++; }
+        else if (ch === '"') quoted = false;
+        else cell += ch;
+      } else if (ch === '"') quoted = true;
+      else if (ch === delimiter) { row.push(cell.trim()); cell = ''; }
+      else if (ch === '\n') { row.push(cell.trim()); rows.push(row); row = []; cell = ''; }
+      else cell += ch;
+    }
+    row.push(cell.trim());
+    rows.push(row);
+    rows = rows.filter(function (r) { return r.some(function (c) { return c !== ''; }); });
+    var header = rows.shift() || [];
+    var width = header.length;
+    rows = rows.map(function (r) {
+      while (r.length < width) r.push('');
+      return r.slice(0, width);
+    });
+    return { header: header, rows: rows, delimiter: delimiter };
+  };
+
+  /* "yes"/"y"/"true"/"1"/"x" → true */
+  U.truthy = function (v) {
+    return /^(y|yes|true|1|x|✓|shared)$/i.test(String(v || '').trim());
+  };
+
+  /* Accepts 2026-07, 07/2026, "July 2026", 2026-07-15 → "2026-07" */
+  U.toPeriod = function (v) {
+    var s = String(v || '').trim();
+    var m = /^(\d{4})[-/](\d{1,2})/.exec(s);
+    if (m) return m[1] + '-' + pad(+m[2]);
+    m = /^(\d{1,2})[-/](\d{4})$/.exec(s);
+    if (m) return m[2] + '-' + pad(+m[1]);
+    m = /^([a-z]+)\.?\s+(\d{4})$/i.exec(s);
+    if (m) {
+      var want = m[1].toLowerCase();
+      for (var i = 0; i < MONTHS.length; i++) {
+        if (MONTHS[i].toLowerCase().indexOf(want) === 0) return m[2] + '-' + pad(i + 1);
+      }
+    }
+    return null;
+  };
+
+  /* Accepts 2026-07-15, 15/07/2026, 07/15/2026 (when unambiguous) → ISO */
+  U.toDate = function (v) {
+    var s = String(v || '').trim();
+    if (!s) return null;
+    var m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s);
+    if (m) return m[1] + '-' + pad(+m[2]) + '-' + pad(+m[3]);
+    m = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(s);
+    if (m) {
+      var a = +m[1], b = +m[2];
+      if (a > 12 && b <= 12) return m[3] + '-' + pad(b) + '-' + pad(a);   // d/m/y
+      if (b > 12 && a <= 12) return m[3] + '-' + pad(a) + '-' + pad(b);   // m/d/y
+      return m[3] + '-' + pad(b) + '-' + pad(a);                          // assume d/m/y
+    }
+    var d = new Date(s);
+    return isNaN(d.getTime()) ? null : U.iso(d);
+  };
+
   U.readFile = function (file, cb) {
     var fr = new FileReader();
     fr.onload = function () { cb(null, String(fr.result)); };

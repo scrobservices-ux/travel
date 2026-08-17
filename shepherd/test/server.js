@@ -215,6 +215,39 @@ function stop(code) {
   ok('signing out works', logout.status === 200);
   ok('and the session stops working', (await request('GET', '/api/state', null, publisher)).status === 401);
 
+  // ---- hardening for the open internet ----
+  console.log('\ninternet hardening');
+  var headers = await new Promise(function (resolve) {
+    http.get(BASE + '/index.html', function (res) { res.resume(); resolve(res.headers); });
+  });
+  ok('a content security policy is sent', /default-src 'self'/.test(headers['content-security-policy'] || ''));
+  ok('the page cannot be framed', headers['x-frame-options'] === 'DENY');
+  ok('content type sniffing is off', headers['x-content-type-options'] === 'nosniff');
+  ok('no HSTS over plain http', !headers['strict-transport-security']);
+
+  var lockedAt = 0;
+  for (var i = 0; i < 12; i++) {
+    var r = await request('POST', '/api/login', { email: 'coordinator@example.org', password: 'wrong' + i });
+    if (r.status === 429) { lockedAt = i + 1; break; }
+  }
+  ok('repeated wrong passwords lock the account out', lockedAt > 0 && lockedAt <= 10, 'locked after ' + lockedAt);
+  var stillBlocked = await request('POST', '/api/login', { email: 'coordinator@example.org', password: 'first-password-1' });
+  ok('even the right password waits out the lockout', stillBlocked.status === 429);
+  ok('a different account is unaffected',
+    (await request('POST', '/api/login', { email: 'ruth@example.org', password: 'nope' })).status === 401);
+
+  // ---- uploaded files sync like any other record ----
+  console.log('\ncongregation files');
+  var freshState = await request('GET', '/api/state', null, admin);
+  var doc2 = { id: 'doc_test_1', congId: 'cong_riverside', name: 'Branch letter.pdf',
+    mime: 'application/pdf', size: 42, data: 'data:application/pdf;base64,JVBERi0xLjQK',
+    audience: 'elders', notes: '', uploadedBy: 'p_1', uploadedAt: Date.now() };
+  var upload = await request('POST', '/api/changes',
+    { since: freshState.body.seq, changes: [{ c: 'documents', id: doc2.id, op: 'put', rec: doc2 }] }, admin);
+  ok('an elder can upload a file', upload.body.applied === 1, JSON.stringify(upload.body.rejected));
+  var onDiskDocs = JSON.parse(fs.readFileSync(path.join(DATA, 'shepherd.json'), 'utf8'));
+  ok('the file is stored in the database', (onDiskDocs.documents || []).length === 1);
+
   // ---- static app is served ----
   var page = await new Promise(function (resolve) {
     http.get(BASE + '/index.html', function (res) {

@@ -10,7 +10,8 @@
      `session` is deliberately absent: theme, workspace and which congregation you
      are looking at are personal to the device, not congregation data. */
   var SYNCED = ['congregations', 'people', 'groups', 'weeks', 'duties', 'territories',
-    'reports', 'attendance', 'tasks', 'visits', 'transactions', 'announcements', 'users', 'audit'];
+    'reports', 'attendance', 'tasks', 'visits', 'transactions', 'announcements', 'documents',
+    'users', 'audit'];
 
   var Store = {
     state: null,
@@ -120,7 +121,7 @@
     state.version = state.version || 1;
     // forward-compatible defaults for documents written by older versions
     ['people', 'groups', 'weeks', 'duties', 'territories', 'reports', 'attendance',
-      'tasks', 'visits', 'transactions', 'announcements', 'users', 'audit'].forEach(function (k) {
+      'tasks', 'visits', 'transactions', 'announcements', 'documents', 'users', 'audit'].forEach(function (k) {
       if (!Array.isArray(state[k])) state[k] = [];
     });
     if (!Array.isArray(state.congregations) || !state.congregations.length) {
@@ -221,6 +222,7 @@
   Store.visits = function () { return scoped('visits'); };
   Store.transactions = function () { return scoped('transactions'); };
   Store.announcements = function () { return scoped('announcements'); };
+  Store.documents = function () { return scoped('documents'); };
 
   Store.person = function (id) { return U.by(Store.state.people, id); };
   Store.name = function (id, style) {

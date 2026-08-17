@@ -297,6 +297,7 @@
       visits: visits,
       transactions: transactions,
       announcements: announcements,
+      documents: [],
       users: users,
       audit: [{
         id: U.uid('a'), at: Date.now(), personId: 'p_1', action: 'account.created',
@@ -330,7 +331,7 @@
       session: { personId: null, workspace: 'elders', congId: cong.id, theme: 'light' },
       congregations: [cong],
       people: [], groups: [], weeks: [], duties: [], territories: [], reports: [],
-      attendance: [], tasks: [], visits: [], transactions: [], announcements: [], users: [],
+      attendance: [], tasks: [], visits: [], transactions: [], announcements: [], documents: [], users: [],
       audit: []
     };
   };

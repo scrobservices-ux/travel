@@ -42,22 +42,100 @@ function arg(name, fallback) {
 var PORT = +arg('port', process.env.PORT || 8787);
 var HOST = arg('host', process.env.HOST || '0.0.0.0');
 var DATA_DIR = path.resolve(String(arg('data', path.join(__dirname, 'data'))));
+// Set when a reverse proxy (Caddy, nginx, Cloudflare) terminates TLS in front of us.
+var TRUST_PROXY = !!arg('trust-proxy', process.env.TRUST_PROXY === '1');
 
 var db = new DB(DATA_DIR);
 var auth = new Auth(DATA_DIR);
 
 /* ---------- helpers ---------- */
 
+function isSecure(req) {
+  if (req.socket.encrypted) return true;
+  if (TRUST_PROXY && String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https') return true;
+  return false;
+}
+
+function clientIp(req) {
+  if (TRUST_PROXY && req.headers['x-forwarded-for']) {
+    return String(req.headers['x-forwarded-for']).split(',')[0].trim();
+  }
+  return req.socket.remoteAddress || 'unknown';
+}
+
+/* Safe to expose on the open internet: no third-party anything is loaded, so the
+   policy can be strict. Inline style attributes are used throughout the app,
+   hence 'unsafe-inline' for styles only — scripts stay same-origin files. */
+function securityHeaders(req) {
+  var h = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'same-origin',
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Content-Security-Policy': [
+      "default-src 'self'",
+      "img-src 'self' data:",
+      "style-src 'self' 'unsafe-inline'",
+      "script-src 'self'",
+      "connect-src 'self'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'"
+    ].join('; ')
+  };
+  if (isSecure(req)) h['Strict-Transport-Security'] = 'max-age=15552000';
+  return h;
+}
+
 function send(res, status, body, headers) {
   var payload = typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body);
   var h = Object.assign({
     'Content-Type': 'application/json; charset=utf-8',
-    'Cache-Control': 'no-store',
-    'X-Content-Type-Options': 'nosniff'
-  }, headers || {});
+    'Cache-Control': 'no-store'
+  }, securityHeaders(res.__req || { socket: {}, headers: {} }), headers || {});
   res.writeHead(status, h);
   res.end(payload);
 }
+
+/* ---------- brute-force protection ---------- */
+
+/* Sign-in is the only thing an unauthenticated visitor can reach, so it is the
+   only thing worth throttling. Guessing at one account locks that account for a
+   while; the per-address limit is far higher because a whole congregation on the
+   hall's wifi shares one address, and locking them all out over one brother's
+   forgotten password would be worse than the attack. */
+var LIMITS = { email: 8, ip: 60 };
+var FAILURE_WINDOW = 15 * 60 * 1000;
+var attempts = Object.create(null);
+
+function attemptKey(key) {
+  var rec = attempts[key];
+  if (!rec || Date.now() - rec.first > FAILURE_WINDOW) {
+    rec = attempts[key] = { count: 0, first: Date.now() };
+  }
+  return rec;
+}
+
+function lockedOut(keys) {
+  for (var i = 0; i < keys.length; i++) {
+    var rec = attemptKey(keys[i]);
+    var limit = LIMITS[keys[i].split(':')[0]] || LIMITS.email;
+    if (rec.count >= limit) {
+      return Math.ceil((FAILURE_WINDOW - (Date.now() - rec.first)) / 1000);
+    }
+  }
+  return 0;
+}
+
+function noteFailure(keys) { keys.forEach(function (k) { attemptKey(k).count += 1; }); }
+function clearFailures(keys) { keys.forEach(function (k) { delete attempts[k]; }); }
+
+setInterval(function () {
+  Object.keys(attempts).forEach(function (k) {
+    if (Date.now() - attempts[k].first > FAILURE_WINDOW) delete attempts[k];
+  });
+}, FAILURE_WINDOW).unref();
 
 function fail(res, status, message) { send(res, status, { error: message }); }
 
@@ -119,12 +197,11 @@ function serveStatic(req, res, pathname) {
   if (file.indexOf(path.join(APP_ROOT, 'server')) === 0) { fail(res, 403, 'Forbidden'); return; }
   fs.stat(file, function (err, stat) {
     if (err || !stat.isFile()) { fail(res, 404, 'Not found'); return; }
-    res.writeHead(200, {
+    res.writeHead(200, Object.assign({
       'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream',
       'Content-Length': stat.size,
-      'Cache-Control': 'no-cache',
-      'X-Content-Type-Options': 'nosniff'
-    });
+      'Cache-Control': 'no-cache'
+    }, securityHeaders(req)));
     fs.createReadStream(file).pipe(res);
   });
 }
@@ -187,15 +264,26 @@ routes['POST /api/setup'] = function (req, res, body) {
 };
 
 function sessionCookie(token, req, clear) {
-  var secure = req.socket.encrypted ? '; Secure' : '';
+  var secure = isSecure(req) ? '; Secure' : '';
   var age = clear ? 0 : 60 * 60 * 24 * 30;
   return 'sh_session=' + (clear ? '' : token) + '; Path=/; HttpOnly; SameSite=Lax; Max-Age=' + age + secure;
 }
 
 routes['POST /api/login'] = function (req, res, body) {
   if (!db.exists() || auth.isEmpty()) { fail(res, 409, 'This server has not been set up yet.'); return; }
+  var keys = ['ip:' + clientIp(req), 'email:' + String(body.email || '').trim().toLowerCase()];
+  var wait = lockedOut(keys);
+  if (wait) {
+    fail(res, 429, 'Too many failed attempts. Try again in ' + Math.ceil(wait / 60) + ' minutes.');
+    return;
+  }
   var personId = auth.verify(String(body.email || ''), String(body.password || ''));
-  if (!personId) { fail(res, 401, 'That email address and password do not match.'); return; }
+  if (!personId) {
+    noteFailure(keys);
+    fail(res, 401, 'That email address and password do not match.');
+    return;
+  }
+  clearFailures(keys);
   var token = auth.startSession(personId, req.headers['user-agent']);
   send(res, 200, {
     personId: personId,
@@ -327,6 +415,7 @@ routes['POST /api/accounts/remove'] = function (req, res, body) {
 /* ---------- request handling ---------- */
 
 function handle(req, res) {
+  res.__req = req;                      // so send() can pick the right security headers
   var parsed = url.parse(req.url, true);
   var pathname = parsed.pathname.replace(/\/+$/, '') || '/';
   var key = req.method + ' ' + pathname;

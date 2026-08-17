@@ -54,6 +54,7 @@
     'accounts.view': ['accounts', 'coordinator', 'secretary', 'elder'],
     'accounts.edit': ['accounts', 'coordinator'],
     'announce.publish': ['secretary', 'coordinator', 'elder'],
+    'files.manage': ['elder', 'secretary', 'coordinator', 'servant', 'accounts', 'territory', 'life_ministry', 'service'],
     'admin.manage': []            // admin only
   };
 

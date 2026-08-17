@@ -15,7 +15,8 @@
         { id: 'home', label: 'Home', icon: 'dashboard' },
         { id: 'my-assignments', label: 'My assignments', icon: 'calendar' },
         { id: 'meetings', label: 'Meeting programs', icon: 'book' },
-        { id: 'announcements', label: 'Announcements', icon: 'megaphone' }
+        { id: 'announcements', label: 'Announcements', icon: 'megaphone' },
+        { id: 'files', label: 'Files', icon: 'copy' }
       ] },
       { group: 'My ministry', items: [
         { id: 'my-report', label: 'Monthly report', icon: 'report' },
@@ -44,7 +45,12 @@
       ] },
       { group: 'Administration', items: [
         { id: 'accounts', label: 'Accounts', icon: 'cash', perm: 'accounts.view' },
-        { id: 'announcements', label: 'Announcements', icon: 'megaphone' }
+        { id: 'announcements', label: 'Announcements', icon: 'megaphone' },
+        { id: 'files', label: 'Files', icon: 'copy' }
+      ] },
+      { group: 'Paperwork', items: [
+        { id: 'print', label: 'Print & PDF', icon: 'print', perm: 'schedule.view' },
+        { id: 'import', label: 'Import files', icon: 'upload', perm: 'publishers.edit' }
       ] }
     ],
     admin: [

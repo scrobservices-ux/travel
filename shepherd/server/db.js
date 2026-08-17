@@ -10,7 +10,8 @@ var path = require('path');
 
 // collections that sync, plus 'account' which is a single object
 var COLLECTIONS = ['congregations', 'people', 'groups', 'weeks', 'duties', 'territories',
-  'reports', 'attendance', 'tasks', 'visits', 'transactions', 'announcements', 'users', 'audit'];
+  'reports', 'attendance', 'tasks', 'visits', 'transactions', 'announcements', 'documents',
+  'users', 'audit'];
 var SINGLETONS = ['account'];
 var LOG_LIMIT = 8000;
 

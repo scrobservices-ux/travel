@@ -12,6 +12,9 @@ Runs two ways, and the app is the same either way:
 - **Local** — open `index.html` straight from disk. Everything stays in that one browser.
   Good for trying it out or for one person keeping the schedule on their own laptop.
 
+Shared mode works on a hall network or over the internet — see [HOSTING.md](HOSTING.md)
+for a tunnel from a computer at the hall, a small server with a domain, or Docker.
+
 No build step and no dependencies in either mode.
 
 > Shepherd is an independent tool. It is not affiliated with, authorised by, or endorsed
@@ -82,6 +85,93 @@ you an empty book. In this mode switching person *is* the sign-in: the **⇥ ico
 bottom of the left rail** picks who you are, and the workspace rail above it switches
 between the three interfaces that person's roles allow. Take a backup and restore it on
 the server later if you decide to share it.
+
+### Reaching it from anywhere
+
+The LAN address only works inside the building. To reach it from home or from a phone on
+mobile data, pick one of the routes in **[HOSTING.md](HOSTING.md)**:
+
+| | What it takes | Good for |
+|---|---|---|
+| **Tunnel** (Cloudflare Tunnel or Tailscale) | one command; no domain, no port forwarding, HTTPS included | a laptop or Raspberry Pi at the hall behind a normal router |
+| **Small server + Docker** | a £4/month VPS and a domain; `docker compose up -d` and the certificate is automatic | a congregation that wants it always on |
+| **Existing server** | systemd unit and a Caddy or nginx snippet, both in `deploy/` | someone who already runs a server |
+
+Over the internet, serve it over HTTPS — pass `--trust-proxy` when something else
+terminates TLS in front. Sign-in is throttled per account, passwords are PBKDF2-SHA256 in
+a file that never reaches a browser, and a strict Content-Security-Policy, HSTS and
+anti-framing headers are sent on every response. Tailscale is worth a look if you would
+rather the records were not on the public internet at all.
+
+---
+
+## Do I need to host it before I can start?
+
+No. Enter everything in your browser today; move it to a server whenever you like.
+
+1. Open `index.html`, clear the demo from **Administration → Backup & restore**, and
+   import or type in your congregation's records.
+2. When you are ready to share it, **download a backup** — one `.json` file with
+   everything, uploaded files included.
+3. Set the server up, sign in as the administrator, and **restore** that file.
+
+Nothing is lost and nothing has to be re-typed.
+
+---
+
+## Bringing your existing files in
+
+**Import files** (Elders Desk → Paperwork) takes a CSV or a straight copy-paste out of
+Excel, Numbers or Google Sheets — select the cells, copy, paste. It reads the headings,
+guesses which column is which, lets you correct it, and shows a preview of exactly what
+will be created or updated before anything is written. Running the same file twice updates
+rather than duplicates, because rows are matched by name.
+
+- **Publishers** — names, group, type, appointment, contact details, baptism date.
+  Service groups it has not seen are created for you.
+- **Territories** — the register, including what is currently checked out and when it is due.
+- **Field service reports** — historic months, so record cards and trends are complete from
+  day one. `July 2026`, `2026-07` and `07/2026` are all understood.
+- **Meeting attendance** — past counts.
+- **A full backup** — Administration → Backup & restore, for moving between browsers or
+  onto the server.
+
+Meeting programs come in separately, on the meeting schedule — see **Where meeting
+programs come from** below.
+
+### Files such as PDFs
+
+**Files** holds the things a congregation keeps that are not records: letters, forms,
+maps, cleaning schedules. Drop them in, choose who may see each one — whole congregation,
+elders and servants, or elders only — and they sync to everyone entitled to them. PDFs open
+in the browser's own viewer, where they can be printed or saved again. Up to 8 MB a file;
+they travel in the backup, so keep an eye on the total.
+
+---
+
+## Printing and PDFs
+
+Everything printable lives in **Print & PDF** (Elders Desk → Paperwork). Pick a document,
+press Print, and choose **Save as PDF** as the destination to get a PDF file instead of
+paper — that works on every desktop browser, on iPhone and on Android, with no plugin and
+nothing uploaded anywhere.
+
+| Document | What it is |
+|---|---|
+| Meeting schedule | Both meetings, every part and who has it — one page per week, for the board |
+| Assignment slips | A slip per assignment to hand out: part, date, setting, assistant and any note |
+| Duty rota | Attendants, audio/video, microphones, platform and cleaning |
+| Publisher list | Contact list by service group |
+| Publisher record cards | A service-year card per publisher — months reported, studies, hours |
+| Territory register | Every territory, who holds it, when it is due |
+| Field service report | Congregation totals for a month, plus each publisher's line |
+| Accounts report | The monthly report read to the congregation |
+| Attendance record | Every meeting count for the service year with monthly averages |
+| Elders' meeting agenda | What is on the agenda and who is caring for it |
+
+Sheets are laid out at real paper size with proper page breaks, repeated table headings and
+a choice of A4 or Letter. Individual pages still print directly too — the Print button on
+the meeting schedule prints that week.
 
 ---
 
@@ -235,12 +325,13 @@ shepherd/
   js/program.js         program skeletons, parsers, import/export
   js/scheduler.js       eligibility, ranking, auto-fill, rota, conflicts
   js/app.js             navigation, hash router, sign-in screens, quick find
-  js/views/*.js         one file per area
+  js/views/*.js         one file per area (including print, import and files)
   server/server.js      HTTP server, API, static files  (no dependencies)
   server/db.js          the shared JSON database and its change log
   server/auth.js        passwords (PBKDF2-SHA256) and sessions
   server/permit.js      server-side authorisation, from the same role table
   server/data/          the congregation's database — not in git
+  deploy/               Dockerfile, compose, Caddy, nginx, systemd, backup script
   test/                 headless checks
 ```
 
@@ -254,13 +345,17 @@ npm i playwright                                 # for the browser suites
 node test/smoke.js       # every view in all three workspaces + engine checks
 node test/interact.js    # clicks the real UI: assign, auto-fill, import, drag, submit
 node test/shared.js      # two browsers on one server, including going offline
+node test/paperwork.js  # every print document, the importer, and file uploads
 ```
 
-All four exit non-zero on failure. `test/server.js` needs nothing but Node and covers
+All five exit non-zero on failure. `test/server.js` needs nothing but Node and covers
 first-run setup, wrong passwords, publisher self-service limits (a publisher may confirm
 their own part but not assign themselves one), and that no password material reaches the
 synced document. `test/shared.js` runs two real browsers against a live server: an elder
 assigns a part, the publisher sees it without reloading and confirms it, the elder sees
 the confirmation come back, the server is killed mid-session to check the app keeps
-working and queues the change, then restarted to watch the queue drain. Screenshots land
-in `/tmp`.
+working and queues the change, then restarted to watch the queue drain.
+`test/paperwork.js` builds all ten print documents, imports messy real-world spreadsheet
+columns (`Full Name` as `Surname, Firstname`, `12/04/1998` dates, a group that does not
+exist yet), checks the rows that cannot be matched are reported rather than silently
+dropped, and prints a real PDF. Screenshots land in `/tmp`.
