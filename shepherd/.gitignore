@@ -1,0 +1,2 @@
+# The congregation's own database — never commit it.
+server/data/

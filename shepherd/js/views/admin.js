@@ -328,6 +328,162 @@
     }
   };
 
+  /* ---------- logins & sharing ---------- */
+
+  Views['admin-access'] = {
+    title: 'logins and sharing',
+    perm: PERM,
+    render: function (root) {
+      var Sync = global.Sync;
+
+      root.appendChild(UI.pageHead({
+        crumbs: [{ label: 'Administration', href: App.href('admin') }, { label: 'Logins & sharing' }],
+        title: 'Logins & sharing',
+        sub: 'Who can sign in, and how the congregation shares one set of records.'
+      }));
+
+      if (Sync.mode !== 'server') {
+        root.appendChild(UI.banner('warn', 'Running in this browser only',
+          'Records are stored in this browser and nobody else can reach them. Start the bundled server on one computer to share them.'));
+        root.appendChild(UI.card('Share it with the congregation', [
+          el('ol', { style: 'padding-left:18px;list-style:decimal;line-height:1.9' }, [
+            el('li', [el('strong', { text: 'Pick a computer that stays on' }),
+              document.createTextNode(' — a laptop at the hall, a spare desktop, or a small box like a Raspberry Pi.')]),
+            el('li', [document.createTextNode('Copy the '), el('code.mono', { text: 'shepherd' }),
+              document.createTextNode(' folder onto it and install Node.js (nothing else — the server has no dependencies).')]),
+            el('li', 'Run it:'),
+          ]),
+          el('pre.mono', { style: 'background:var(--bg-sunken);padding:12px;border-radius:4px;overflow-x:auto;margin:8px 0',
+            text: 'cd shepherd\nnode server/server.js --port 8080' }),
+          el('ol', { style: 'padding-left:18px;list-style:decimal;line-height:1.9', start: '4' }, [
+            el('li', 'It prints an address such as http://192.168.1.20:8080 — that is what everyone opens.'),
+            el('li', 'The first person to open it creates the administrator account, then adds a login for each publisher here.')
+          ]),
+          UI.banner('neutral', 'Where the data lives',
+            'One JSON file in server/data on that machine. Nothing is sent anywhere else — back it up by copying that folder, or from Backup & restore.')
+        ], { icon: 'shield' }));
+        root.appendChild(UI.card('Moving what is already here', [
+          el('p.small.muted', { text: 'Take a backup from Administration → Backup & restore in this browser, open the app on the server address, sign in as the administrator, and restore that file. Everyone else then sees it.' })
+        ], { icon: 'upload' }));
+        return;
+      }
+
+      var box = el('div');
+      root.appendChild(box);
+
+      function draw() {
+        U.clear(box);
+        box.appendChild(el('div.muted', { text: 'Loading…' }));
+        Sync.api('GET', 'api/accounts').then(function (out) {
+          U.clear(box);
+          var byPerson = {};
+          out.logins.forEach(function (l) { byPerson[l.personId] = l; });
+          var sessionsBy = {};
+          out.sessions.forEach(function (s) {
+            if (!sessionsBy[s.personId] || s.lastSeenAt > sessionsBy[s.personId]) sessionsBy[s.personId] = s.lastSeenAt;
+          });
+
+          box.appendChild(el('div.grid.c4', [
+            UI.stat('Logins', out.logins.length, 'Of ' + Store.people().length + ' on the roll'),
+            UI.stat('Signed in now', Object.keys(sessionsBy).length, 'Active sessions'),
+            UI.stat('Server', 'Connected', 'Change no. ' + Sync.seq),
+            UI.stat('Waiting to send', Sync.pendingCount(), Sync.status === 'offline' ? 'Offline' : 'Up to date')
+          ]));
+
+          box.appendChild(UI.banner('neutral', 'How a publisher gets in',
+            'Create a login, read them the one-time password, and they change it the first time they sign in.'));
+
+          var people = U.sortBy(Store.people(), function (p) { return p.lastName; });
+          box.appendChild(UI.table([
+            { key: 'name', label: 'Person', sort: function (p) { return p.lastName; },
+              render: function (p) { return UI.person(p.id, { sub: true }); } },
+            { key: 'login', label: 'Login', render: function (p) {
+              var l = byPerson[p.id];
+              if (!l) return UI.lozenge('None', '');
+              return el('div', [
+                el('div.small', { text: l.email }),
+                l.mustChange ? UI.lozenge('Must change password', 'warn') : null
+              ]);
+            } },
+            { key: 'last', label: 'Last signed in', sort: function (p) {
+              var l = byPerson[p.id]; return l && l.lastLoginAt || 0;
+            }, render: function (p) {
+              var l = byPerson[p.id];
+              if (!l || !l.lastLoginAt) return el('span.muted', { text: '—' });
+              return U.relative(l.lastLoginAt);
+            } },
+            { key: 'now', label: 'Open now', render: function (p) {
+              return sessionsBy[p.id] ? UI.lozenge('Active', 'success') : el('span.muted', { text: '—' });
+            } },
+            { key: 'actions', label: '', render: function (p) {
+              var l = byPerson[p.id];
+              return el('div.row', [
+                UI.btn(l ? 'Reset password' : 'Create login', { sm: true, onClick: function () { createLogin(p, !!l, draw); } }),
+                l && p.id !== Sync.user.personId
+                  ? UI.btn('Remove', { sm: true, variant: 'subtle', onClick: function () {
+                    UI.confirm({ title: 'Remove the login for ' + Store.name(p.id) + '?',
+                      body: 'Their publisher record stays; only the ability to sign in is removed.',
+                      danger: true, confirmLabel: 'Remove login' }, function () {
+                      Sync.api('POST', 'api/accounts/remove', { personId: p.id }).then(function () {
+                        UI.flag('Login removed', Store.name(p.id), 'success');
+                        draw();
+                      }, function (e) { UI.flag('Could not remove it', e.message, 'danger'); });
+                    });
+                  } })
+                  : null
+              ]);
+            } }
+          ], people, { sortKey: 'name' }));
+        }, function (err) {
+          U.clear(box);
+          box.appendChild(UI.banner('danger', 'Could not read the login list', err.message));
+        });
+      }
+      draw();
+    }
+  };
+
+  function createLogin(person, exists, done) {
+    var Sync = global.Sync;
+    var email = UI.input({ type: 'email', value: person.email || '' });
+    var pw = UI.input({ type: 'password', placeholder: 'Leave blank to generate one' });
+    var mustChange = { value: true };
+    UI.modal({
+      title: (exists ? 'Reset the password for ' : 'Create a login for ') + Store.name(person.id),
+      sub: 'They sign in with this email address at the same web address you are using now.',
+      body: [
+        UI.field('Email address', email),
+        UI.field('Password', pw, 'At least 8 characters, or leave it blank and one will be generated.'),
+        UI.checkbox('Make them choose a new password when they first sign in', true, function (v) { mustChange.value = v; })
+      ],
+      actions: [{ label: exists ? 'Reset' : 'Create', variant: 'primary', onClick: function () {
+        if (!email.value.trim()) { UI.flag('An email address is needed', null, 'danger'); return false; }
+        if (pw.value && pw.value.length < 8) { UI.flag('Too short', 'Use at least 8 characters.', 'danger'); return false; }
+        Sync.api('POST', 'api/password', {
+          personId: person.id, email: email.value.trim(),
+          password: pw.value || undefined, mustChange: mustChange.value
+        }).then(function (out) {
+          if (out.password) {
+            UI.modal({
+              title: 'One-time password',
+              sub: 'Read this to ' + Store.name(person.id) + ' — it is not shown again.',
+              body: [
+                el('div.mono', { style: 'font-size:22px;padding:16px;background:var(--bg-sunken);border-radius:6px;text-align:center;letter-spacing:.02em', text: out.password }),
+                el('div', { style: 'margin-top:12px' }, UI.copyBtn(function () {
+                  return Store.name(person.id) + ' — sign in at ' + location.origin + '\nEmail: ' + out.email + '\nPassword: ' + out.password;
+                }, 'Copy the sign-in details'))
+              ],
+              closeLabel: 'Done'
+            });
+          } else {
+            UI.flag('Saved', Store.name(person.id) + ' can sign in now.', 'success');
+          }
+          if (done) done();
+        }, function (err) { UI.flag('Could not save it', err.message, 'danger'); });
+      } }]
+    });
+  }
+
   /* ---------- billing ---------- */
 
   Views['admin-billing'] = {

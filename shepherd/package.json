@@ -1,0 +1,11 @@
+{
+  "name": "shepherd",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Congregation coordination for a body of elders — publisher, elders and administration workspaces.",
+  "scripts": {
+    "start": "node server/server.js",
+    "test": "node test/server.js"
+  },
+  "engines": { "node": ">=18" }
+}

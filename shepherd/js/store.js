@@ -5,33 +5,114 @@
   'use strict';
 
   var U = global.U, S = global.Schema;
-  var KEY = 'shepherd.state.v1';
+
+  /* Collections that sync record-by-record, plus `account` as a single record.
+     `session` is deliberately absent: theme, workspace and which congregation you
+     are looking at are personal to the device, not congregation data. */
+  var SYNCED = ['congregations', 'people', 'groups', 'weeks', 'duties', 'territories',
+    'reports', 'attendance', 'tasks', 'visits', 'transactions', 'announcements', 'users', 'audit'];
 
   var Store = {
     state: null,
     listeners: [],
-    ready: false
+    ready: false,
+    storageKey: 'shepherd.state.v1',
+    onChanges: null,     // set by Sync in server mode
+    _sig: null,
+    _applyingRemote: false
   };
+
+  Store.SYNCED = SYNCED;
 
   /* ---------- lifecycle ---------- */
 
-  Store.init = function () {
+  /* opts.seed  — false to start empty instead of loading the demo congregation
+     opts.key   — which localStorage slot to cache in */
+  Store.init = function (opts) {
+    opts = opts || {};
+    if (opts.key) Store.storageKey = opts.key;
     var raw = null;
-    try { raw = global.localStorage && localStorage.getItem(KEY); } catch (e) { raw = null; }
+    try { raw = global.localStorage && localStorage.getItem(Store.storageKey); } catch (e) { raw = null; }
     if (raw) {
       try {
-        var parsed = JSON.parse(raw);
-        Store.state = migrate(parsed);
+        Store.state = migrate(JSON.parse(raw));
       } catch (e) {
-        console.warn('Stored data unreadable, starting from the demo congregation.', e);
-        Store.state = global.Seed.build();
+        console.warn('Cached data unreadable, starting fresh.', e);
+        Store.state = opts.seed === false ? global.Seed.blankState() : global.Seed.build();
       }
     } else {
-      Store.state = global.Seed.build();
+      Store.state = opts.seed === false ? global.Seed.blankState() : global.Seed.build();
     }
     Store.ready = true;
+    Store._sig = signature(Store.state);
     Store.persist();
     return Store.state;
+  };
+
+  /* ---------- record-level change tracking ---------- */
+
+  function signature(state) {
+    var out = {};
+    SYNCED.forEach(function (c) {
+      var m = {};
+      (state[c] || []).forEach(function (r) { if (r && r.id) m[r.id] = JSON.stringify(r); });
+      out[c] = m;
+    });
+    out.account = { account: JSON.stringify(state.account || {}) };
+    return out;
+  }
+
+  /* Compares two signatures and returns [{c, id, op, rec}] */
+  function diff(prev, next, state) {
+    var changes = [];
+    Object.keys(next).forEach(function (c) {
+      var before = prev[c] || {}, after = next[c];
+      Object.keys(after).forEach(function (id) {
+        if (before[id] === after[id]) return;
+        changes.push({
+          c: c, id: id, op: 'put',
+          rec: c === 'account' ? state.account : U.by(state[c], id)
+        });
+      });
+      Object.keys(before).forEach(function (id) {
+        if (after[id] === undefined) changes.push({ c: c, id: id, op: 'del' });
+      });
+    });
+    return changes;
+  }
+
+  /* Replace everything with a document from the server. */
+  Store.replaceDocument = function (doc, personId) {
+    var session = Store.state ? Store.state.session : { theme: 'light', workspace: 'elders' };
+    Store.state = migrate(Object.assign({}, doc, { session: session }));
+    if (personId) Store.state.session.personId = personId;
+    var me = Store.person(Store.state.session.personId);
+    if (me) Store.state.session.congId = Store.state.session.congId || me.congId;
+    if (!U.by(Store.state.congregations, Store.state.session.congId)) {
+      Store.state.session.congId = (me && me.congId) || Store.state.congregations[0].id;
+    }
+    Store.ready = true;
+    Store._sig = signature(Store.state);
+    Store.persist();
+    Store.emit();
+  };
+
+  /* Apply changes that came from someone else, without echoing them back. */
+  Store.applyRemote = function (changes) {
+    Store._applyingRemote = true;
+    changes.forEach(function (ch) {
+      if (ch.c === 'account') { Store.state.account = ch.rec; return; }
+      var list = Store.state[ch.c];
+      if (!Array.isArray(list)) return;
+      var idx = -1;
+      for (var i = 0; i < list.length; i++) if (list[i].id === ch.id) { idx = i; break; }
+      if (ch.op === 'del') { if (idx !== -1) list.splice(idx, 1); return; }
+      if (idx === -1) list.push(ch.rec); else list[idx] = ch.rec;
+    });
+    Store._applyingRemote = false;
+    Store._sig = signature(Store.state);
+    Store.persist();
+    Store.emit();
   };
 
   function migrate(state) {
@@ -64,7 +145,7 @@
 
   Store.persist = function () {
     try {
-      localStorage.setItem(KEY, JSON.stringify(Store.state));
+      localStorage.setItem(Store.storageKey, JSON.stringify(Store.state));
       return true;
     } catch (e) {
       console.warn('Could not save to this browser.', e);
@@ -85,12 +166,18 @@
     });
   };
 
-  /* mutate + persist + audit + notify, in one place */
+  /* mutate + persist + audit + sync + notify, in one place */
   Store.update = function (audit, fn) {
     if (typeof audit === 'function') { fn = audit; audit = null; }
     var result = fn(Store.state);
     if (audit) Store.log(audit.action, audit.summary, audit.entityId);
+
+    var next = signature(Store.state);
+    var changes = Store._sig ? diff(Store._sig, next, Store.state) : [];
+    Store._sig = next;
+
     Store.persist();
+    if (changes.length && Store.onChanges && !Store._applyingRemote) Store.onChanges(changes);
     Store.emit();
     return result;
   };
@@ -397,24 +484,32 @@
     return JSON.stringify(Store.state, null, 2);
   };
 
-  Store.importAll = function (json) {
-    var data = JSON.parse(json);
-    Store.state = migrate(data);
-    Store.log('data.imported', 'Full account data replaced by import');
+  /* Wholesale replacements still sync: the difference against what was there is
+     pushed record by record, so a restore reaches everyone else too. */
+  function replaceAll(next, auditSummary) {
+    var prevSig = Store._sig;
+    var session = Store.state ? Store.state.session : null;
+    Store.state = migrate(next);
+    if (session) Store.state.session = session;
+    if (auditSummary) Store.log('data.imported', auditSummary);
+    var sig = signature(Store.state);
+    var changes = prevSig ? diff(prevSig, sig, Store.state) : [];
+    Store._sig = sig;
     Store.persist();
+    if (changes.length && Store.onChanges) Store.onChanges(changes);
     Store.emit();
+  }
+
+  Store.importAll = function (json) {
+    replaceAll(JSON.parse(json), 'Full account data replaced by import');
   };
 
   Store.resetDemo = function () {
-    Store.state = global.Seed.build();
-    Store.persist();
-    Store.emit();
+    replaceAll(global.Seed.build(), 'Reset to the demo congregation');
   };
 
   Store.resetBlank = function () {
-    Store.state = global.Seed.blankState();
-    Store.persist();
-    Store.emit();
+    replaceAll(global.Seed.blankState(), 'Account cleared');
   };
 
   global.Store = Store;

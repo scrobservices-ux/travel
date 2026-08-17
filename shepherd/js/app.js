@@ -55,6 +55,7 @@
       ] },
       { group: 'Configuration', items: [
         { id: 'admin-program', label: 'Program source', icon: 'book' },
+        { id: 'admin-access', label: 'Logins & sharing', icon: 'lock' },
         { id: 'admin-billing', label: 'Subscription', icon: 'cash' }
       ] },
       { group: 'Data', items: [
@@ -136,6 +137,8 @@
 
     top.appendChild(el('div.top-spacer'));
 
+    top.appendChild(syncChip());
+
     var search = el('div.search-top', [U.icon('search', 16),
       el('input', { type: 'search', placeholder: 'Quick find  (people, parts, tasks)', 'aria-label': 'Quick find' })]);
     search.querySelector('input').addEventListener('input', U.debounce(function (e) {
@@ -162,6 +165,53 @@
     top.appendChild(avatar);
   }
 
+  function syncChip() {
+    var Sync = global.Sync;
+    var tone = { synced: 'success', syncing: 'inprogress', offline: 'warn', error: 'removed', local: '' }[Sync.status] || '';
+    var chip = el('button.congpicker', {
+      title: Sync.mode === 'local'
+        ? 'Everything is stored in this browser only. Run the server to share it with the congregation.'
+        : 'Signed in as ' + (Sync.user ? Sync.user.name : '—') + (Sync.lastError ? ' — ' + Sync.lastError : ''),
+      style: 'gap:6px',
+      onclick: syncMenu
+    }, [
+      U.icon(Sync.mode === 'local' ? 'lock' : (Sync.status === 'offline' ? 'warn' : 'shield'), 15),
+      el('span.small', { text: Sync.label() })
+    ]);
+    if (Sync.mode === 'local') chip.appendChild(UI.lozenge('Local', tone));
+    return chip;
+  }
+
+  function syncMenu() {
+    var Sync = global.Sync;
+    var body = el('div.stack');
+    if (Sync.mode === 'local') {
+      body.appendChild(UI.banner('neutral', 'This browser only',
+        'Records live in this browser. Nobody else can see them and they are gone if the browser data is cleared — take backups from Administration → Backup & restore.'));
+      body.appendChild(el('div', [
+        el('p', { text: 'To let the whole congregation use it, run the bundled server on one computer and open it from everyone’s phone or laptop:' }),
+        el('pre.mono', { style: 'background:var(--bg-sunken);padding:12px;border-radius:4px;overflow-x:auto;margin-top:8px',
+          text: 'cd shepherd\nnode server/server.js --port 8080' }),
+        el('p.small.muted', { style: 'margin-top:8px',
+          text: 'It prints the address to share. Everything stays on that machine — no third-party cloud.' })
+      ]));
+    } else {
+      body.appendChild(UI.kv([
+        ['Signed in as', Sync.user ? Sync.user.name : '—'],
+        ['Status', Sync.label()],
+        ['Last sync', Sync.lastSyncAt ? U.relative(Sync.lastSyncAt) : 'never'],
+        ['Waiting to send', String(Sync.pendingCount())],
+        ['Server change no.', String(Sync.seq)]
+      ]));
+      if (Sync.lastError) body.appendChild(UI.banner('warn', 'Last problem', Sync.lastError));
+      body.appendChild(el('div.row', [
+        UI.btn('Sync now', { icon: 'download', onClick: function () { Sync.push(); Sync.pull(); } }),
+        UI.btn('Sign out', { variant: 'subtle', icon: 'logout', onClick: function () { Sync.logout(); } })
+      ]));
+    }
+    UI.modal({ title: Sync.mode === 'local' ? 'Storage' : 'Shared database', body: body, closeLabel: 'Close' });
+  }
+
   function renderRail() {
     var rail = U.clear(U.$('#rail'));
     var current = Auth.workspace();
@@ -175,10 +225,17 @@
       }, U.icon(w.icon, 20)));
     });
     rail.appendChild(el('div.rail-sep'));
-    rail.appendChild(el('button.rail-item', {
-      title: 'Switch person (demo sign-in)',
-      onclick: signInPicker
-    }, U.icon('logout', 20)));
+    if (global.Sync.mode === 'server') {
+      rail.appendChild(el('button.rail-item', {
+        title: 'Sign out',
+        onclick: function () { global.Sync.logout(); }
+      }, U.icon('logout', 20)));
+    } else {
+      rail.appendChild(el('button.rail-item', {
+        title: 'Switch person (local sign-in)',
+        onclick: signInPicker
+      }, U.icon('logout', 20)));
+    }
   }
 
   function renderSidebar() {
@@ -317,10 +374,102 @@
     });
   }
 
+  /* ---------- sign-in / first-run screens (server mode) ---------- */
+
+  function gateShell(title, sub, form) {
+    U.clear(U.$('#topnav')).appendChild(el('div.brand', [
+      el('span.brand-mark', U.icon('shield', 16)),
+      el('span', [el('span', { text: 'Shepherd' }), el('small', { text: 'Congregation coordination' })])
+    ]));
+    U.clear(U.$('#rail'));
+    U.clear(U.$('#sidebar'));
+    var content = U.clear(U.$('#content'));
+    content.appendChild(el('div', { style: 'max-width:440px;margin:6vh auto' }, [
+      el('h1.page-title', { style: 'margin-bottom:6px', text: title }),
+      el('p.page-sub', { style: 'margin-bottom:24px', text: sub }),
+      UI.card(null, form)
+    ]));
+  }
+
+  function loginScreen() {
+    var email = UI.input({ type: 'email', placeholder: 'you@example.org' });
+    var password = UI.input({ type: 'password' });
+    var error = el('div');
+    function submit() {
+      U.clear(error);
+      if (!email.value || !password.value) {
+        error.appendChild(UI.banner('danger', 'Enter your email address and password'));
+        return;
+      }
+      global.Sync.login(email.value.trim(), password.value).then(function (out) {
+        UI.flag('Signed in', null, 'success');
+        if (out && out.mustChangePassword) {
+          setTimeout(function () { Views.profile.changePassword(true); }, 400);
+        }
+        App.render();
+      }, function (err) {
+        U.clear(error);
+        error.appendChild(UI.banner('danger', 'Could not sign in', err.message));
+      });
+    }
+    [email, password].forEach(function (f) {
+      f.addEventListener('keydown', function (e) { if (e.key === 'Enter') submit(); });
+    });
+    gateShell('Sign in', Store.state.congregations.length && Store.state.congregations[0].name
+      ? 'Shared congregation records.' : 'Shared congregation records.', [
+      error,
+      UI.field('Email address', email),
+      UI.field('Password', password),
+      UI.btn('Sign in', { variant: 'primary', onClick: submit }),
+      el('p.small.muted', { style: 'margin-top:16px',
+        text: 'No login yet? An elder with administrator access creates one for you in Administration → Logins & sharing.' })
+    ]);
+  }
+
+  function setupScreen() {
+    var d = { firstName: '', lastName: '', email: '', password: '', congregationName: '', city: '', demo: false };
+    function inp(key, opts) {
+      return UI.input(Object.assign({ value: d[key], onInput: function (e) { d[key] = e.target.value; } }, opts || {}));
+    }
+    var error = el('div');
+    gateShell('Set up this server', 'This is the first time anyone has opened it. Create the administrator account — everything is stored on this machine.', [
+      error,
+      el('div.grid.c2', [UI.field('Your first name', inp('firstName')), UI.field('Last name', inp('lastName'))]),
+      UI.field('Email address', inp('email', { type: 'email' }), 'This is what you sign in with.'),
+      UI.field('Password', inp('password', { type: 'password' }), 'At least 8 characters.'),
+      UI.divider(),
+      UI.field('Congregation name', inp('congregationName')),
+      UI.field('Town or city', inp('city')),
+      UI.checkbox('Load the demo congregation instead, to try it out first', false, function (v) { d.demo = v; },
+        'Riverside and Northgate with sample publishers, schedules and records. You can clear it later.'),
+      UI.btn('Create the account', { variant: 'primary', onClick: function () {
+        U.clear(error);
+        if (!d.email || (d.password || '').length < 8) {
+          error.appendChild(UI.banner('danger', 'An email address and a password of at least 8 characters are needed'));
+          return;
+        }
+        global.Sync.setup(d).then(function () {
+          UI.flag('Server ready', 'You are signed in as the administrator.', 'success');
+          App.go(App.defaultViewFor(Auth.workspace()));
+          App.render();
+        }, function (err) {
+          U.clear(error);
+          error.appendChild(UI.banner('danger', 'Setup failed', err.message));
+        });
+      } })
+    ]);
+  }
+
   /* ---------- render ---------- */
 
   App.render = function () {
     document.documentElement.setAttribute('data-theme', Store.state.session.theme || 'light');
+
+    if (global.Sync.mode === 'server') {
+      if (global.Sync.needsSetup) { setupScreen(); return; }
+      if (!global.Sync.user) { loginScreen(); return; }
+    }
+
     App.route = parseHash();
     renderTop();
     renderRail();
@@ -362,8 +511,27 @@
   /* ---------- boot ---------- */
 
   function boot() {
-    Store.init();
-    Store.ensureWindow(6, 10);
+    global.Sync.init(function () {
+      var server = global.Sync.mode === 'server';
+      if (!Store.ready) {
+        Store.init({ seed: !server, key: server ? 'shepherd.shared.v1' : 'shepherd.state.v1' });
+      }
+      if (server) {
+        Store.onChanges = function (changes) { global.Sync.record(changes); };
+        global.Sync.subscribe(function () { renderTopSafely(); });
+      }
+      if (!server || global.Sync.user) Store.ensureWindow(6, 10);
+      start();
+    });
+  }
+
+  function renderTopSafely() {
+    if (global.Sync.mode === 'server' && (!global.Sync.user || global.Sync.needsSetup)) return;
+    if (!U.$('#topnav')) return;
+    renderTop();
+  }
+
+  function start() {
     Store.subscribe(function () { App.render(); });
     global.addEventListener('hashchange', App.render);
     global.addEventListener('keydown', function (e) {

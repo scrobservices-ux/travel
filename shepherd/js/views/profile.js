@@ -124,6 +124,20 @@
         ]), { icon: 'building' })
       ]));
 
+      if (global.Sync.mode === 'server') {
+        root.appendChild(UI.sectionTitle('Sign-in'));
+        root.appendChild(UI.card(null, [
+          UI.kv([
+            ['Signed in as', global.Sync.user ? global.Sync.user.name : '—'],
+            ['This device', global.Sync.label()]
+          ]),
+          el('div.row', { style: 'margin-top:12px' }, [
+            UI.btn('Change my password', { icon: 'lock', onClick: function () { Views.profile.changePassword(false); } }),
+            UI.btn('Sign out', { variant: 'subtle', icon: 'logout', onClick: function () { global.Sync.logout(); } })
+          ])
+        ], { icon: 'lock' }));
+      }
+
       root.appendChild(UI.sectionTitle('When I am not available', UI.btn('Add away dates', {
         sm: true, icon: 'plus', onClick: addAway
       })));
@@ -173,6 +187,33 @@
           } }]
         });
       }
+    },
+
+    /* forced === true when the administrator issued a one-time password */
+    changePassword: function (forced) {
+      var Sync = global.Sync;
+      if (Sync.mode !== 'server') return;
+      var current = UI.input({ type: 'password' });
+      var next = UI.input({ type: 'password' });
+      var again = UI.input({ type: 'password' });
+      UI.modal({
+        title: forced ? 'Choose your own password' : 'Change my password',
+        sub: forced ? 'You signed in with a password an elder issued. Pick one only you know.' : null,
+        hideClose: !!forced,
+        body: [
+          UI.field('Current password', current),
+          UI.field('New password', next, 'At least 8 characters.'),
+          UI.field('New password again', again)
+        ],
+        actions: [{ label: 'Save', variant: 'primary', onClick: function () {
+          if (next.value.length < 8) { UI.flag('Too short', 'Use at least 8 characters.', 'danger'); return false; }
+          if (next.value !== again.value) { UI.flag('They do not match', null, 'danger'); return false; }
+          Sync.changePassword({ current: current.value, password: next.value }).then(function () {
+            UI.flag('Password changed', null, 'success');
+          }, function (err) { UI.flag('Could not change it', err.message, 'danger'); });
+          return true;
+        } }]
+      });
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);
