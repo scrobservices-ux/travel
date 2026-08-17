@@ -8,6 +8,10 @@ Digitized njangi / tontines & funeral (trouble) funds for Cameroon.
 | Lean "start small, then scale" pilot plan with go/no-go gates | [PILOT_PLAN.md](PILOT_PLAN.md) |
 | **Working MVP app** — the treasurer's digital ledger | [`app/`](app/) |
 
+Also in this repo, unrelated to Kola: [`shepherd/`](shepherd/) — a congregation
+coordination app (scheduling, records, territories, tasks) with publisher, elders and
+administration interfaces.
+
 ## The MVP app
 
 A zero-install, offline-first ledger for the group president/treasurer. No server, no
