@@ -468,6 +468,70 @@
     ]);
   }
 
+  /* Shown when the congregation is empty: name it, and create the first elder so
+     there is somebody to sign in as. */
+  function firstRunScreen(content) {
+    var cong = Store.cong();
+    var d = { congregation: cong.name === 'My Congregation' ? '' : cong.name, city: '', firstName: '', lastName: '' };
+    function inp(key, placeholder) {
+      return UI.input({
+        value: d[key], placeholder: placeholder || null,
+        onInput: function (e) { d[key] = e.target.value; }
+      });
+    }
+    var error = el('div');
+
+    content.appendChild(el('div', { style: 'max-width:460px;margin:6vh auto' }, [
+      el('h1.page-title', { style: 'margin-bottom:6px', text: 'Set up your congregation' }),
+      el('p.page-sub', { style: 'margin-bottom:24px',
+        text: 'Nothing is here yet. Name the congregation and add yourself, then you can add the rest of the publishers or import them from a spreadsheet.' }),
+      UI.card(null, [
+        error,
+        UI.field('Congregation name', inp('congregation', 'e.g. Riverside Congregation')),
+        UI.field('Town or city', inp('city')),
+        UI.divider(),
+        el('div.grid.c2', [
+          UI.field('Your first name', inp('firstName')),
+          UI.field('Your last name', inp('lastName'))
+        ]),
+        el('p.small.muted', { style: 'margin-bottom:12px',
+          text: 'You are added as an elder with the coordinator and administrator roles, so you can set everything else up. Change it later on your own record.' }),
+        UI.btn('Create it', { variant: 'primary', icon: 'check', onClick: function () {
+          U.clear(error);
+          if (!d.congregation.trim() || !d.firstName.trim() || !d.lastName.trim()) {
+            error.appendChild(UI.banner('danger', 'Fill in the congregation name and your own name'));
+            return;
+          }
+          var id = U.uid('p');
+          Store.update({ action: 'congregation.firstRun', summary: d.congregation }, function (st) {
+            cong.name = d.congregation.trim();
+            cong.city = d.city.trim();
+            var group = st.groups.filter(function (g) { return g.congId === cong.id; })[0];
+            if (!group) {
+              group = { id: U.uid('grp'), congId: cong.id, name: 'Group 1', overseerId: null, assistantId: null };
+              st.groups.push(group);
+            }
+            st.people.push({
+              id: id, congId: cong.id, firstName: d.firstName.trim(), lastName: d.lastName.trim(),
+              gender: 'm', appointment: 'elder', roles: ['publisher', 'elder', 'coordinator', 'admin'],
+              qualifications: ['chairman', 'prayer', 'treasures', 'gems', 'living',
+                'cbs_conductor', 'wt_conductor', 'public_talk'],
+              publisherType: 'publisher', status: 'active', email: '', phone: '', address: '',
+              baptizedOn: '', birthOn: '', serviceGroupId: group.id, emergencyContact: '',
+              unavailable: [], notes: '', createdAt: Date.now()
+            });
+            st.account.name = cong.name;
+            st.session.personId = id;
+            st.session.workspace = 'elders';
+          });
+          Store.ensureWindow(2, 10);
+          UI.flag('Ready', 'Add the rest of the publishers, or import them from a spreadsheet.', 'success');
+          App.go('publishers');
+        } })
+      ])
+    ]));
+  }
+
   /* ---------- render ---------- */
 
   App.render = function () {
@@ -487,6 +551,9 @@
     var view = Views[App.route.view];
 
     if (!Store.me()) {
+      // an empty congregation has nobody to sign in as, so the first thing to do
+      // is create yourself — otherwise this is a dead end
+      if (!Store.people().length) { firstRunScreen(content); return; }
       content.appendChild(UI.pageHead({ title: 'Welcome to Shepherd' }));
       content.appendChild(UI.banner('neutral', 'No one is signed in',
         'Pick a person to open the workspace. Everything is stored in this browser only.'));

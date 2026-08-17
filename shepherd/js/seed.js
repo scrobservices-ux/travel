@@ -330,7 +330,11 @@
       account: { name: 'My account', ownerEmail: '', createdAt: Date.now(), plan: 'free' },
       session: { personId: null, workspace: 'elders', congId: cong.id, theme: 'light' },
       congregations: [cong],
-      people: [], groups: [], weeks: [], duties: [], territories: [], reports: [],
+      people: [],
+      // one service group to start with: every publisher belongs to one, and an
+      // empty congregation with none has nowhere to put the first person added
+      groups: [{ id: U.uid('grp'), congId: cong.id, name: 'Group 1', overseerId: null, assistantId: null }],
+      weeks: [], duties: [], territories: [], reports: [],
       attendance: [], tasks: [], visits: [], transactions: [], announcements: [], documents: [], users: [],
       audit: []
     };

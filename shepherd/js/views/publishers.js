@@ -363,6 +363,16 @@
           if (draft.roles.indexOf('publisher') === -1) draft.roles.push('publisher');
           Store.update({ action: isNew ? 'person.added' : 'person.updated', summary: draft.firstName + ' ' + draft.lastName },
             function (st) {
+              // every publisher belongs to a service group; make the first one if needed
+              if (!draft.serviceGroupId || !U.by(st.groups, draft.serviceGroupId)) {
+                var g = st.groups.filter(function (x) { return x.congId === Store.congId(); })[0];
+                if (!g) {
+                  g = { id: U.uid('grp'), congId: Store.congId(), name: 'Group 1',
+                    overseerId: null, assistantId: null };
+                  st.groups.push(g);
+                }
+                draft.serviceGroupId = g.id;
+              }
               if (isNew) {
                 draft.id = U.uid('p');
                 draft.congId = Store.congId();
