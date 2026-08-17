@@ -449,30 +449,41 @@
   /* ---------- person picker with eligibility reasons ---------- */
 
   /* candidates: [{person, score, reasons:[], blocked:bool, note}] */
+  /* opts.candidates      ranked candidates, blocked ones included
+     opts.onPick(id)      chosen, or null to clear
+     opts.onEveryone(fn)  called when "anyone in the congregation" is ticked; should
+                          return a fresh candidate list including unqualified people */
   UI.personPicker = function (opts) {
     var listWrap = el('div.picker-list');
     var searchInput = UI.input({ type: 'search', placeholder: 'Filter by name…' });
-    var showAll = { value: false };
+    var showRuledOut = { value: false };
+    var everyone = { value: false };
+    var candidates = opts.candidates;
 
     function draw() {
       U.clear(listWrap);
       var q = searchInput.value;
-      var rows = opts.candidates.filter(function (c) {
-        if (!showAll.value && c.blocked) return false;
+      var rows = candidates.filter(function (c) {
+        if (!showRuledOut.value && c.blocked) return false;
         return U.matches(Store.name(c.person.id), q);
       });
       if (!rows.length) {
-        listWrap.appendChild(el('div.muted', { style: 'padding:16px', text: 'No one matches.' }));
+        listWrap.appendChild(el('div.muted', { style: 'padding:16px',
+          text: everyone.value ? 'No one matches.'
+            : 'Nobody is both marked for this and free. Tick “anyone in the congregation” to choose regardless.' }));
         return;
       }
       rows.forEach(function (c) {
-        listWrap.appendChild(el('button.picker-item' + (c.blocked ? '.blocked' : ''), {
+        listWrap.appendChild(el('button.picker-item' + (c.blocked || c.notMarked ? '.blocked' : ''), {
           type: 'button',
-          onclick: function () { close(); opts.onPick(c.person.id); }
+          onclick: function () { close(); opts.onPick(c.person.id, c); }
         }, [
           UI.avatar(c.person),
-          el('span', [
-            el('div', { text: Store.name(c.person.id) }),
+          el('span', { style: 'flex:1;min-width:0' }, [
+            el('div', [
+              document.createTextNode(Store.name(c.person.id)),
+              c.notMarked ? el('span', { style: 'margin-left:6px' }, UI.lozenge('Not marked', 'warn')) : null
+            ]),
             el('div.person-sub', { text: c.note || UI.personSub(c.person) })
           ]),
           el('span.why', { text: (c.reasons || []).join(' · ') })
@@ -482,16 +493,26 @@
 
     searchInput.addEventListener('input', draw);
 
-    var toggle = UI.checkbox('Show people the scheduler ruled out', false, function (v) {
-      showAll.value = v; draw();
-    });
+    var controls = el('div', [
+      UI.checkbox('Show people the scheduler ruled out', false, function (v) {
+        showRuledOut.value = v; draw();
+      }, 'Away, or already busy that night. You can still choose them.')
+    ]);
+    if (opts.onEveryone) {
+      controls.appendChild(UI.checkbox('Choose anyone in the congregation', false, function (v) {
+        everyone.value = v;
+        candidates = v ? opts.onEveryone() : opts.candidates;
+        if (v) showRuledOut.value = true;
+        draw();
+      }, 'Ignores who is marked for this part — for when you know best.'));
+    }
 
     var close = UI.modal({
       title: opts.title || 'Assign',
       sub: opts.sub,
       body: [
         searchInput,
-        toggle,
+        controls,
         listWrap,
         opts.allowClear ? el('div', { style: 'margin-top:12px' },
           UI.btn('Clear this assignment', {

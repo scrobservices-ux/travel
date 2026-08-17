@@ -18,6 +18,7 @@
     listeners: [],
     ready: false,
     storageKey: 'shepherd.state.v1',
+    generation: 0,          // bumped on every change, so caches know to rebuild
     onChanges: null,     // set by Sync in server mode
     _sig: null,
     _applyingRemote: false
@@ -112,6 +113,7 @@
     });
     Store._applyingRemote = false;
     Store._sig = signature(Store.state);
+    Store.generation += 1;
     Store.persist();
     Store.emit();
   };
@@ -177,6 +179,7 @@
     var changes = Store._sig ? diff(Store._sig, next, Store.state) : [];
     Store._sig = next;
 
+    Store.generation += 1;
     Store.persist();
     if (changes.length && Store.onChanges && !Store._applyingRemote) Store.onChanges(changes);
     Store.emit();

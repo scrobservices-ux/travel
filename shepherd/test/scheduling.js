@@ -242,6 +242,120 @@ function ok(name, cond, detail) {
   ok('and they are shared between several brothers', rota.people >= 3, rota.people + ' people');
   console.log('    duties available: ' + rota.names.join(', '));
 
+  // ---------- congregation size ----------
+  console.log('\nsmall and large congregations');
+  await fresh();
+  const small = await page.evaluate(() => {
+    const keep = ['p_1', 'p_2', 'p_7', 'p_11', 'p_12', 'p_13', 'p_19', 'p_20', 'p_21', 'p_22', 'p_23', 'p_24'];
+    Store.update(st => { st.people = st.people.filter(p => keep.includes(p.id)); });
+    const weeks = [];
+    for (let i = 1; i <= 8; i++) weeks.push(Store.ensureWeek(U.weekStart(U.addDays(U.today(), i * 7))));
+    const plan = Scheduler.planRange(weeks, {});
+    Scheduler.applyRangePlan(weeks, plan.plan);
+    const counts = Scheduler.workload(U.weekStart(U.today()), U.addDays(U.weekStart(U.today()), 56));
+    const set = Scheduler.settings();
+    return {
+      profile: set.profile.id, perMeeting: set.maxPerMeeting,
+      slots: weeks.reduce((n, w) => n + Store.allParts(w).length, 0),
+      unfilled: weeks.reduce((n, w) => n + Store.allParts(w).filter(r => !r.part.assigneeId).length, 0),
+      clashes: weeks.reduce((n, w) => n + Scheduler.conflicts(w).length, 0),
+      used: Store.activePeople().filter(p => counts[p.id]).length,
+      of: Store.activePeople().length,
+      reasons: [...new Set(plan.skipped.map(s => s.why))]
+    };
+  });
+  ok('a twelve-publisher congregation is recognised as small', small.profile === 'small');
+  ok('and allows the same brother several parts a night', small.perMeeting > 1);
+  ok('so its schedule fills', small.unfilled <= 2, small.unfilled + ' of ' + small.slots + ' unfilled');
+  ok('without calling the doubling-up a clash', small.clashes === 0, small.clashes + ' clashes');
+  ok('and everybody is used', small.used === small.of, small.used + '/' + small.of);
+  if (small.reasons.length) console.log('    when it cannot fill: ' + small.reasons[0]);
+
+  await fresh();
+  const large = await page.evaluate(() => {
+    const QUALS = ['student', 'assistant', 'bible_reading', 'prayer', 'attendant', 'mic', 'av',
+      'platform', 'cbs_reader', 'wt_reader', 'treasures', 'gems', 'living', 'chairman',
+      'public_talk', 'cbs_conductor', 'wt_conductor'];
+    Store.update(st => {
+      for (let i = 0; i < 185; i++) {
+        const male = i % 2 === 0;
+        st.people.push({
+          id: 'big_' + i, congId: Store.congId(), firstName: 'Test' + i, lastName: 'Person' + i,
+          gender: male ? 'm' : 'f',
+          appointment: i < 20 && male ? 'elder' : (i < 40 && male ? 'servant' : 'none'),
+          roles: ['publisher'], qualifications: male ? QUALS.slice(0, 3 + (i % 14)) : ['student', 'assistant'],
+          publisherType: 'publisher', status: 'active', email: '', phone: '', address: '',
+          baptizedOn: '1990-01-01', birthOn: '1980-01-01', serviceGroupId: Store.groups()[i % 4].id,
+          emergencyContact: '', unavailable: [], notes: '', createdAt: Date.now()
+        });
+      }
+    });
+    const weeks = [];
+    for (let i = 1; i <= 12; i++) weeks.push(Store.ensureWeek(U.weekStart(U.addDays(U.today(), i * 7))));
+    const t0 = performance.now();
+    const plan = Scheduler.planRange(weeks, {});
+    const planMs = performance.now() - t0;
+    Scheduler.applyRangePlan(weeks, plan.plan);
+    const t1 = performance.now();
+    Scheduler.applyDutyPlan(Scheduler.planDuties(weeks, ['av', 'attendant_main', 'mic1'], {}));
+    const dutyMs = performance.now() - t1;
+    const counts = Scheduler.workload(U.weekStart(U.today()), U.addDays(U.weekStart(U.today()), 84));
+    const set = Scheduler.settings();
+    return {
+      profile: set.profile.id, perWeek: set.maxPerWeek,
+      people: Store.activePeople().length,
+      unfilled: weeks.reduce((n, w) => n + Store.allParts(w).filter(r => !r.part.assigneeId).length, 0),
+      used: Object.keys(counts).length,
+      planMs: Math.round(planMs), dutyMs: Math.round(dutyMs)
+    };
+  });
+  ok('a 220-publisher congregation is recognised as large', large.profile === 'large');
+  ok('and gives each person less, so the rotation reaches further', large.perWeek === 1);
+  ok('its schedule still fills', large.unfilled <= 2, large.unfilled + ' unfilled');
+  ok('over a hundred different people are used', large.used > 100, large.used + ' used');
+  ok('and planning twelve weeks stays quick', large.planMs < 3000 && large.dutyMs < 3000,
+    large.planMs + 'ms + ' + large.dutyMs + 'ms');
+  console.log(`    small: ${small.used}/${small.of} used · large: ${large.used}/${large.people} used in ${large.planMs}ms`);
+
+  // ---------- doing it by hand ----------
+  console.log('\ndoing it by hand');
+  await fresh();
+  const manual = await page.evaluate(() => {
+    const w = Store.ensureWeek(U.weekStart(U.addDays(U.today(), 7)));
+    const part = w.midweek.parts.find(p => p.type === 'bible_reading');
+    const marked = Scheduler.candidatesForPart(part, w, 'midweek', 'assigneeId');
+    const everyone = Scheduler.candidatesForPart(part, w, 'midweek', 'assigneeId', { includeUnqualified: true });
+    const sister = everyone.find(c => c.person.gender === 'f');
+    Store.setAssignment(part.id, 'assigneeId', sister.person.id);
+    const flagged = Scheduler.conflicts(w).some(c => c.kind === 'qual');
+
+    // and a locked week is left alone
+    const locked = Store.ensureWeek(U.weekStart(U.addDays(U.today(), 21)));
+    Store.update(st => { locked.locked = true; });
+    const lockedPlan = Scheduler.planRange([locked], {});
+
+    // a congregation can turn suggestions off altogether
+    Store.update(st => { Store.cong().scheduling = { profile: 'auto', autoSuggest: false }; });
+    const suggests = Scheduler.settings().autoSuggest;
+
+    return {
+      markedPool: marked.length, everyonePool: everyone.length,
+      sisterFlagged: !!sister.notMarked,
+      assigned: Store.name(part.assigneeId) === Store.name(sister.person.id),
+      qualWarning: flagged,
+      lockedPlanned: lockedPlan.plan.length,
+      suggests: suggests
+    };
+  });
+  ok('the picker normally offers only those marked for the part', manual.markedPool < manual.everyonePool);
+  ok('but "anyone in the congregation" offers everyone', manual.everyonePool > 30,
+    manual.everyonePool + ' offered');
+  ok('and says who is not marked for it', manual.sisterFlagged);
+  ok('the assignment is made anyway when you insist', manual.assigned);
+  ok('with a warning rather than a refusal', manual.qualWarning);
+  ok('a locked week is never touched by auto-fill', manual.lockedPlanned === 0);
+  ok('and a congregation can turn suggestions off entirely', manual.suggests === false);
+
   console.log('\nbrowser errors: ' + (errors.length ? '\n  ' + errors.join('\n  ') : 'none'));
   failures += errors.length;
   console.log(failures ? '\n' + failures + ' FAILED' : '\nall scheduling checks passed');

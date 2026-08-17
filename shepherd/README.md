@@ -260,6 +260,38 @@ again. What it takes into account:
 Nothing is applied until you have seen the proposal, including how many each person would
 get.
 
+**Or do it all by hand.** Every slot is a click: open it and pick whoever you want. The
+list is *ordered* by whose turn it is, not restricted to it — tick **"choose anyone in the
+congregation"** and everyone appears, including people not marked for that part, each
+labelled so you know. The assignment is made either way; the app warns rather than
+refuses, and offers to add the qualification to their record so it can propose them next
+time. **Lock a week** and auto-fill leaves it alone. A congregation that would rather have
+no suggestions at all can turn them off in its settings — the auto-fill buttons disappear
+and the suggested order remains as a hint when you open a slot.
+
+### It adapts to the size of the congregation
+
+What is fair depends entirely on how many people there are. The size is taken from the
+number of active publishers, and every limit follows from it — or the elders set it
+themselves in **Administration → Congregations → How this congregation is scheduled**.
+
+| | Most on one meeting | Most in one week | Fairness looks back | A pool is "thin" under |
+|---|---|---|---|---|
+| **Small** (under ~25) | 4 | 10 | 13 weeks | 2 people |
+| **Medium** (~25–100) | 2 | 3 | 26 weeks | 4 people |
+| **Large** (over ~100) | 1 | 1 | 39 weeks | 6 people |
+
+In a small congregation the ceilings are effectively off, because the same brother
+genuinely takes several parts a meeting — there is nobody else — and doubling up is not
+reported as a clash. Fairness still decides the order. In a large one each person gets one
+thing a week so the rotation reaches everybody. Tested at both ends: a twelve-publisher
+congregation schedules eight weeks with everyone used and no gaps, and a 220-publisher
+congregation plans twelve weeks in about half a second and reaches over 150 people.
+
+When a slot genuinely cannot be filled the app says why in plain words — "only Daniel
+Achebe is marked for it, and he is not free that night" — rather than leaving a silent
+gap.
+
 **Who is being used** — the report that answers "is anyone being left out, and is anyone
 carrying too much". Every active publisher over three months, six months, the coming eight
 weeks or the whole service year, with what they carry, when they were last used, what is
@@ -418,7 +450,7 @@ node test/interact.js    # clicks the real UI: assign, auto-fill, import, drag, 
 node test/shared.js      # two browsers on one server, including going offline
 node test/paperwork.js  # every print document, the importer, and file uploads
 node test/roles.js      # the default arrangement, group scoping, server enforcement
-node test/scheduling.js # fairness, away dates, availability, demonstration partners
+node test/scheduling.js # fairness, availability, sizes, manual override
 ```
 
 All seven exit non-zero on failure. `test/roles.js` needs nothing but Node for the first
@@ -440,5 +472,9 @@ grants it, can the moment it does, and cannot rewrite the arrangement himself.
 clashes, that no active publisher is left out, that people marked for the same things
 carry comparable amounts, that nothing lands on a week someone is away, that a brother
 unavailable midweek gets only weekend parts, that a one-a-month limit holds, that
-demonstration partners match, and that the car park and security watch reach the rota.
+demonstration partners match, and that the car park and security watch reach the rota. It
+then does the same at both extremes — twelve publishers and two hundred and twenty — and
+checks the manual side: that the picker offers everyone when asked, marks who is not
+qualified, makes the assignment anyway with a warning rather than a refusal, leaves a
+locked week alone, and honours a congregation that has turned suggestions off.
 Screenshots land in `/tmp`.

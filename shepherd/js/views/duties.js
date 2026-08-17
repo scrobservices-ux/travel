@@ -118,9 +118,15 @@
       sub: U.fmtDate(date, 'long'),
       allowClear: !!dutyFor(date, typeId),
       candidates: Sch.candidates({
-        typeId: typeId, qual: dt.qual, pool: null, date: date,
-        weekStart: U.weekStart(date), excludeIds: busy, maxPerWeek: 3
+        typeId: typeId, qual: dt.qual, pool: null, date: date, duty: true,
+        weekStart: U.weekStart(date), excludeIds: busy
       }),
+      onEveryone: function () {
+        return Sch.candidates({
+          typeId: typeId, qual: dt.qual, pool: null, date: date, duty: true,
+          weekStart: U.weekStart(date), excludeIds: busy, includeUnqualified: true
+        });
+      },
       onPick: function (personId) { setDuty(date, meeting, typeId, personId, null); }
     });
   }
@@ -175,7 +181,8 @@
         actions: [
           UI.btnGroup([{ id: '4', label: '4 wks' }, { id: '6', label: '6 wks' }, { id: '12', label: '12 wks' }],
             String(state.weeks), function (v) { state.weeks = +v; App.render(); }),
-          canEdit ? UI.btn('Fill the rota', { variant: 'primary', icon: 'sparkle', onClick: generate }) : null,
+          canEdit && Sch.settings().autoSuggest
+            ? UI.btn('Fill the rota', { variant: 'primary', icon: 'sparkle', onClick: generate }) : null,
           canEdit ? UI.btn('Manage duties', { icon: 'cog', onClick: manageTypes }) : null,
           UI.btn('Print', { variant: 'subtle', icon: 'print', onClick: function () { global.print(); } }),
           UI.btn('Export CSV', { variant: 'subtle', icon: 'download', onClick: exportCsv })

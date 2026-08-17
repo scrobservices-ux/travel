@@ -15,11 +15,42 @@
   // parts the chairman keeps for himself rather than handing to another brother
   var CHAIR_PARTS = ['opening_words', 'concluding'];
 
-  // how far back fairness looks
-  Sch.WINDOW_WEEKS = 26;
+  /* How this congregation wants to be scheduled — taken from its size unless the
+     elders have set it themselves. Everything below reads limits from here rather
+     than assuming a mid-sized hall. */
+  Sch.settings = function () {
+    return S.schedulingFor(Store.cong(), Store.activePeople().length);
+  };
+
+  Sch.WINDOW_WEEKS = 26;     // fallback for anything asking without a congregation
 
   function windowStart() {
-    return U.addDays(U.weekStart(U.today()), -7 * Sch.WINDOW_WEEKS);
+    var weeks = Sch.settings().windowWeeks || Sch.WINDOW_WEEKS;
+    return U.addDays(U.weekStart(U.today()), -7 * weeks);
+  }
+
+  /* Counting what everyone carries is the hot path — a large congregation asks for
+     it hundreds of times per plan — so it is worked out once per change. */
+  var cache = { gen: -1, congId: null, counts: null };
+
+  function carriedCounts() {
+    if (cache.gen === Store.generation && cache.congId === Store.congId()) return cache.counts;
+    var from = windowStart();
+    var counts = {};
+    Store.weeks().forEach(function (w) {
+      if (w.weekStart < from) return;
+      Store.allParts(w).forEach(function (row) {
+        [row.part.assigneeId, row.part.assistantId].forEach(function (id) {
+          if (id) counts[id] = (counts[id] || 0) + 1;
+        });
+      });
+    });
+    Store.duties().forEach(function (d) {
+      if (!d.personId || U.weekStart(d.date) < from) return;
+      counts[d.personId] = (counts[d.personId] || 0) + 1;
+    });
+    cache = { gen: Store.generation, congId: Store.congId(), counts: counts };
+    return counts;
   }
 
   /* ---------- availability ---------- */
@@ -87,13 +118,20 @@
      ahead. Counting the future matters — the duty rota is filled after the meeting
      parts, and without it the same willing brother is picked twice. */
   Sch.carriedBy = function (personId, pending) {
-    return Store.assignmentCountBetween(personId, windowStart(), null) + (pending || 0);
+    return (carriedCounts()[personId] || 0) + (pending || 0);
   };
 
   Sch.candidates = function (ctx) {
-    var pool = Sch.eligible(ctx.typeId, { qual: ctx.qual, pool: ctx.pool, gender: ctx.gender });
-    var maxPerWeek = ctx.maxPerWeek || 2;
+    var set = Sch.settings();
+    var pool = ctx.includeUnqualified
+      ? Store.activePeople()
+      : Sch.eligible(ctx.typeId, { qual: ctx.qual, pool: ctx.pool, gender: ctx.gender });
+    var maxPerWeek = ctx.maxPerWeek || set.maxPerWeek;
     var pending = ctx.pending || {};        // personId -> already placed by the plan in progress
+    var qualified = ctx.includeUnqualified
+      ? Sch.eligible(ctx.typeId, { qual: ctx.qual, pool: ctx.pool, gender: ctx.gender })
+        .reduce(function (m, p) { m[p.id] = true; return m; }, {})
+      : null;
 
     return U.sortBy(pool.map(function (p) {
       var reasons = [], blocked = false;
@@ -104,8 +142,15 @@
       if (why) { blocked = true; reasons.push(why); }
 
       if ((ctx.excludeIds || []).indexOf(p.id) !== -1) {
-        blocked = true; reasons.push('Already on this meeting');
+        blocked = true;
+        reasons.push(set.maxPerMeeting > 1
+          ? 'Already has ' + set.maxPerMeeting + ' on this meeting'
+          : 'Already on this meeting');
       }
+
+      // when the picker is showing everyone, say who is not marked for the part
+      var notMarked = qualified && !qualified[p.id];
+      if (notMarked) reasons.unshift('Not marked for this');
 
       var inWeek = ctx.weekStart ? Store.assignmentCountInWeek(p.id, ctx.weekStart) : 0;
       if (inWeek >= maxPerWeek) { blocked = true; reasons.push(inWeek + ' already this week'); }
@@ -124,10 +169,12 @@
         person: p, blocked: blocked, reasons: reasons,
         carried: carried,
         lastAt: last, lastAny: lastAny,
-        inWeek: inWeek
+        inWeek: inWeek,
+        notMarked: !!notMarked
       };
     }), function (c) {
       if (c.blocked) return 1e12;                      // blocked people sink to the bottom
+      if (c.notMarked) return 1e11;                    // then anyone not marked for it
       // anyone already on this week waits until everyone free has had a turn;
       // then fewest carried overall; then whoever has waited longest
       return (c.inWeek * 1e9)
@@ -143,8 +190,7 @@
     var t = S.partType(part.type);
     if (t.assistantQual) return { qual: t.assistantQual, pool: t.pool, gender: null };
     var main = part.assigneeId && Store.person(part.assigneeId);
-    var cong = Store.cong();
-    var pairSame = cong.pairSameGender !== false;
+    var pairSame = Sch.settings().pairSameGender;
     return {
       qual: 'assistant',
       pool: null,
@@ -163,13 +209,18 @@
     });
   }
 
-  Sch.candidatesForPart = function (part, week, meeting, field) {
+  Sch.candidatesForPart = function (part, week, meeting, field, opts) {
+    opts = opts || {};
+    var set = Sch.settings();
     var block = meeting === 'midweek' ? week.midweek : week.weekend;
-    var exclude = [];
+    var onMeeting = {};
     block.parts.forEach(function (p) {
       if (p.id === part.id && field !== 'assistantId') return;
-      if (p.assigneeId) exclude.push(p.assigneeId);
-      if (p.assistantId) exclude.push(p.assistantId);
+      if (p.assigneeId) onMeeting[p.assigneeId] = (onMeeting[p.assigneeId] || 0) + 1;
+      if (p.assistantId) onMeeting[p.assistantId] = (onMeeting[p.assistantId] || 0) + 1;
+    });
+    var exclude = Object.keys(onMeeting).filter(function (id) {
+      return onMeeting[id] >= set.maxPerMeeting;
     });
     var t = S.partType(part.type);
     var ctx = {
@@ -181,7 +232,8 @@
       meeting: meeting,
       weekStart: week.weekStart,
       excludeIds: exclude,
-      maxPerWeek: 2
+      maxPerWeek: set.maxPerWeek,
+      includeUnqualified: !!opts.includeUnqualified
     };
     if (field === 'assistantId') {
       var a = assistantContext(part, week, meeting);
@@ -200,20 +252,29 @@
   Sch.planWeek = function (week, opts) {
     opts = opts || {};
     var plan = [], skipped = [];
+    if (week.locked && !opts.force) return { plan: plan, skipped: skipped, state: opts.state, locked: true };
+    var set = Sch.settings();
     var state = opts.state || { placed: {}, monthly: {} };
-    var maxWeek = opts.maxPerWeek || 2;
+    var maxWeek = opts.maxPerWeek || set.maxPerWeek;
+    var maxMeeting = opts.maxPerMeeting || set.maxPerMeeting;
 
     ['midweek', 'weekend'].forEach(function (meeting) {
       if (opts.meeting && opts.meeting !== meeting) return;
       var block = week[meeting];
       if (block.cancelled) return;
-      var placedThisMeeting = {};
+      var onThisMeeting = {};        // personId -> how many parts on this meeting
       var chairmanId = null;
       var period = U.period(block.date);
 
+      function atMeetingLimit() {
+        return Object.keys(onThisMeeting).filter(function (id) {
+          return onThisMeeting[id] >= maxMeeting;
+        });
+      }
+
       block.parts.forEach(function (p) {
-        if (p.assigneeId) placedThisMeeting[p.assigneeId] = true;
-        if (p.assistantId) placedThisMeeting[p.assistantId] = true;
+        if (p.assigneeId) onThisMeeting[p.assigneeId] = (onThisMeeting[p.assigneeId] || 0) + 1;
+        if (p.assistantId) onThisMeeting[p.assistantId] = (onThisMeeting[p.assistantId] || 0) + 1;
         if (p.type === 'chairman' && p.assigneeId) chairmanId = p.assigneeId;
       });
 
@@ -250,7 +311,7 @@
           date: block.date,
           meeting: meeting,
           weekStart: week.weekStart,
-          excludeIds: Object.keys(placedThisMeeting),
+          excludeIds: atMeetingLimit(),
           maxPerWeek: maxWeek,
           pending: state.placed,
           pendingMonth: state.monthly[period] || {}
@@ -264,7 +325,10 @@
 
         var cands = Sch.candidates(ctx).filter(function (c) {
           if (c.blocked) return false;
-          if (state.placed[c.person.id + '|' + meeting + '|' + week.weekStart]) return false;
+          // the ceilings, counted across this plan as well as what is already stored
+          var onMeeting = (state.placed[c.person.id + '|' + meeting + '|' + week.weekStart] || 0)
+            + (onThisMeeting[c.person.id] || 0);
+          if (onMeeting >= maxMeeting) return false;
           if (p.type === 'chairman' && state.chaired && state.chaired[c.person.id + '|' + week.weekStart]) return false;
           var carriedThisWeek = Store.assignmentCountInWeek(c.person.id, week.weekStart)
             + (state.placed[c.person.id + '|week|' + week.weekStart] || 0);
@@ -276,18 +340,27 @@
         }
 
         if (!cands.length) {
-          skipped.push({
-            partId: p.id, title: p.title, field: field,
-            why: 'No one both qualified and available'
-          });
+          // explain it: an empty pool and a pool that is merely busy need
+          // different action from the elders
+          var marked = Sch.eligible(p.type, { qual: ctx.qual, pool: ctx.pool, gender: ctx.gender });
+          var why;
+          if (!marked.length) {
+            why = 'Nobody is marked for this';
+          } else if (marked.length === 1) {
+            why = 'Only ' + Store.name(marked[0].id) + ' is marked for it, and he is not free that night';
+          } else {
+            why = 'All ' + marked.length + ' marked for it are away or already busy that night';
+          }
+          skipped.push({ partId: p.id, title: p.title, field: field, why: why, pool: marked.length });
           return;
         }
 
         var chosen = cands[0].person;
         plan.push({ partId: p.id, field: field, personId: chosen.id, meeting: meeting, title: p.title });
-        placedThisMeeting[chosen.id] = true;
+        onThisMeeting[chosen.id] = (onThisMeeting[chosen.id] || 0) + 1;
         state.placed[chosen.id] = (state.placed[chosen.id] || 0) + 1;
-        state.placed[chosen.id + '|' + meeting + '|' + week.weekStart] = true;
+        state.placed[chosen.id + '|' + meeting + '|' + week.weekStart] =
+          (state.placed[chosen.id + '|' + meeting + '|' + week.weekStart] || 0) + 1;
         state.placed[chosen.id + '|week|' + week.weekStart] =
           (state.placed[chosen.id + '|week|' + week.weekStart] || 0) + 1;
         state.monthly[period] = state.monthly[period] || {};
@@ -352,6 +425,7 @@
 
   Sch.conflicts = function (week) {
     var out = [];
+    var maxMeeting = Sch.settings().maxPerMeeting;
     ['midweek', 'weekend'].forEach(function (meeting) {
       var block = week[meeting];
       if (block.cancelled) return;
@@ -366,11 +440,14 @@
           if (!id) return;
           var chairsOwn = id === chairmanId && field === 'assigneeId'
             && (p.type === 'chairman' || CHAIR_PARTS.indexOf(p.type) !== -1);
-          if (seen[id] && !chairsOwn) {
+          if (!chairsOwn) seen[id] = (seen[id] || 0) + 1;
+          // more than one part a night is normal in a small congregation and a
+          // mistake in a large one, so the ceiling decides what counts as a clash
+          if (!chairsOwn && seen[id] > maxMeeting) {
             out.push({ partId: p.id, field: field, personId: id, kind: 'double',
-              message: Store.name(id) + ' has two parts on ' + U.fmtDate(block.date, 'day') });
+              message: Store.name(id) + ' has ' + seen[id] + ' parts on ' + U.fmtDate(block.date, 'day')
+                + ' — more than the ' + U.plural(maxMeeting, 'one') + ' this congregation allows' });
           }
-          seen[id] = true;
 
           var person = Store.person(id);
           if (person) {
@@ -392,7 +469,7 @@
           // a demonstration partner of the other sex is nearly always a mistake
           if (field === 'assistantId' && !t.assistantQual && p.assigneeId) {
             var main = Store.person(p.assigneeId);
-            if (main && person && main.gender !== person.gender && Store.cong().pairSameGender !== false) {
+            if (main && person && main.gender !== person.gender && Sch.settings().pairSameGender) {
               out.push({ partId: p.id, field: field, personId: id, kind: 'pairing',
                 message: Store.name(id) + ' and ' + Store.name(main.id) + ' are not the same sex for a demonstration' });
             }
@@ -466,7 +543,7 @@
             // not more than the week's ceiling, counting the parts already scheduled
             var inWeek = Store.assignmentCountInWeek(cand.id, week.weekStart)
               + plan.filter(function (x) { return x.personId === cand.id && U.weekStart(x.date) === week.weekStart; }).length;
-            if (inWeek >= (opts.maxPerWeek || 2)) continue;
+            if (inWeek >= (opts.maxPerWeek || Sch.settings().maxPerWeek)) continue;
             if (plan.some(function (x) { return x.date === block.date && x.personId === cand.id; })) continue;
             pick = cand;
             break;
@@ -583,6 +660,7 @@
       from: from,
       to: to,
       windowWeeks: Math.max(1, Math.round(U.diffDays(from, to) / 7) + 1),
+      settings: Sch.settings(),
       neverUsed: rows.filter(function (r) { return !r.lastAt && r.openTo.length; }),
       notUsedInWindow: rows.filter(function (r) { return r.past === 0 && r.openTo.length; }),
       nothingOpen: rows.filter(function (r) { return !r.openTo.length; }),
@@ -594,7 +672,7 @@
      marked for. This is the usual reason one brother carries far more than the
      rest, and it is something only the elders can fix — by marking more people. */
   Sch.thinPools = function (threshold) {
-    var limit = threshold || 4;
+    var limit = threshold || Sch.settings().thinThreshold;
     var out = [];
 
     Object.keys(S.PART_TYPES).forEach(function (typeId) {

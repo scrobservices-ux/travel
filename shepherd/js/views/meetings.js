@@ -8,6 +8,7 @@
   var Views = global.Views = global.Views || {};
 
   function canEdit() { return Auth.can('schedule.edit'); }
+  function suggests() { return Sch.settings().autoSuggest; }
 
   /* ---------- assignment slot ---------- */
 
@@ -39,13 +40,43 @@
     var cands = Sch.candidatesForPart(part, week, meeting, field);
     UI.personPicker({
       title: part.title,
-      sub: U.fmtDate(week[meeting].date, 'long') + ' · ranked by who has waited longest',
+      sub: U.fmtDate(week[meeting].date, 'long') + ' · suggested order, but the choice is yours',
       candidates: cands,
       allowClear: !!part[field],
-      onPick: function (personId) {
+      onEveryone: function () {
+        return Sch.candidatesForPart(part, week, meeting, field, { includeUnqualified: true });
+      },
+      onPick: function (personId, candidate) {
         Store.setAssignment(part.id, field, personId);
-        if (personId) UI.flag('Assigned', Store.name(personId) + ' — ' + part.title, 'success');
+        if (!personId) return;
+        UI.flag('Assigned', Store.name(personId) + ' — ' + part.title, 'success');
+        if (candidate && candidate.notMarked) offerToMark(personId, part, field);
       }
+    });
+  }
+
+  /* Assigning someone who is not marked for a part is allowed — but it is nearly
+     always because the record is out of date, so offer to put it right. */
+  function offerToMark(personId, part, field) {
+    var t = S.partType(part.type);
+    var qual = field === 'assistantId' ? (t.assistantQual || 'assistant') : t.qual;
+    if (!qual) return;
+    var meta = S.QUALIFICATIONS.filter(function (q) { return q.id === qual; })[0];
+    if (!meta) return;
+    var person = Store.person(personId);
+    if ((person.qualifications || []).indexOf(qual) !== -1) return;
+
+    UI.confirm({
+      title: 'Mark ' + person.firstName + ' for “' + meta.name + '”?',
+      body: 'The assignment is made either way. Marking it means the scheduler can propose '
+        + person.firstName + ' for this in future rather than you having to remember.',
+      confirmLabel: 'Mark it'
+    }, function () {
+      Store.update({ action: 'person.qualifications', summary: Store.name(personId) + ' — ' + meta.name },
+        function () {
+          person.qualifications = (person.qualifications || []).concat([qual]);
+        });
+      UI.flag('Marked', person.firstName + ' can now be proposed for this.', 'success');
     });
   }
 
@@ -146,7 +177,7 @@
       ]),
       el('div.right.row', [
         block.cancelled ? UI.lozenge('Cancelled', 'removed') : null,
-        canEdit() ? UI.btn('Auto-fill', {
+        canEdit() && suggests() ? UI.btn('Auto-fill', {
           sm: true, icon: 'sparkle',
           onClick: function () { autoFill(week, meeting); }
         }) : null,
@@ -252,9 +283,15 @@
       var result = Sch.planRange(weeks, {});
       U.clear(preview);
 
+      var locked = weeks.filter(function (w) { return w.locked; });
+      if (locked.length) {
+        preview.appendChild(UI.banner('neutral', U.plural(locked.length, 'week') + ' locked and left alone',
+          locked.map(function (w) { return U.fmtWeek(w.weekStart); }).join(', ')));
+      }
       if (!result.plan.length) {
         preview.appendChild(UI.banner('success', 'Nothing to fill',
-          'Every slot in the next ' + choice.weeks + ' weeks already has someone on it.'));
+          'Every slot in the next ' + choice.weeks + ' weeks already has someone on it'
+            + (locked.length ? ', apart from the locked weeks.' : '.')));
         return { weeks: weeks, result: result };
       }
 
@@ -455,8 +492,8 @@
             function () { App.go('meetings', U.addDays(weekStart, 7)); },
             function () { App.go('meetings', U.weekStart(U.today())); }),
           canEdit() ? UI.btn('Import program', { icon: 'upload', onClick: function () { importModal(weekStart); } }) : null,
-          canEdit() ? UI.btn('Auto-fill week', { icon: 'sparkle', onClick: function () { autoFill(week, null); } }) : null,
-          canEdit() ? UI.btn('Balance several weeks', { variant: 'primary', icon: 'chart', onClick: balanceRange }) : null,
+          canEdit() && suggests() ? UI.btn('Auto-fill week', { icon: 'sparkle', onClick: function () { autoFill(week, null); } }) : null,
+          canEdit() && suggests() ? UI.btn('Balance several weeks', { variant: 'primary', icon: 'chart', onClick: balanceRange }) : null,
           UI.btn('Print', { variant: 'subtle', icon: 'print', onClick: function () { global.print(); } }),
           UI.copyBtn(function () {
             return Program.weekToText(week, cong, function (id) { return Store.name(id); });
@@ -473,9 +510,20 @@
         var t = S.partType(r.part.type);
         return !r.part.assigneeId || (t.assistant && !r.part.assistantId);
       }).length;
+      if (week.locked) {
+        root.appendChild(UI.banner('neutral', 'This week is locked',
+          'Auto-fill and balancing leave it exactly as it is. You can still change anything by hand.',
+          canEdit() ? UI.btn('Unlock', { sm: true, onClick: function () {
+            Store.update({ action: 'week.unlocked', summary: U.fmtWeek(week.weekStart) },
+              function () { week.locked = false; });
+          } }) : null));
+      }
+
       if (unfilled && canEdit()) {
         root.appendChild(UI.banner('warn', U.plural(unfilled, 'slot') + ' still unassigned',
-          'Auto-fill proposes names, then you confirm or change any of them.'));
+          suggests()
+            ? 'Auto-fill proposes names, then you confirm or change any of them. Or click any slot and choose yourself.'
+            : 'Click any slot to choose someone. Suggestions are turned off for this congregation.'));
       }
 
       root.appendChild(el('div.stack', [
@@ -532,6 +580,11 @@
       ]));
     });
     card.appendChild(grid);
+    card.appendChild(UI.checkbox('Lock this week', !!week.locked, function (v) {
+      Store.update({ action: v ? 'week.locked' : 'week.unlocked', summary: U.fmtWeek(week.weekStart) },
+        function () { week.locked = v; });
+    }, 'Auto-fill and balancing will not touch it. Assignments made by hand are unaffected.'));
+
     card.appendChild(el('div.row', { style: 'margin-top:12px' }, [
       UI.btn('Save notes', { onClick: function () {
         var inputs = U.$$('input[placeholder^="e.g. circuit"]', card);

@@ -130,6 +130,62 @@
         ], { icon: 'calendar' })
       ]));
 
+      /* how this congregation wants to be scheduled */
+      var active = Store.state.people.filter(function (p) {
+        return p.congId === cong.id && (p.status === 'active' || p.status === 'irregular');
+      }).length;
+      var sched = Object.assign({}, S.DEFAULT_SCHEDULING, cong.scheduling || {});
+      var resolved = S.schedulingFor(cong, active);
+      var schedBox = el('div');
+
+      function drawSched() {
+        U.clear(schedBox);
+        var r = S.schedulingFor(Object.assign({}, cong, { scheduling: sched }), active);
+        schedBox.appendChild(UI.banner(r.automatic ? 'neutral' : 'inprogress',
+          r.profile.name + (r.automatic ? ' — chosen from your ' + U.plural(active, 'active publisher') : ' — set by hand'),
+          r.profile.note));
+        schedBox.appendChild(UI.kv([
+          ['Most on one meeting', String(r.maxPerMeeting)],
+          ['Most in one week', String(r.maxPerWeek)],
+          ['Fairness looks back', U.plural(r.windowWeeks, 'week')],
+          ['A pool counts as thin under', U.plural(r.thinThreshold, 'person', 'people')]
+        ]));
+      }
+
+      root.appendChild(UI.sectionTitle('How this congregation is scheduled'));
+      root.appendChild(UI.card(null, [
+        el('p.small.muted', { style: 'margin-bottom:12px',
+          text: 'What is fair depends on how many publishers there are. In a small congregation the same brother '
+            + 'takes several parts a meeting because there is nobody else; in a large one he should have one a week. '
+            + 'This is picked from your numbers unless you set it yourself.' }),
+        UI.field('Congregation size', UI.select(
+          [{ id: 'auto', name: 'Work it out from the number of publishers' }].concat(
+            S.SIZE_PROFILES.map(function (x) { return { id: x.id, name: x.name }; })),
+          sched.profile, function (v) { sched.profile = v; drawSched(); })),
+        el('div.grid.c2', [
+          UI.field('Most on one meeting (blank for the default)', UI.input({
+            type: 'number', min: 1, max: 6, value: sched.maxPerMeeting == null ? '' : sched.maxPerMeeting,
+            onInput: function (e) { sched.maxPerMeeting = e.target.value === '' ? null : +e.target.value; drawSched(); }
+          })),
+          UI.field('Most in one week (blank for the default)', UI.input({
+            type: 'number', min: 1, max: 12, value: sched.maxPerWeek == null ? '' : sched.maxPerWeek,
+            onInput: function (e) { sched.maxPerWeek = e.target.value === '' ? null : +e.target.value; drawSched(); }
+          }))
+        ]),
+        UI.checkbox('Suggest names automatically', sched.autoSuggest !== false, function (v) { sched.autoSuggest = v; },
+          'Off means no auto-fill or balancing anywhere — every assignment is made by hand. The suggested order still shows when you open a slot.'),
+        UI.checkbox('Pair demonstration partners of the same sex', sched.pairSameGender !== false,
+          function (v) { sched.pairSameGender = v; }),
+        schedBox,
+        el('div', { style: 'margin-top:12px' }, UI.btn('Save scheduling', { onClick: function () {
+          Store.update({ action: 'congregation.scheduling', summary: cong.name }, function () {
+            cong.scheduling = sched;
+          });
+          UI.flag('Saved', 'The scheduler follows this from now on.', 'success');
+        } }))
+      ], { icon: 'sparkle' }));
+      drawSched();
+
       root.appendChild(el('div.row', { style: 'margin-top:16px' }, [
         UI.btn('Save settings', { variant: 'primary', onClick: function () {
           Store.update({ action: 'congregation.updated', summary: draft.name }, function () {

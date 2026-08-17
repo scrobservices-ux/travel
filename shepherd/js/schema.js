@@ -237,6 +237,67 @@
     };
   };
 
+  /* ---------- congregation size ---------- *
+     What is fair depends entirely on how many people there are. In a group of
+     fifteen the same brother genuinely takes three parts a meeting because nobody
+     else can; in a congregation of two hundred he should have one a month. These
+     are picked from the number of active publishers unless the body of elders
+     sets them itself. */
+  S.SIZE_PROFILES = [
+    {
+      id: 'small', name: 'Small congregation', upTo: 24,
+      note: 'Under about 25 publishers. Ceilings are effectively off — the same brother will take several parts a meeting because there is nobody else. Fairness still decides the order.',
+      maxPerMeeting: 4, maxPerWeek: 10, windowWeeks: 13, thinThreshold: 2
+    },
+    {
+      id: 'medium', name: 'Medium congregation', upTo: 99,
+      note: 'About 25 to 100 publishers. At most two things on a night and three in a week, with the rotation doing the rest.',
+      maxPerMeeting: 2, maxPerWeek: 3, windowWeeks: 26, thinThreshold: 4
+    },
+    {
+      id: 'large', name: 'Large congregation', upTo: Infinity,
+      note: 'Over about 100 publishers. One thing a week each, so the rotation reaches everybody.',
+      maxPerMeeting: 1, maxPerWeek: 1, windowWeeks: 39, thinThreshold: 6
+    }
+  ];
+
+  S.sizeProfile = function (activeCount) {
+    var n = activeCount || 0;
+    for (var i = 0; i < S.SIZE_PROFILES.length; i++) {
+      if (n <= S.SIZE_PROFILES[i].upTo) return S.SIZE_PROFILES[i];
+    }
+    return S.SIZE_PROFILES[S.SIZE_PROFILES.length - 1];
+  };
+
+  /* How this congregation wants to be scheduled: the size profile, plus anything
+     the elders have overridden, plus whether they want suggestions at all. */
+  S.DEFAULT_SCHEDULING = {
+    profile: 'auto',        // 'auto' | 'small' | 'medium' | 'large'
+    autoSuggest: true,      // false hides auto-fill entirely: a manual congregation
+    pairSameGender: true,
+    maxPerMeeting: null,    // null = take it from the profile
+    maxPerWeek: null,
+    windowWeeks: null,
+    thinThreshold: null
+  };
+
+  S.schedulingFor = function (cong, activeCount) {
+    var set = Object.assign({}, S.DEFAULT_SCHEDULING, (cong && cong.scheduling) || {});
+    var profile = set.profile === 'auto' || !set.profile
+      ? S.sizeProfile(activeCount)
+      : (S.SIZE_PROFILES.filter(function (p) { return p.id === set.profile; })[0] || S.sizeProfile(activeCount));
+    return {
+      profile: profile,
+      automatic: set.profile === 'auto' || !set.profile,
+      autoSuggest: set.autoSuggest !== false,
+      pairSameGender: set.pairSameGender !== false,
+      maxPerMeeting: set.maxPerMeeting || profile.maxPerMeeting,
+      maxPerWeek: set.maxPerWeek || profile.maxPerWeek,
+      windowWeeks: set.windowWeeks || profile.windowWeeks,
+      thinThreshold: set.thinThreshold || profile.thinThreshold
+    };
+  };
+
   /* ---------- assignment workflow ---------- */
   S.PART_STATUS = [
     { id: 'unassigned', name: 'Unassigned', tone: '' },
