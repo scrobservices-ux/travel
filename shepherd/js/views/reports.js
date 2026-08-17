@@ -70,11 +70,16 @@
       var per = period();
       var sum = Store.reportSummary(per);
       var cong = Store.cong();
+      // a group overseer collects only his own group; the secretary collects everyone
+      var inScope = Auth.peopleInScope('reports.review').filter(function (p) {
+        return p.status === 'active' || p.status === 'irregular';
+      });
 
       root.appendChild(UI.pageHead({
         crumbs: [{ label: cong.name }, { label: 'Field service reports' }],
         title: 'Field service reports',
-        sub: 'Due by the ' + cong.reportDueDay + 'th of the following month.',
+        sub: 'Due by the ' + cong.reportDueDay + 'th of the following month.'
+          + (Auth.scopeLabel('reports.review') ? ' You collect ' + Auth.scopeLabel('reports.review') + '.' : ''),
         actions: [
           UI.dateNav(U.periodLabel(per),
             function () { state.period = U.prevPeriod(per); App.render(); },
@@ -85,7 +90,7 @@
         ]
       }));
 
-      root.appendChild(el('div.grid.c4', [
+      if (Auth.scope('reports.review') !== 'group') root.appendChild(el('div.grid.c4', [
         UI.stat('Handed in', sum.submitted + ' / ' + sum.expected,
           sum.expected - sum.submitted > 0 ? (sum.expected - sum.submitted) + ' outstanding' : 'Complete',
           sum.expected - sum.submitted > 0 ? 'down' : 'up'),
@@ -94,7 +99,9 @@
         UI.stat('Pioneer hours', sum.pioneerHours, sum.regular + ' regular · ' + sum.auxiliary + ' auxiliary')
       ]));
 
-      var missing = Store.missingReports(per);
+      var missing = Store.missingReports(per).filter(function (p) {
+        return inScope.some(function (x) { return x.id === p.id; });
+      });
       if (missing.length) {
         root.appendChild(el('div', { style: 'margin-top:16px' },
           UI.banner('warn', U.plural(missing.length, 'report') + ' still outstanding',
@@ -112,7 +119,7 @@
       bar.querySelector('select').style.maxWidth = '200px';
       root.appendChild(bar);
 
-      var rows = Store.activePeople().filter(function (p) {
+      var rows = inScope.filter(function (p) {
         if (state.group && p.serviceGroupId !== state.group) return false;
         if (state.only === 'missing' && Store.report(p.id, per)) return false;
         if (state.only === 'pioneers' && ['regular', 'auxiliary', 'special'].indexOf(p.publisherType) === -1) return false;
@@ -138,6 +145,14 @@
             onClick: function () { reportForm(r.person.id, per); } });
         } }
       ], rows, { sortKey: 'status', empty: 'Nobody matches those filters.' }));
+
+      if (Auth.scope('reports.review') === 'group') {
+        var groupIn = rows.filter(function (r) { return r.report; }).length;
+        root.appendChild(el('div', { style: 'margin-top:24px' },
+          UI.banner('neutral', 'Your group: ' + groupIn + ' of ' + rows.length + ' handed in',
+            'The congregation totals are put together by the secretary from every group.')));
+        return;
+      }
 
       /* congregation summary */
       root.appendChild(UI.sectionTitle('Congregation summary — ' + U.periodLabel(per)));

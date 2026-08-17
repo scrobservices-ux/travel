@@ -70,14 +70,19 @@
     title: 'shepherding records',
     perm: 'shepherding.view',
     render: function (root) {
-      var visits = U.sortBy(Store.visits(), function (v) { return v.date; }, 'desc');
-      var people = Store.activePeople();
+      var people = Auth.peopleInScope('shepherding.view').filter(function (p) {
+        return p.status === 'active' || p.status === 'irregular';
+      });
+      var visits = U.sortBy(Store.visits().filter(function (v) {
+        return Auth.reaches('shepherding.view', v.personId);
+      }), function (v) { return v.date; }, 'desc');
       var dueFollowUps = visits.filter(function (v) { return v.followUpOn && v.followUpOn <= U.today(); });
 
       root.appendChild(UI.pageHead({
         crumbs: [{ label: Store.cong().name }, { label: 'Shepherding' }],
         title: 'Shepherding',
-        sub: 'Visit planning and confidential notes for the body of elders.',
+        sub: 'Visit planning and confidential notes for the body of elders.'
+          + (Auth.scopeLabel('shepherding.view') ? ' You see ' + Auth.scopeLabel('shepherding.view') + '.' : ''),
         actions: [UI.btn('Record a visit', { variant: 'primary', icon: 'plus', onClick: function () { newVisit(null); } })]
       }));
 
@@ -131,7 +136,10 @@
 
       root.appendChild(UI.sectionTitle('Coverage by service group'));
       var grid = el('div.grid.c2');
-      Store.groups().forEach(function (g) {
+      var groupsInScope = Auth.scope('shepherding.view') === 'group'
+        ? Store.groups().filter(function (g) { return g.id === Auth.me().serviceGroupId; })
+        : Store.groups();
+      groupsInScope.forEach(function (g) {
         var members = people.filter(function (p) { return p.serviceGroupId === g.id; });
         var visited = members.filter(function (p) {
           return lastVisit[p.id] && U.diffDays(lastVisit[p.id], U.today()) <= 365;

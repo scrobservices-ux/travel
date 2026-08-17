@@ -211,17 +211,156 @@
         } }
       ], people, { sortKey: 'name', empty: 'No people in this congregation yet.' }));
 
-      root.appendChild(UI.sectionTitle('What each capability means'));
-      var rows = Object.keys(S.PERMISSIONS).map(function (cap) {
-        return { cap: cap, roles: S.PERMISSIONS[cap] };
+      root.appendChild(UI.sectionTitle('What each role may do',
+        UI.btn('Change the arrangement', { sm: true, icon: 'cog', onClick: function () { App.go('admin-roles'); } })));
+      root.appendChild(matrixSummary());
+    }
+  };
+
+  /* read-only view of the congregation's current arrangement */
+  function matrixSummary() {
+    var matrix = Auth.matrix();
+    var rows = S.CAPABILITIES.map(function (cap) {
+      var holders = S.ROLES.filter(function (r) {
+        return S.grantFor(matrix, cap.id, r.id) !== 'none';
+      }).map(function (r) {
+        return { role: r, grant: S.grantFor(matrix, cap.id, r.id) };
+      });
+      return { cap: cap, holders: holders };
+    });
+    return UI.table([
+      { key: 'area', label: 'Area', width: '150px', render: function (r) { return r.cap.area; } },
+      { key: 'cap', label: 'Can', render: function (r) {
+        return el('div', [
+          el('div', { text: r.cap.name }),
+          r.cap.note ? el('div.small.muted', { text: r.cap.note }) : null
+        ]);
+      } },
+      { key: 'who', label: 'Cared for by', render: function (r) {
+        if (!r.holders.length) return UI.lozenge('Administrator only', 'removed');
+        return el('div', r.holders.map(function (h) {
+          return h.grant === 'group'
+            ? UI.lozenge(S.roleName(h.role.id) + ' · own group', 'warn')
+            : UI.tag(S.roleName(h.role.id));
+        }));
+      } }
+    ], rows);
+  }
+
+  /* ---------- roles & responsibilities ---------- */
+
+  Views['admin-roles'] = {
+    title: 'roles and responsibilities',
+    perm: PERM,
+    render: function (root) {
+      var cong = Store.cong();
+      var custom = !!cong.roleMatrix;
+      var matrix = U.clone(S.matrixFor(cong));
+
+      root.appendChild(UI.pageHead({
+        crumbs: [{ label: 'Administration', href: App.href('admin') }, { label: 'Roles & responsibilities' }],
+        title: 'Roles & responsibilities',
+        sub: 'How ' + cong.name + ' divides the work. This is the body of elders’ decision, not ours — change anything here and both the app and the server follow it.',
+        actions: [
+          UI.btn('Back to the default arrangement', { icon: 'sparkle', onClick: function () {
+            UI.confirm({
+              title: 'Use the default arrangement?',
+              body: 'Everything goes back to the usual division of work. Nothing else about the congregation changes.',
+              confirmLabel: 'Reset'
+            }, function () {
+              Store.update({ action: 'roles.reset', summary: cong.name }, function () {
+                delete cong.roleMatrix;
+              });
+              UI.flag('Reset', 'The default arrangement is back.', 'success');
+            });
+          } })
+        ]
+      }));
+
+      root.appendChild(UI.banner(custom ? 'inprogress' : 'neutral',
+        custom ? 'This congregation has its own arrangement' : 'Using the default arrangement',
+        custom ? 'Changed from the default. The server enforces exactly what is set here.'
+          : 'A starting point that follows how the work is usually divided. Adjust it to match how your body of elders has assigned things.'));
+
+      root.appendChild(UI.banner('neutral', 'How to read it',
+        '“Whole congregation” gives the role that work for everyone. “Own service group” narrows it — a group overseer collecting his own group’s reports and seeing his own group’s records, and nobody else’s. The account administrator always holds everything.'));
+
+      var dirty = { value: false };
+      var saveBar = el('div.row', { style: 'margin:16px 0' });
+
+      function markDirty() {
+        dirty.value = true;
+        U.clear(saveBar);
+        saveBar.appendChild(UI.btn('Save the arrangement', { variant: 'primary', icon: 'check', onClick: save }));
+        saveBar.appendChild(el('span.small.muted', { text: 'Not saved yet.' }));
+      }
+
+      function save() {
+        Store.update({ action: 'roles.updated', summary: cong.name + ' role arrangement changed' },
+          function () { cong.roleMatrix = matrix; });
+        UI.flag('Saved', 'Everyone’s access follows the new arrangement from now on.', 'success');
+        App.go('admin-roles');
+      }
+
+      root.appendChild(saveBar);
+
+      var roles = S.ROLES.filter(function (r) { return r.id !== 'admin' && r.id !== 'publisher'; });
+
+      S.capabilityAreas().forEach(function (area) {
+        root.appendChild(UI.sectionTitle(area));
+        var caps = S.CAPABILITIES.filter(function (c) { return c.area === area; });
+        var columns = [{
+          key: 'cap', label: 'Can', width: '280px', minWidth: '260px', render: function (cap) {
+            return el('div', [
+              el('div', { text: cap.name }),
+              cap.note ? el('div.small.muted', { style: 'max-width:34ch', text: cap.note }) : null,
+              cap.scope ? el('div', { style: 'margin-top:4px' }, UI.lozenge('Can be narrowed to a group', '')) : null
+            ]);
+          }
+        }].concat(roles.map(function (role) {
+          return {
+            key: role.id,
+            label: S.roleName(role.id),
+            minWidth: '140px',
+            render: function (cap) {
+              var options = cap.scope
+                ? [{ id: 'none', name: '—' }, { id: 'group', name: 'Own group' }, { id: 'all', name: 'Whole cong.' }]
+                : [{ id: 'none', name: '—' }, { id: 'all', name: 'Yes' }];
+              var current = S.grantFor(matrix, cap.id, role.id);
+              var sel = UI.select(options, current, function (v) {
+                matrix[cap.id] = matrix[cap.id] || {};
+                if (v === 'none') delete matrix[cap.id][role.id];
+                else matrix[cap.id][role.id] = v;
+                markDirty();
+              });
+              sel.style.minWidth = '120px';
+              if (current !== 'none') sel.style.fontWeight = '600';
+              return sel;
+            }
+          };
+        }));
+        root.appendChild(UI.table(columns, caps));
+      });
+
+      root.appendChild(UI.sectionTitle('Who this affects right now'));
+      var people = Store.people().filter(function (p) {
+        return (p.roles || []).some(function (r) { return r !== 'publisher'; });
       });
       root.appendChild(UI.table([
-        { key: 'cap', label: 'Capability', render: function (r) { return el('code.mono', { text: r.cap }); } },
-        { key: 'roles', label: 'Held by', render: function (r) {
-          return el('div', r.roles.length ? r.roles.map(function (x) { return UI.tag(S.roleName(x)); })
-            : [UI.lozenge('Account administrator only', 'removed')]);
+        { key: 'name', label: 'Person', render: function (p) { return UI.person(p.id, { sub: true }); } },
+        { key: 'roles', label: 'Roles', render: function (p) {
+          return el('div', (p.roles || []).filter(function (r) { return r !== 'publisher'; })
+            .map(function (r) { return UI.tag(S.roleName(r)); }));
+        } },
+        { key: 'holds', label: 'Which means they can', render: function (p) {
+          var held = S.CAPABILITIES.filter(function (c) { return Auth.can(c.id, p); });
+          if (!held.length) return el('span.muted', { text: 'the same as any publisher' });
+          return el('div.small', { text: held.map(function (c) {
+            var g = Auth.grant(c.id, p);
+            return c.name.toLowerCase() + (g === 'group' ? ' (own group)' : '');
+          }).join(' · ') });
         } }
-      ], rows));
+      ], people, { empty: 'Nobody has a role beyond publisher yet.' }));
     }
   };
 

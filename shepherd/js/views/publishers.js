@@ -16,8 +16,8 @@
     root.appendChild(UI.pageHead({
       crumbs: [{ label: Store.cong().name }, { label: 'Publishers' }],
       title: 'Publishers',
-      sub: U.plural(Store.people().length, 'person', 'people') + ' on the roll · '
-        + U.plural(Store.activePeople().length, 'active publisher'),
+      sub: U.plural(Auth.peopleInScope('publishers.view').length, 'person', 'people')
+        + (Auth.scope('publishers.view') === 'group' ? ' in your service group' : ' on the roll'),
       actions: [
         UI.btn('Export CSV', { variant: 'subtle', icon: 'download', onClick: exportCsv }),
         canEdit ? UI.btn('Add publisher', { variant: 'primary', icon: 'plus', onClick: function () { editPerson(null); } }) : null
@@ -33,7 +33,13 @@
     U.$$('select', bar).forEach(function (s) { s.style.maxWidth = '170px'; });
     root.appendChild(bar);
 
-    var rows = Store.people().filter(function (p) {
+    var scoped = Auth.peopleInScope('publishers.view');
+    var scopeNote = Auth.scopeLabel('publishers.view');
+    if (scopeNote) {
+      root.appendChild(UI.banner('neutral', 'You are seeing ' + scopeNote,
+        'Your congregation has given the group overseer these records for his own group. The secretary or coordinator sees everyone.'));
+    }
+    var rows = scoped.filter(function (p) {
       if (filter.q && !U.matches(Store.name(p.id) + ' ' + p.email + ' ' + p.phone, filter.q)) return false;
       if (filter.group && p.serviceGroupId !== filter.group) return false;
       if (filter.status && p.status !== filter.status) return false;
@@ -79,6 +85,7 @@
     }));
 
     /* service groups */
+    if (Auth.scope('publishers.view') !== 'all') return;
     root.appendChild(UI.sectionTitle('Service groups', canEdit
       ? UI.btn('Add group', { sm: true, icon: 'plus', onClick: function () { editGroup(null); } }) : null));
     var grid = el('div.grid.c3');
@@ -209,7 +216,7 @@
     root.appendChild(awayList(person, canEdit || me.id === person.id));
 
     /* shepherding */
-    if (Auth.can('shepherding.view')) {
+    if (Auth.reaches('shepherding.view', person.id)) {
       var visits = Store.visits().filter(function (v) { return v.personId === person.id; });
       root.appendChild(UI.sectionTitle('Shepherding history'));
       root.appendChild(UI.card(null, [
@@ -402,6 +409,11 @@
       var person = params.id ? Store.person(params.id) : null;
       if (params.id && !person) {
         root.appendChild(UI.empty('No such publisher', 'The record may have been removed.'));
+        return;
+      }
+      if (person && !Auth.reaches('publishers.view', person.id)) {
+        root.appendChild(UI.empty('Not in your service group',
+          'Your congregation has given you publisher records for ' + (Auth.scopeLabel('publishers.view') || 'your own group') + '.'));
         return;
       }
       if (person) record(root, person);

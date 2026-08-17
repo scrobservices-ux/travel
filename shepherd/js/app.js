@@ -57,7 +57,8 @@
       { group: 'Account', items: [
         { id: 'admin', label: 'Overview', icon: 'dashboard' },
         { id: 'admin-congregations', label: 'Congregations', icon: 'building' },
-        { id: 'admin-users', label: 'Users & roles', icon: 'people' }
+        { id: 'admin-users', label: 'Users & roles', icon: 'people' },
+        { id: 'admin-roles', label: 'Roles & responsibilities', icon: 'shield' }
       ] },
       { group: 'Configuration', items: [
         { id: 'admin-program', label: 'Program source', icon: 'book' },

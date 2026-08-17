@@ -1,10 +1,15 @@
 /* Server-side authorisation.
  *
  * The browser hides what a person may not do; this decides what the server will
- * actually accept, using the same role/capability table the UI reads. Publishers
- * get four narrow self-service exceptions: their own contact details, their own
- * field service report, confirming or declining their own assignment, and
- * handing back a territory checked out to them. */
+ * actually accept. It reads the arrangement the body of elders has set on their
+ * own congregation (falling back to the default one), so changing who cares for
+ * what in the interface changes what the server enforces too.
+ *
+ * A capability can be held for the whole congregation or only for the person's
+ * own service group — a group overseer collecting his own group's reports, for
+ * instance. Publishers additionally get four narrow self-service exceptions:
+ * their own contact details, their own field service report, confirming or
+ * declining their own assignment, and handing back a territory they hold. */
 'use strict';
 
 require('../js/util.js');
@@ -31,6 +36,14 @@ var WRITE = {
   audit: null            // anyone signed in may append their own entries
 };
 
+/* Collections whose records belong to one publisher, so a group-scoped grant can
+   be checked: how to find the person a record is about. */
+var SUBJECT = {
+  people: function (rec) { return rec && rec.id; },
+  reports: function (rec) { return rec && rec.personId; },
+  visits: function (rec) { return rec && rec.personId; }
+};
+
 // fields a person may change on their own record
 var SELF_FIELDS = ['phone', 'email', 'address', 'emergencyContact', 'unavailable'];
 
@@ -41,13 +54,25 @@ function rolesOf(person) {
   return roles;
 }
 
-function can(person, capability) {
+/* 'all' | 'group' | 'none', from the congregation's own arrangement. */
+function grant(db, person, capability) {
   var roles = rolesOf(person);
-  if (roles.indexOf('admin') !== -1) return true;
-  if (!capability) return true;
-  var allowed = S.PERMISSIONS[capability];
-  if (!allowed) return false;
-  return allowed.some(function (r) { return roles.indexOf(r) !== -1; });
+  if (roles.indexOf('admin') !== -1) return 'all';
+  if (!capability) return 'all';
+  if (capability === 'admin.manage') return 'none';
+  var cong = person && db.find('congregations', person.congId);
+  var matrix = S.matrixFor(cong);
+  var best = 'none';
+  for (var i = 0; i < roles.length; i++) {
+    var g = S.grantFor(matrix, capability, roles[i]);
+    if (g === 'all') return 'all';
+    if (g === 'group') best = 'group';
+  }
+  return best;
+}
+
+function can(db, person, capability) {
+  return grant(db, person, capability) !== 'none';
 }
 
 function deny(reason) { return { ok: false, reason: reason }; }
@@ -118,7 +143,7 @@ function permit(db, personId, change) {
   if (!(c in WRITE)) return deny('Unknown collection “' + c + '”.');
 
   var isAdmin = rolesOf(me).indexOf('admin') !== -1;
-  var before = change.op === 'del' || c === 'account' ? db.find(c, change.id) : db.find(c, change.id);
+  var before = db.find(c, change.id);
   var rec = change.rec;
 
   // stay inside your own congregation unless you administer the account
@@ -129,11 +154,24 @@ function permit(db, personId, change) {
     }
   }
 
-  if (can(me, WRITE[c])) {
+  var held = grant(db, me, WRITE[c]);
+  if (held !== 'none') {
+    // a grant narrowed to a service group only reaches that group's records
+    if (held === 'group' && SUBJECT[c]) {
+      var subjectId = SUBJECT[c](rec) || SUBJECT[c](before);
+      var subject = subjectId && db.find('people', subjectId);
+      if (!subject || subject.serviceGroupId !== me.serviceGroupId) {
+        return deny('Your congregation has given you that only for your own service group.');
+      }
+    }
     // an elder may not quietly grant themselves the administrator role
     if (c === 'people' && !isAdmin && rec && (rec.roles || []).indexOf('admin') !== -1) {
       var wasAdmin = before && (before.roles || []).indexOf('admin') !== -1;
       if (!wasAdmin) return deny('Only an account administrator can grant the administrator role.');
+    }
+    // nor rewrite who is allowed to do what — that is the congregation's arrangement
+    if (c === 'congregations' && !isAdmin) {
+      return deny('Only an account administrator can change congregation settings.');
     }
     if (c === 'audit' && rec) rec.personId = personId;
     return ALLOW;
@@ -153,6 +191,7 @@ function permit(db, personId, change) {
 module.exports = {
   permit: permit,
   can: can,
+  grant: grant,
   rolesOf: rolesOf,
   WRITE: WRITE
 };

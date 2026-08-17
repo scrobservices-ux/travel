@@ -35,27 +35,109 @@
     return r ? r.name : id;
   };
 
-  /* ---------- permissions ---------- */
-  // capability -> roles that hold it. 'admin' implicitly holds everything.
-  S.PERMISSIONS = {
-    'schedule.view': ['publisher', 'servant', 'elder', 'secretary', 'coordinator', 'life_ministry', 'service', 'group_overseer', 'territory', 'accounts'],
-    'schedule.edit': ['elder', 'coordinator', 'life_ministry'],
-    'duties.edit': ['elder', 'coordinator', 'servant', 'life_ministry'],
-    'publishers.view': ['elder', 'secretary', 'coordinator', 'group_overseer', 'service', 'life_ministry', 'servant'],
-    'publishers.edit': ['secretary', 'coordinator', 'elder'],
-    'reports.submit': ['publisher', 'servant', 'elder', 'secretary', 'coordinator', 'group_overseer', 'service', 'life_ministry', 'territory', 'accounts'],
-    'reports.review': ['secretary', 'coordinator', 'elder', 'group_overseer', 'service'],
-    'territories.view': ['publisher', 'servant', 'elder', 'secretary', 'coordinator', 'territory', 'service', 'group_overseer', 'life_ministry', 'accounts'],
-    'territories.manage': ['territory', 'service', 'coordinator', 'elder'],
-    'shepherding.view': ['elder', 'coordinator', 'secretary'],
-    'tasks.view': ['elder', 'servant', 'coordinator', 'secretary', 'group_overseer', 'service', 'life_ministry', 'territory', 'accounts'],
-    'tasks.edit': ['elder', 'coordinator', 'secretary', 'servant'],
-    'attendance.edit': ['secretary', 'coordinator', 'elder', 'servant'],
-    'accounts.view': ['accounts', 'coordinator', 'secretary', 'elder'],
-    'accounts.edit': ['accounts', 'coordinator'],
-    'announce.publish': ['secretary', 'coordinator', 'elder'],
-    'files.manage': ['elder', 'secretary', 'coordinator', 'servant', 'accounts', 'territory', 'life_ministry', 'service'],
-    'admin.manage': []            // admin only
+  /* ---------- capabilities ---------- *
+     What a person may do, described the way a body of elders would describe it.
+     `scope: true` means the capability can be granted for the whole congregation
+     or narrowed to the person's own service group — which is how a group overseer
+     normally works: he cares for his own group's records, not everyone's. */
+  S.CAPABILITIES = [
+    { id: 'schedule.view', area: 'Meetings', name: 'See the meeting schedule',
+      note: 'Who has which part on which week.' },
+    { id: 'schedule.edit', area: 'Meetings', name: 'Prepare the meeting schedule',
+      note: 'Assign parts, import the programme, auto-fill a week. Normally the Life and Ministry overseer and the coordinator.' },
+    { id: 'duties.edit', area: 'Meetings', name: 'Fill the duty rota',
+      note: 'Attendants, audio and video, microphones, platform, cleaning.' },
+    { id: 'attendance.edit', area: 'Meetings', name: 'Record meeting attendance',
+      note: 'Enter the count after each meeting. Usually the secretary or an attendant.' },
+
+    { id: 'publishers.view', area: 'Congregation records', name: 'See publisher records', scope: true,
+      note: 'The directory and each record card.' },
+    { id: 'publishers.edit', area: 'Congregation records', name: 'Keep publisher records', scope: true,
+      note: 'Add, change and remove records. The secretary keeps these.' },
+    { id: 'reports.submit', area: 'Congregation records', name: 'Hand in a field service report',
+      note: 'Every publisher does this for themselves.' },
+    { id: 'reports.review', area: 'Congregation records', name: 'Collect field service reports', scope: true,
+      note: 'Chase what is outstanding and record reports handed in on paper. A group overseer usually does this for his own group only.' },
+    { id: 'shepherding.view', area: 'Congregation records', name: 'See shepherding records', scope: true,
+      note: 'Confidential visit notes.' },
+
+    { id: 'territories.view', area: 'Field ministry', name: 'See the territory register' },
+    { id: 'territories.manage', area: 'Field ministry', name: 'Check territories in and out',
+      note: 'The territory servant, under the service overseer.' },
+
+    { id: 'tasks.view', area: 'Body of elders', name: "See the elders' task board" },
+    { id: 'tasks.edit', area: 'Body of elders', name: 'Raise and close tasks',
+      note: 'Including what goes on the next elders’ meeting agenda.' },
+
+    { id: 'accounts.view', area: 'Administration', name: 'See the congregation accounts' },
+    { id: 'accounts.edit', area: 'Administration', name: 'Keep the congregation accounts',
+      note: 'The accounts servant.' },
+    { id: 'announce.publish', area: 'Administration', name: 'Publish announcements' },
+    { id: 'files.manage', area: 'Administration', name: 'Upload and manage congregation files' }
+  ];
+  S.capability = function (id) {
+    return S.CAPABILITIES.filter(function (c) { return c.id === id; })[0] || null;
+  };
+  S.capabilityAreas = function () {
+    var seen = [];
+    S.CAPABILITIES.forEach(function (c) { if (seen.indexOf(c.area) === -1) seen.push(c.area); });
+    return seen;
+  };
+
+  /* ---------- the default arrangement ---------- *
+     capability -> { role: 'all' | 'group' }. This is a starting point that follows
+     how the work is normally divided; every congregation can change it in
+     Administration -> Roles & responsibilities, and what is stored on the
+     congregation is what both the app and the server obey.
+     The account administrator always holds everything, so is not listed. */
+  S.DEFAULT_MATRIX = {
+    'schedule.view': { publisher: 'all', servant: 'all', elder: 'all', secretary: 'all',
+      coordinator: 'all', life_ministry: 'all', service: 'all', group_overseer: 'all',
+      territory: 'all', accounts: 'all' },
+    'schedule.edit': { coordinator: 'all', life_ministry: 'all' },
+    'duties.edit': { coordinator: 'all', life_ministry: 'all', servant: 'all' },
+    'attendance.edit': { secretary: 'all', coordinator: 'all', servant: 'all' },
+
+    'publishers.view': { secretary: 'all', coordinator: 'all', service: 'all', elder: 'all',
+      life_ministry: 'all', group_overseer: 'group' },
+    'publishers.edit': { secretary: 'all', coordinator: 'all' },
+    'reports.submit': { publisher: 'all', servant: 'all', elder: 'all', secretary: 'all',
+      coordinator: 'all', group_overseer: 'all', service: 'all', life_ministry: 'all',
+      territory: 'all', accounts: 'all' },
+    'reports.review': { secretary: 'all', coordinator: 'all', service: 'all', group_overseer: 'group' },
+    'shepherding.view': { elder: 'all', coordinator: 'all', secretary: 'all', group_overseer: 'group' },
+
+    'territories.view': { publisher: 'all', servant: 'all', elder: 'all', secretary: 'all',
+      coordinator: 'all', territory: 'all', service: 'all', group_overseer: 'all',
+      life_ministry: 'all', accounts: 'all' },
+    'territories.manage': { territory: 'all', service: 'all', coordinator: 'all' },
+
+    'tasks.view': { elder: 'all', servant: 'all', coordinator: 'all', secretary: 'all',
+      group_overseer: 'all', service: 'all', life_ministry: 'all', territory: 'all', accounts: 'all' },
+    'tasks.edit': { elder: 'all', coordinator: 'all', secretary: 'all' },
+
+    'accounts.view': { accounts: 'all', coordinator: 'all', secretary: 'all', elder: 'all' },
+    'accounts.edit': { accounts: 'all', coordinator: 'all' },
+    'announce.publish': { secretary: 'all', coordinator: 'all' },
+    'files.manage': { secretary: 'all', coordinator: 'all', elder: 'all', servant: 'all' }
+  };
+
+  /* The arrangement a congregation is actually using. */
+  S.matrixFor = function (cong) {
+    var stored = cong && cong.roleMatrix;
+    if (!stored) return S.DEFAULT_MATRIX;
+    var out = {};
+    S.CAPABILITIES.forEach(function (c) {
+      out[c.id] = stored[c.id] || {};
+    });
+    return out;
+  };
+
+  /* 'all' | 'group' | 'none' for one role. */
+  S.grantFor = function (matrix, capability, role) {
+    var row = matrix[capability];
+    if (!row) return 'none';
+    return row[role] || 'none';
   };
 
   /* ---------- publisher status ---------- */

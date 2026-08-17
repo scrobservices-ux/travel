@@ -1,13 +1,17 @@
-/* Who is signed in, what they may see, and which of the three workspaces they can open.
-   In this build sign-in is a person picker (no server); the permission model itself is
-   the real thing and every view asks it before rendering an action. */
+/* Who is signed in, what they may do, and which of the three workspaces they can open.
+ *
+ * What a role may do is not fixed in this file — it comes from the arrangement the
+ * body of elders has set on the congregation (Administration → Roles &
+ * responsibilities), falling back to the default one in schema.js. A capability
+ * can be held for the whole congregation or narrowed to a person's own service
+ * group, which is how a group overseer normally works. */
 (function (global) {
   'use strict';
 
   var S = global.Schema, Store = global.Store, U = global.U;
   var Auth = {};
 
-  Auth.me = function () { return Store.me(); };
+  Auth.me = function () { return Store.person(Store.state.session.personId); };
 
   Auth.roles = function (person) {
     var p = person || Auth.me();
@@ -21,12 +25,61 @@
     return Auth.roles(person).indexOf('admin') !== -1;
   };
 
-  Auth.can = function (capability, person) {
+  Auth.matrix = function (cong) {
+    return S.matrixFor(cong || Store.cong());
+  };
+
+  /* The widest grant any of the person's roles gives: 'all' | 'group' | 'none'. */
+  Auth.grant = function (capability, person) {
     var roles = Auth.roles(person);
-    if (roles.indexOf('admin') !== -1) return true;
-    var allowed = S.PERMISSIONS[capability];
-    if (!allowed) return false;
-    return allowed.some(function (r) { return roles.indexOf(r) !== -1; });
+    if (roles.indexOf('admin') !== -1) return 'all';
+    if (capability === 'admin.manage') return 'none';
+    var matrix = Auth.matrix();
+    var best = 'none';
+    for (var i = 0; i < roles.length; i++) {
+      var g = S.grantFor(matrix, capability, roles[i]);
+      if (g === 'all') return 'all';
+      if (g === 'group') best = 'group';
+    }
+    return best;
+  };
+
+  Auth.can = function (capability, person) {
+    return Auth.grant(capability, person) !== 'none';
+  };
+
+  /* 'all' or 'group' — what the person sees for a capability they hold. */
+  Auth.scope = function (capability, person) {
+    return Auth.grant(capability, person);
+  };
+
+  /* Does this capability reach that person's records? */
+  Auth.reaches = function (capability, targetPersonId, person) {
+    var g = Auth.grant(capability, person);
+    if (g === 'all') return true;
+    if (g === 'none') return false;
+    var me = person || Auth.me();
+    var target = Store.person(targetPersonId);
+    return !!(me && target && target.serviceGroupId === me.serviceGroupId);
+  };
+
+  /* Everyone whose records this capability covers. */
+  Auth.peopleInScope = function (capability, person) {
+    var g = Auth.grant(capability, person);
+    if (g === 'none') return [];
+    var people = Store.people();
+    if (g === 'all') return people;
+    var me = person || Auth.me();
+    if (!me) return [];
+    return people.filter(function (p) { return p.serviceGroupId === me.serviceGroupId; });
+  };
+
+  /* A short phrase for the interface, e.g. "Group 2 — Acacia only". */
+  Auth.scopeLabel = function (capability, person) {
+    if (Auth.grant(capability, person) !== 'group') return null;
+    var me = person || Auth.me();
+    var g = me && Store.group(me.serviceGroupId);
+    return g ? g.name + ' only' : 'your service group only';
   };
 
   Auth.workspaces = function (person) {
@@ -78,19 +131,8 @@
     return named.map(S.roleName).join(' · ');
   };
 
-  /* People visible to the signed-in user. Publishers see the directory only if their
-     congregation allows it; elders and above see everyone in the congregation. */
   Auth.visiblePeople = function () {
-    if (Auth.can('publishers.view')) return Store.people();
-    var me = Auth.me();
-    if (!me) return [];
-    return Store.people().filter(function (p) { return p.serviceGroupId === me.serviceGroupId; });
-  };
-
-  /* Shepherding notes are confidential to the body of elders. */
-  Auth.canSeeVisit = function (visit) {
-    if (Auth.can('shepherding.view')) return true;
-    return false;
+    return Auth.peopleInScope('publishers.view');
   };
 
   global.Auth = Auth;

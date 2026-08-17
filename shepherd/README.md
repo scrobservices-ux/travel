@@ -185,15 +185,50 @@ the meeting schedule prints that week.
 
 Access is by **role**, not by workspace. Everyone is a publisher; adding a role —
 elder, secretary, coordinator, accounts servant, territory servant, Life & Ministry
-overseer and so on — turns on the matching pages. The full capability → role matrix is in
-`js/schema.js` and is rendered for reference on Administration → Users & roles.
+overseer and so on — turns on the matching pages.
 
-In shared mode the **server enforces the same table**, so hiding a page is not the only
-thing standing between a publisher and the congregation's records — a request to change
-something their roles do not cover is refused. Publishers get four deliberate
-self-service exceptions: their own contact details and away dates, their own field
-service report, confirming or declining an assignment they are on, and handing back a
-territory checked out to them.
+---
+
+## Who cares for what — and changing it
+
+Each body of elders divides the work differently, so the arrangement is **theirs to set**,
+not fixed in the software: **Administration → Roles & responsibilities** is a grid of
+every capability against every role, saved on the congregation. Change it and both the
+app and the server follow it from that moment; "Back to the default arrangement" undoes
+everything.
+
+A capability is granted three ways: **—** (not held), **own service group**, or **whole
+congregation**. The middle one is how a group overseer normally works — he collects his
+own group's reports and sees his own group's records, and nobody else's. It applies to
+publisher records, keeping records, collecting reports and shepherding notes.
+
+The default arrangement follows how the work is usually divided:
+
+| Role | Holds by default |
+|---|---|
+| **Coordinator (COBE)** | everything the body handles |
+| **Secretary** | publisher records, collecting reports, attendance, announcements, files; sees the accounts but does not keep them |
+| **Service overseer** | territories, collecting reports, sees publisher records |
+| **Life & Ministry overseer** | prepares the meeting schedule and the duty rota |
+| **Group overseer** | his own group's records, reports and shepherding notes |
+| **Territory servant** | checking territories in and out |
+| **Accounts servant** | keeps the congregation accounts |
+| **Ministerial servant** | duty rota, attendance, files, sees the task board |
+| **Elder** | shepherding, tasks, files, sees publisher records and the accounts |
+| **Publisher** | their own report, their own details, the schedules and territory list |
+
+Note what an elder does *not* get by default: preparing the meeting schedule or keeping
+the publisher records, because in most congregations those belong to the Life & Ministry
+overseer and the secretary. If your congregation does it differently — many small ones
+share the work more widely — change it in the grid and it is so.
+
+In shared mode the **server enforces the congregation's own arrangement**, so hiding a
+page is not the only thing standing between a publisher and the records: a request to
+change something their roles do not cover is refused, and a group-scoped grant is checked
+against the record's service group. Only an account administrator can edit the arrangement
+itself. Publishers keep four deliberate self-service exceptions: their own contact details
+and away dates, their own field service report, confirming or declining an assignment they
+are on, and handing back a territory checked out to them.
 
 ---
 
@@ -316,11 +351,11 @@ shepherd/
   css/tokens.css        design tokens — light and dark are a token swap
   css/app.css           shell, components, print rules
   js/util.js            DOM, dates, CSV, icons
-  js/schema.js          roles, permissions, part types, duties, statuses, plans
+  js/schema.js          roles, capabilities, the default arrangement, part types, plans
   js/seed.js            demo congregations
   js/store.js           persistence, selectors, audit, per-record change tracking
   js/sync.js            local vs shared mode, login, push/pull, offline queue
-  js/auth.js            roles → capabilities → workspaces
+  js/auth.js            roles → capabilities → scope → workspaces
   js/ui.js              component kit (tables, modals, pickers, lozenges, flags)
   js/program.js         program skeletons, parsers, import/export
   js/scheduler.js       eligibility, ranking, auto-fill, rota, conflicts
@@ -329,7 +364,7 @@ shepherd/
   server/server.js      HTTP server, API, static files  (no dependencies)
   server/db.js          the shared JSON database and its change log
   server/auth.js        passwords (PBKDF2-SHA256) and sessions
-  server/permit.js      server-side authorisation, from the same role table
+  server/permit.js      server-side authorisation, from the congregation's own arrangement
   server/data/          the congregation's database — not in git
   deploy/               Dockerfile, compose, Caddy, nginx, systemd, backup script
   test/                 headless checks
@@ -346,9 +381,11 @@ node test/smoke.js       # every view in all three workspaces + engine checks
 node test/interact.js    # clicks the real UI: assign, auto-fill, import, drag, submit
 node test/shared.js      # two browsers on one server, including going offline
 node test/paperwork.js  # every print document, the importer, and file uploads
+node test/roles.js      # the default arrangement, group scoping, server enforcement
 ```
 
-All five exit non-zero on failure. `test/server.js` needs nothing but Node and covers
+All six exit non-zero on failure. `test/roles.js` needs nothing but Node for the first
+half. `test/server.js` needs nothing but Node and covers
 first-run setup, wrong passwords, publisher self-service limits (a publisher may confirm
 their own part but not assign themselves one), and that no password material reaches the
 synced document. `test/shared.js` runs two real browsers against a live server: an elder
@@ -358,4 +395,8 @@ working and queues the change, then restarted to watch the queue drain.
 `test/paperwork.js` builds all ten print documents, imports messy real-world spreadsheet
 columns (`Full Name` as `Surname, Firstname`, `12/04/1998` dates, a group that does not
 exist yet), checks the rows that cannot be matched are reported rather than silently
-dropped, and prints a real PDF. Screenshots land in `/tmp`.
+dropped, and prints a real PDF. `test/roles.js` checks the default division of work, then
+signs in as a group overseer against a live server to confirm he can record his own
+group's reports but not another group's, cannot raise elders' tasks until the congregation
+grants it, can the moment it does, and cannot rewrite the arrangement himself. Screenshots
+land in `/tmp`.

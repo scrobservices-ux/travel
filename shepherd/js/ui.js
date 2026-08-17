@@ -291,7 +291,8 @@
     columns.forEach(function (c) {
       var sortable = !!c.sort;
       var th = el('th' + (c.num ? '.num' : '') + (sortable ? '.sortable' : ''), {
-        style: c.width ? 'width:' + c.width : null,
+        style: [c.width ? 'width:' + c.width : null, c.minWidth ? 'min-width:' + c.minWidth : null]
+          .filter(Boolean).join(';') || null,
         onclick: sortable ? function () {
           if (state.key === c.key) state.dir = state.dir === 'asc' ? 'desc' : 'asc';
           else { state.key = c.key; state.dir = 'asc'; }
