@@ -202,7 +202,7 @@
     root.appendChild(UI.table([
       { key: 'date', label: 'Date', sort: function (r) { return r.date; }, render: function (r) { return U.fmtDate(r.date, 'day'); } },
       { key: 'what', label: 'Assignment', render: function (r) {
-        return r.duty ? S.dutyType(r.duty.type).name : r.part.title + (r.role === 'assistant' ? ' (assistant)' : '');
+        return r.duty ? S.dutyType(r.duty.type, Store.cong()).name : r.part.title + (r.role === 'assistant' ? ' (assistant)' : '');
       } },
       { key: 'meeting', label: 'Meeting', render: function (r) { return r.meeting === 'midweek' ? 'Midweek' : 'Weekend'; } },
       { key: 'status', label: 'Status', render: function (r) {
@@ -211,6 +211,24 @@
     ], assigns, { sortKey: 'date', sortDir: 'desc', empty: 'No assignments recorded.' }));
 
     /* availability */
+    var av = S.availabilityOf(person);
+    root.appendChild(UI.sectionTitle('Availability', canEdit
+      ? UI.btn('Change', { sm: true, icon: 'edit', onClick: function () {
+        Views.fairness.availabilityEditor(person);
+      } }) : null));
+    root.appendChild(UI.card(null, [
+      el('p.small.muted', { style: 'margin-bottom:10px',
+        text: 'The scheduler only proposes this person when these allow it.' }),
+      el('div.row', [
+        UI.lozenge('Midweek: ' + (av.midweek ? 'yes' : 'no'), av.midweek ? 'success' : 'removed'),
+        UI.lozenge('Weekend: ' + (av.weekend ? 'yes' : 'no'), av.weekend ? 'success' : 'removed'),
+        UI.lozenge('Duty rota: ' + (av.duties ? 'yes' : 'no'), av.duties ? 'success' : 'removed'),
+        UI.lozenge(av.maxPerMonth == null ? 'No monthly limit' : 'At most ' + av.maxPerMonth + ' a month',
+          av.maxPerMonth == null ? '' : 'warn')
+      ]),
+      av.notes ? el('p.small', { style: 'margin-top:10px', text: '“' + av.notes + '”' }) : null
+    ]));
+
     root.appendChild(UI.sectionTitle('Away dates', (canEdit || me.id === person.id)
       ? UI.btn('Add', { sm: true, icon: 'plus', onClick: function () { addAway(person); } }) : null));
     root.appendChild(awayList(person, canEdit || me.id === person.id));

@@ -20,7 +20,7 @@
         sub: 'Everything you have been given, and what you have cared for before.',
         actions: [UI.copyBtn(function () {
           return upcoming.map(function (r) {
-            return U.fmtDate(r.date, 'day') + ' — ' + (r.duty ? S.dutyType(r.duty.type).name : r.part.title);
+            return U.fmtDate(r.date, 'day') + ' — ' + (r.duty ? S.dutyType(r.duty.type, Store.cong()).name : r.part.title);
           }).join('\n') || 'Nothing scheduled.';
         }, 'Copy my list')]
       }));
@@ -36,7 +36,7 @@
         root.appendChild(UI.empty('Nothing scheduled', 'Assignments appear here as soon as an elder gives you one.'));
       } else {
         root.appendChild(el('div.stack', upcoming.map(function (r) {
-          var title = r.duty ? S.dutyType(r.duty.type).name : r.part.title;
+          var title = r.duty ? S.dutyType(r.duty.type, Store.cong()).name : r.part.title;
           return UI.card(null, [
             el('div.row', [
               el('div', [
@@ -79,7 +79,7 @@
       root.appendChild(UI.table([
         { key: 'date', label: 'Date', sort: function (r) { return r.date; }, render: function (r) { return U.fmtDate(r.date, 'day'); } },
         { key: 'what', label: 'Assignment', render: function (r) {
-          return r.duty ? S.dutyType(r.duty.type).name : r.part.title + (r.role === 'assistant' ? ' (assistant)' : '');
+          return r.duty ? S.dutyType(r.duty.type, Store.cong()).name : r.part.title + (r.role === 'assistant' ? ' (assistant)' : '');
         } },
         { key: 'meeting', label: 'Meeting', render: function (r) { return r.meeting === 'midweek' ? 'Midweek' : 'Weekend'; } }
       ], past, { sortKey: 'date', sortDir: 'desc', empty: 'Nothing yet.' }));
@@ -154,6 +154,23 @@
           } });
         } }
       ], rows) : UI.empty('No away dates', 'Add holidays or work travel and you will not be scheduled those weeks.'));
+
+      root.appendChild(UI.sectionTitle('When I can serve'));
+      var av = S.availabilityOf(me);
+      root.appendChild(UI.card(null, [
+        el('p.small.muted', { style: 'margin-bottom:10px',
+          text: 'The elders set this from what you tell them, and the scheduler follows it.' }),
+        el('div.row', [
+          UI.lozenge('Midweek: ' + (av.midweek ? 'yes' : 'no'), av.midweek ? 'success' : 'removed'),
+          UI.lozenge('Weekend: ' + (av.weekend ? 'yes' : 'no'), av.weekend ? 'success' : 'removed'),
+          UI.lozenge('Duty rota: ' + (av.duties ? 'yes' : 'no'), av.duties ? 'success' : 'removed'),
+          UI.lozenge(av.maxPerMonth == null ? 'No monthly limit' : 'At most ' + av.maxPerMonth + ' a month',
+            av.maxPerMonth == null ? '' : 'warn')
+        ]),
+        av.notes ? el('p.small', { style: 'margin-top:10px', text: '“' + av.notes + '”' }) : null,
+        el('p.small.muted', { style: 'margin-top:10px',
+          text: 'If something here is wrong, tell an elder — or add away dates above yourself.' })
+      ]));
 
       root.appendChild(UI.sectionTitle('What I am marked for'));
       root.appendChild(UI.card(null, [

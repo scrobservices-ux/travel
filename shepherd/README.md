@@ -238,23 +238,59 @@ are on, and handing back a territory checked out to them.
 material. Each slot opens a picker that ranks eligible people by who has waited longest,
 showing why anyone was ruled out (away, already on that meeting, not marked for the part).
 
-**Auto-fill** — proposes a whole week in one pass. It fills the scarcest pools first (a
-part only four elders can take goes before one any brother can take), gives the chairman
-his own opening and concluding comments, never puts the same person on two parts in one
-meeting or in the chair at both meetings in one week, and skips anyone with away dates
-over that meeting. Nothing is applied until you review the proposal.
+**Auto-fill** — proposes a whole week, or balances a run of weeks in one pass so the
+rotation stays level across all of them rather than each week starting the reckoning
+again. What it takes into account:
+
+- **Whose turn it is.** Candidates are ranked by how little they are carrying over a
+  rolling six months — counting parts, assistant parts and duties together, and counting
+  what is already booked ahead, not just the past. Someone who has never had an
+  assignment comes to the top rather than being quietly skipped forever.
+- **Not the same few every week.** Anyone already on that week goes to the back of the
+  queue until everyone free has had a turn.
+- **Scarcest first.** A part only four elders can take is filled before one any brother
+  can take, or the scarce people are used up on the easy slots.
+- **Away dates**, and each person's own availability — midweek, weekend, whether they are
+  on the duty rota at all, and the most they have asked to be given in a month.
+- **Demonstration partners**: the same sex as the student, and a member of the same
+  household preferred where there is one. A mismatched pair entered by hand is flagged.
+- **The chairman** gives his own opening and concluding comments, and nobody chairs both
+  meetings in one week.
+
+Nothing is applied until you have seen the proposal, including how many each person would
+get.
+
+**Who is being used** — the report that answers "is anyone being left out, and is anyone
+carrying too much". Every active publisher over three months, six months, the coming eight
+weeks or the whole service year, with what they carry, when they were last used, what is
+booked next, and any availability limits. It calls out three things the scheduler cannot
+decide for itself:
+
+- publishers who had **nothing at all** in the period;
+- publishers **nobody has marked for anything**, whom the scheduler can therefore never
+  reach;
+- **where the rotation is thin** — a part or duty fewer than four people are marked for,
+  which is nearly always the real reason one brother keeps coming round. Marking one or
+  two more people is the single thing that spreads the work further.
 
 **Assignment board** — every upcoming part and duty as a card, dragged
 Unassigned → Proposed → Notified → Confirmed as you invite people and they accept.
 Publishers confirm or decline from their own workspace.
 
-**Duty rota** — attendants, audio/video, microphones, platform, Zoom host and cleaning
-groups, generated round-robin across as many weeks as you like, skipping anyone already
-on the platform that night. Printable and CSV-exportable.
+**Duty rota** — attendants, welcome desk, audio/video, microphones, platform, **car park**,
+**security watch**, literature counter, Zoom host and cleaning groups. "Manage duties" is
+where a hall adds the arrangements it actually has and removes the ones it does not; each
+one can require its own qualification. Filled across as many weeks as you like by the same
+fairness rules as the meeting parts — including the weekly ceiling, so a brother with a
+part on Thursday is not also given a microphone on Sunday while others are free.
+Printable and CSV-exportable.
 
 **Publishers** — the record card: status, publisher type, appointment, service group,
-contact details, qualifications (which drive the scheduler), away dates, the service-year
-field service record, every assignment they have had, and their shepherding history.
+contact details, qualifications (which drive the scheduler), **availability** — midweek,
+weekend, duty rota, and a monthly ceiling if they have asked for one — away dates, the
+service-year field service record, every assignment they have had, and their shepherding
+history. Publishers see their own availability on **My details** and add their own away
+dates.
 
 **Field service reports** — publishers submit in about ten seconds; the secretary sees
 what is outstanding, records reports handed in on paper, and gets the congregation summary
@@ -382,9 +418,10 @@ node test/interact.js    # clicks the real UI: assign, auto-fill, import, drag, 
 node test/shared.js      # two browsers on one server, including going offline
 node test/paperwork.js  # every print document, the importer, and file uploads
 node test/roles.js      # the default arrangement, group scoping, server enforcement
+node test/scheduling.js # fairness, away dates, availability, demonstration partners
 ```
 
-All six exit non-zero on failure. `test/roles.js` needs nothing but Node for the first
+All seven exit non-zero on failure. `test/roles.js` needs nothing but Node for the first
 half. `test/server.js` needs nothing but Node and covers
 first-run setup, wrong passwords, publisher self-service limits (a publisher may confirm
 their own part but not assign themselves one), and that no password material reaches the
@@ -398,5 +435,10 @@ exist yet), checks the rows that cannot be matched are reported rather than sile
 dropped, and prints a real PDF. `test/roles.js` checks the default division of work, then
 signs in as a group overseer against a live server to confirm he can record his own
 group's reports but not another group's, cannot raise elders' tasks until the congregation
-grants it, can the moment it does, and cannot rewrite the arrangement himself. Screenshots
-land in `/tmp`.
+grants it, can the moment it does, and cannot rewrite the arrangement himself.
+`test/scheduling.js` fills twelve weeks and checks that every slot is covered with no
+clashes, that no active publisher is left out, that people marked for the same things
+carry comparable amounts, that nothing lands on a week someone is away, that a brother
+unavailable midweek gets only weekend parts, that a one-a-month limit holds, that
+demonstration partners match, and that the car park and security watch reach the rota.
+Screenshots land in `/tmp`.

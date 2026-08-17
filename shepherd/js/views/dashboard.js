@@ -264,7 +264,7 @@
         root.appendChild(UI.table([
           { key: 'date', label: 'Date', render: function (r) { return U.fmtDate(r.date, 'day'); } },
           { key: 'what', label: 'Assignment', render: function (r) {
-            if (r.duty) return S.dutyType(r.duty.type).name;
+            if (r.duty) return S.dutyType(r.duty.type, Store.cong()).name;
             return r.part.title + (r.role === 'assistant' ? ' (assistant)' : '');
           } },
           { key: 'with', label: 'With', render: function (r) {

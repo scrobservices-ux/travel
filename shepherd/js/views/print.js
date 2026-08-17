@@ -171,10 +171,11 @@
       hint: 'Attendants, audio/video, microphones, platform and cleaning.',
       options: ['weeks'],
       build: function () {
-        var types = S.DUTY_TYPES.filter(function (dt) {
+        var all = S.dutyTypesFor(Store.cong());
+        var types = all.filter(function (dt) {
           return Store.duties().some(function (d) { return d.type === dt.id; });
         });
-        if (!types.length) types = S.DUTY_TYPES.slice(0, 6);
+        if (!types.length) types = all.slice(0, 6);
         var rows = [];
         Store.weeks().filter(function (w) { return w.weekStart >= U.weekStart(U.today()); })
           .slice(0, state.weeks).forEach(function (w) {

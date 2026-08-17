@@ -359,6 +359,43 @@
     return latest;
   };
 
+  /* Everything a person carries between two week-starts — parts, assistant parts
+     and duties. This is what fairness is measured on. */
+  Store.assignmentCountBetween = function (personId, fromWeek, toWeek) {
+    var n = 0;
+    Store.weeks().forEach(function (w) {
+      if (fromWeek && w.weekStart < fromWeek) return;
+      if (toWeek && w.weekStart > toWeek) return;
+      Store.allParts(w).forEach(function (row) {
+        if (row.part.assigneeId === personId || row.part.assistantId === personId) n++;
+      });
+    });
+    Store.duties().forEach(function (d) {
+      if (d.personId !== personId) return;
+      var ws = U.weekStart(d.date);
+      if (fromWeek && ws < fromWeek) return;
+      if (toWeek && ws > toWeek) return;
+      n++;
+    });
+    return n;
+  };
+
+  /* How much a person already carries in one calendar month. */
+  Store.assignmentCountInMonth = function (personId, period) {
+    var n = 0;
+    Store.weeks().forEach(function (w) {
+      Store.allParts(w).forEach(function (row) {
+        var date = row.meeting === 'midweek' ? w.midweek.date : w.weekend.date;
+        if (U.period(date) !== period) return;
+        if (row.part.assigneeId === personId || row.part.assistantId === personId) n++;
+      });
+    });
+    Store.duties().forEach(function (d) {
+      if (d.personId === personId && U.period(d.date) === period) n++;
+    });
+    return n;
+  };
+
   Store.assignmentCountInWeek = function (personId, weekStart) {
     var w = Store.week(weekStart);
     if (!w) return 0;

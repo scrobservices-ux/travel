@@ -35,6 +35,7 @@
         { id: 'meetings', label: 'Meeting schedule', icon: 'calendar', perm: 'schedule.view' },
         { id: 'board', label: 'Assignment board', icon: 'board', perm: 'schedule.view' },
         { id: 'duties', label: 'Duty rota', icon: 'duty', perm: 'schedule.view' },
+        { id: 'fairness', label: 'Who is being used', icon: 'chart', perm: 'schedule.view' },
         { id: 'attendance', label: 'Attendance', icon: 'chart', perm: 'attendance.edit' }
       ] },
       { group: 'Congregation', items: [

@@ -175,6 +175,9 @@
     { id: 'attendant', name: 'Attendant' },
     { id: 'mic', name: 'Microphones' },
     { id: 'platform', name: 'Platform / stage' },
+    { id: 'parking', name: 'Car park attendant' },
+    { id: 'security', name: 'Security / safety watch' },
+    { id: 'literature', name: 'Literature counter' },
     { id: 'cart', name: 'Public witnessing (cart)' }
   ];
 
@@ -213,6 +216,27 @@
   };
   S.partType = function (id) { return S.PART_TYPES[id] || { name: id, qual: null }; };
 
+  /* ---------- availability ---------- *
+     Away dates say when someone cannot serve. This says how they can serve when
+     they are here: which meetings, and how much is reasonable to ask of them. */
+  S.DEFAULT_AVAILABILITY = {
+    midweek: true,
+    weekend: true,
+    maxPerMonth: null,      // null = as often as the rotation calls for
+    duties: true,           // willing to be on the duty rota at all
+    notes: ''
+  };
+  S.availabilityOf = function (person) {
+    var a = (person && person.availability) || {};
+    return {
+      midweek: a.midweek !== false,
+      weekend: a.weekend !== false,
+      maxPerMonth: a.maxPerMonth == null ? null : +a.maxPerMonth,
+      duties: a.duties !== false,
+      notes: a.notes || ''
+    };
+  };
+
   /* ---------- assignment workflow ---------- */
   S.PART_STATUS = [
     { id: 'unassigned', name: 'Unassigned', tone: '' },
@@ -222,19 +246,34 @@
     { id: 'declined', name: 'Declined', tone: 'removed' }
   ];
 
-  /* ---------- duty (rota) types ---------- */
-  S.DUTY_TYPES = [
-    { id: 'av', name: 'Audio / video', qual: 'av', perMeeting: 1 },
-    { id: 'attendant_main', name: 'Attendant (auditorium)', qual: 'attendant', perMeeting: 1 },
-    { id: 'attendant_door', name: 'Attendant (entrance)', qual: 'attendant', perMeeting: 1 },
-    { id: 'mic1', name: 'Microphone 1', qual: 'mic', perMeeting: 1 },
-    { id: 'mic2', name: 'Microphone 2', qual: 'mic', perMeeting: 1 },
-    { id: 'platform', name: 'Platform', qual: 'platform', perMeeting: 1 },
-    { id: 'cleaning', name: 'Cleaning group', qual: null, perMeeting: 1, group: true },
-    { id: 'zoom', name: 'Zoom host', qual: 'av', perMeeting: 1 }
+  /* ---------- duty (rota) types ---------- *
+     The list a congregation actually uses is stored on the congregation, so a
+     hall with a car park and a security arrangement can have those on the rota
+     and one without them can leave them off. These are the starting point. */
+  S.DEFAULT_DUTY_TYPES = [
+    { id: 'av', name: 'Audio / video', qual: 'av' },
+    { id: 'attendant_main', name: 'Attendant (auditorium)', qual: 'attendant' },
+    { id: 'attendant_door', name: 'Attendant (entrance)', qual: 'attendant' },
+    { id: 'greeter', name: 'Welcome desk', qual: 'attendant' },
+    { id: 'mic1', name: 'Microphone 1', qual: 'mic' },
+    { id: 'mic2', name: 'Microphone 2', qual: 'mic' },
+    { id: 'platform', name: 'Platform', qual: 'platform' },
+    { id: 'parking', name: 'Car park', qual: 'parking' },
+    { id: 'security', name: 'Security / safety watch', qual: 'security' },
+    { id: 'literature', name: 'Literature counter', qual: 'literature' },
+    { id: 'cleaning', name: 'Cleaning group', qual: null, group: true },
+    { id: 'zoom', name: 'Zoom host', qual: 'av' }
   ];
-  S.dutyType = function (id) {
-    return S.DUTY_TYPES.filter(function (d) { return d.id === id; })[0] || { id: id, name: id };
+  S.DUTY_TYPES = S.DEFAULT_DUTY_TYPES;      // kept for anything reading the plain list
+
+  S.dutyTypesFor = function (cong) {
+    var list = cong && cong.dutyTypes;
+    return (list && list.length) ? list : S.DEFAULT_DUTY_TYPES;
+  };
+  S.dutyType = function (id, cong) {
+    return S.dutyTypesFor(cong).filter(function (d) { return d.id === id; })[0]
+      || S.DEFAULT_DUTY_TYPES.filter(function (d) { return d.id === id; })[0]
+      || { id: id, name: id };
   };
 
   /* ---------- task workflow (elders' task board) ---------- */

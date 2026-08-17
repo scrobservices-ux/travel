@@ -240,6 +240,83 @@
     });
   }
 
+  /* Fill a run of weeks in one pass so the rotation stays level across all of
+     them, rather than each week starting the reckoning again. */
+  function balanceRange() {
+    var choice = { weeks: 8 };
+    var preview = el('div');
+
+    function build() {
+      var weeks = Store.weeks().filter(function (w) { return w.weekStart >= U.weekStart(U.today()); })
+        .slice(0, choice.weeks);
+      var result = Sch.planRange(weeks, {});
+      U.clear(preview);
+
+      if (!result.plan.length) {
+        preview.appendChild(UI.banner('success', 'Nothing to fill',
+          'Every slot in the next ' + choice.weeks + ' weeks already has someone on it.'));
+        return { weeks: weeks, result: result };
+      }
+
+      // how the work would land
+      var counts = {};
+      result.plan.forEach(function (item) {
+        counts[item.personId] = (counts[item.personId] || 0) + 1;
+      });
+      var people = Object.keys(counts);
+      var max = Math.max.apply(null, people.map(function (id) { return counts[id]; }));
+
+      preview.appendChild(UI.banner('neutral',
+        U.plural(result.plan.length, 'assignment') + ' across ' + U.plural(weeks.length, 'week'),
+        'Shared between ' + U.plural(people.length, 'publisher')
+          + (result.skipped.length ? ' · ' + U.plural(result.skipped.length, 'slot') + ' could not be filled' : '')));
+
+      var list = el('div.picker-list');
+      U.sortBy(people, function (id) { return -counts[id]; }).forEach(function (id) {
+        list.appendChild(el('div.picker-item', [
+          UI.avatar(Store.person(id)),
+          el('span', { style: 'flex:1' }, [
+            el('div', { text: Store.name(id) }),
+            el('div.person-sub', { text: UI.personSub(Store.person(id)) })
+          ]),
+          el('span', { style: 'width:110px' }, UI.meter(counts[id] / max)),
+          el('span.why', { text: U.plural(counts[id], 'assignment') })
+        ]));
+      });
+      preview.appendChild(list);
+
+      if (result.skipped.length) {
+        var bySlot = {};
+        result.skipped.forEach(function (sk) { bySlot[sk.title] = (bySlot[sk.title] || 0) + 1; });
+        preview.appendChild(UI.banner('warn', 'Nobody qualified and available for',
+          Object.keys(bySlot).map(function (t) { return t + ' ×' + bySlot[t]; }).join(', ')));
+      }
+      return { weeks: weeks, result: result };
+    }
+
+    var current = build();
+
+    UI.modal({
+      wide: true,
+      title: 'Balance the coming weeks',
+      sub: 'Fills every empty slot in one pass, keeping the rotation level across the whole run — away dates, each person’s availability and their monthly limit are all obeyed.',
+      body: [
+        el('div.row', { style: 'margin-bottom:12px' }, [
+          el('span.small.muted', { text: 'How many weeks' }),
+          UI.btnGroup([{ id: '4', label: '4' }, { id: '8', label: '8' }, { id: '12', label: '12' }],
+            String(choice.weeks), function (v) { choice.weeks = +v; current = build(); })
+        ]),
+        preview
+      ],
+      actions: [{ label: 'Apply', variant: 'primary', onClick: function () {
+        if (!current.result.plan.length) return;
+        Sch.applyRangePlan(current.weeks, current.result.plan);
+        UI.flag('Weeks balanced',
+          U.plural(current.result.plan.length, 'assignment') + ' added as proposed.', 'success');
+      } }]
+    });
+  }
+
   /* ---------- import ---------- */
 
   function importModal(weekStart) {
@@ -378,7 +455,8 @@
             function () { App.go('meetings', U.addDays(weekStart, 7)); },
             function () { App.go('meetings', U.weekStart(U.today())); }),
           canEdit() ? UI.btn('Import program', { icon: 'upload', onClick: function () { importModal(weekStart); } }) : null,
-          canEdit() ? UI.btn('Auto-fill week', { variant: 'primary', icon: 'sparkle', onClick: function () { autoFill(week, null); } }) : null,
+          canEdit() ? UI.btn('Auto-fill week', { icon: 'sparkle', onClick: function () { autoFill(week, null); } }) : null,
+          canEdit() ? UI.btn('Balance several weeks', { variant: 'primary', icon: 'chart', onClick: balanceRange }) : null,
           UI.btn('Print', { variant: 'subtle', icon: 'print', onClick: function () { global.print(); } }),
           UI.copyBtn(function () {
             return Program.weekToText(week, cong, function (id) { return Store.name(id); });

@@ -39,7 +39,7 @@
       if (filter.meeting !== 'all' && filter.meeting !== d.meeting) return;
       if (filter.person && d.personId !== filter.person) return;
       out.push({
-        kind: 'duty', id: d.id, title: S.dutyType(d.type).name,
+        kind: 'duty', id: d.id, title: S.dutyType(d.type, Store.cong()).name,
         status: d.status === 'confirmed' ? 'confirmed' : (d.personId || d.groupId ? 'proposed' : 'unassigned'),
         personId: d.personId, groupId: d.groupId, date: d.date, duty: d, meeting: d.meeting
       });
