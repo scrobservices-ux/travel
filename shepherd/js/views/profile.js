@@ -7,6 +7,14 @@
   var el = U.el;
   var Views = global.Views = global.Views || {};
 
+  function setNotify(person, key, value) {
+    Store.update({ action: 'person.notify', summary: Store.name(person.id) + ' — ' + key + (value ? ' on' : ' off') },
+      function () {
+        person.notify = Object.assign({}, S.notifyOf(person));
+        person.notify[key] = value;
+      });
+  }
+
   Views['my-assignments'] = {
     title: 'your assignments',
     render: function (root) {
@@ -18,11 +26,13 @@
       root.appendChild(UI.pageHead({
         title: 'My assignments',
         sub: 'Everything you have been given, and what you have cared for before.',
-        actions: [UI.copyBtn(function () {
-          return upcoming.map(function (r) {
-            return U.fmtDate(r.date, 'day') + ' — ' + (r.duty ? S.dutyType(r.duty.type, Store.cong()).name : r.part.title);
-          }).join('\n') || 'Nothing scheduled.';
-        }, 'Copy my list')]
+        actions: [
+          UI.btn('Add to my calendar', { icon: 'calendar', onClick: function () { calendarFor(me, upcoming); } }),
+          UI.btn('Send to myself', { variant: 'subtle', icon: 'megaphone', onClick: function () {
+            U.share('My assignments', assignmentText(me, upcoming));
+          } }),
+          UI.copyBtn(function () { return assignmentText(me, upcoming); }, 'Copy')
+        ]
       }));
 
       var unconfirmed = upcoming.filter(function (r) { return r.part && r.part.status === 'notified'; });
@@ -85,6 +95,110 @@
       ], past, { sortKey: 'date', sortDir: 'desc', empty: 'Nothing yet.' }));
     }
   };
+
+  function assignmentText(me, upcoming) {
+    if (!upcoming.length) return 'Nothing scheduled at the moment.';
+    return [Store.cong().name + ' — ' + Store.name(me.id)].concat(
+      upcoming.map(function (r) {
+        var title = r.duty ? S.dutyType(r.duty.type, Store.cong()).name : r.part.title;
+        return U.fmtDate(r.date, 'day') + ' — ' + title
+          + (r.role === 'assistant' ? ' (assistant)' : '');
+      })
+    ).join('\n');
+  }
+
+  /* Two ways onto a phone: a file to open once, or — when the congregation runs
+     the server — a link the calendar keeps checking, so changes follow. */
+  function calendarFor(me, upcoming) {
+    var cong = Store.cong();
+    var events = upcoming.map(function (r) {
+      var title = r.duty ? S.dutyType(r.duty.type, cong).name : r.part.title;
+      var other = r.part && (r.role === 'assistant' ? r.part.assigneeId : r.part.assistantId);
+      return {
+        uid: (r.part ? r.part.id : r.duty.id) + '-' + me.id,
+        title: title + (r.role === 'assistant' ? ' (assistant)' : ''),
+        date: r.date,
+        time: r.meeting === 'midweek' ? cong.meetings.midweek.time : cong.meetings.weekend.time,
+        minutes: r.part && r.part.minutes ? r.part.minutes : 60,
+        location: cong.hallAddress || cong.name,
+        description: [
+          r.part && r.part.source, other ? 'With ' + Store.name(other) : '', r.part && r.part.notes
+        ].filter(Boolean).join('\n')
+      };
+    });
+
+    var body = el('div.stack', [
+      UI.banner('neutral', 'A one-off file',
+        'Downloads a file your phone or computer opens straight into its calendar. It is a snapshot — if the elders change something later, download it again.'),
+      UI.btn('Download my assignments', { variant: 'primary', icon: 'download', onClick: function () {
+        U.download('my-assignments.ics', U.ics(cong.name + ' — ' + me.firstName, events), 'text/calendar');
+        UI.flag('Downloaded', 'Open it and your calendar will offer to add them.', 'success');
+      } })
+    ]);
+
+    if (global.Sync.mode === 'server') {
+      var linkBox = el('div');
+      body.appendChild(UI.divider());
+      body.appendChild(UI.banner('success', 'Or subscribe, and it keeps itself up to date',
+        'Add this address to your phone’s calendar once. Anything the elders change appears there without you doing anything.'));
+      body.appendChild(linkBox);
+      body.appendChild(UI.btn('Get my subscription link', { icon: 'calendar', onClick: function () {
+        global.Sync.api('POST', 'api/calendar/link', {}).then(function (out) {
+          U.clear(linkBox);
+          linkBox.appendChild(el('div.mono', {
+            style: 'padding:12px;background:var(--bg-sunken);border-radius:6px;word-break:break-all',
+            text: out.url
+          }));
+          linkBox.appendChild(el('div.row', { style: 'margin-top:10px' }, [
+            UI.copyBtn(function () { return out.url; }, 'Copy the link'),
+            UI.btn('Open in my calendar', { variant: 'subtle', icon: 'calendar',
+              onClick: function () { global.location.href = out.webcal; } })
+          ]));
+          linkBox.appendChild(el('p.small.muted', { style: 'margin-top:10px',
+            text: 'Anyone with this address can see your assignments, so keep it to yourself. '
+              + 'On iPhone: Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar. '
+              + 'On Android: Google Calendar on a computer → Other calendars → From URL.' }));
+        }, function (err) { UI.flag('Could not make a link', err.message, 'danger'); });
+      } }));
+    }
+
+    UI.modal({ title: 'My assignments in my calendar', body: body, closeLabel: 'Close' });
+  }
+
+  /* Putting the app on a phone's home screen. Android and desktop Chrome hand
+     the page an install prompt; Safari does not, so the iPhone route is spelt
+     out instead. Once it is installed there is nothing to show. */
+  function installCard() {
+    var PWA = global.PWA;
+    if (!PWA || PWA.installed || !PWA.canInstall()) return null;
+    var wrap = el('div');
+    function paint() {
+      wrap.innerHTML = '';
+      wrap.appendChild(UI.sectionTitle('On my phone'));
+      wrap.appendChild(UI.card(null, [
+        el('p.small', { text: PWA.isIOS
+          ? 'Add Shepherd to your home screen and it opens like any other app — full screen, no address bar, and your assignments are still there when the signal is poor.'
+          : 'Install Shepherd on this device and it opens like any other app — full screen, no address bar, and your assignments are still there when the signal is poor.' }),
+        PWA.isIOS
+          ? el('ol.small', { style: 'margin:10px 0 0 18px' }, [
+            el('li', { text: 'Tap the Share button at the bottom of Safari.' }),
+            el('li', { text: 'Scroll down and tap “Add to Home Screen”.' }),
+            el('li', { text: 'Tap “Add”. The Shepherd icon appears with your other apps.' })
+          ])
+          : el('div.row', { style: 'margin-top:12px' }, [
+            UI.btn('Install on this device', { variant: 'primary', icon: 'download', onClick: function () {
+              PWA.install().then(function (outcome) {
+                if (outcome === 'accepted') UI.flag('Installed', 'Shepherd is on your home screen.', 'success');
+                paint();
+              });
+            } })
+          ])
+      ], { icon: 'phone' }));
+    }
+    paint();
+    PWA.subscribe(function () { if (wrap.isConnected) paint(); });
+    return wrap;
+  }
 
   Views.profile = {
     title: 'your details',
@@ -155,6 +269,27 @@
         } }
       ], rows) : UI.empty('No away dates', 'Add holidays or work travel and you will not be scheduled those weeks.'));
 
+      var install = installCard();
+      if (install) root.appendChild(install);
+
+      root.appendChild(UI.sectionTitle('Messages I receive'));
+      var n = S.notifyOf(me);
+      root.appendChild(UI.card(null, [
+        el('p.small.muted', { style: 'margin-bottom:10px',
+          text: global.Sync.mode === 'server'
+            ? 'Sent to ' + (me.email || 'your email address once an elder has it') + '.'
+            : 'These apply once your congregation runs Shepherd on its own server.' }),
+        UI.checkbox('Tell me when I am given something', n.assignments, function (v) {
+          setNotify(me, 'assignments', v);
+        }, 'One message when a part or duty is put against your name.'),
+        UI.checkbox('Send me the week ahead', n.digest, function (v) {
+          setNotify(me, 'digest', v);
+        }, 'A short list every week — only if you have something on.'),
+        UI.checkbox('Remind me about my field service report', n.reports, function (v) {
+          setNotify(me, 'reports', v);
+        }, 'Once, on the day it is due, and only if it is not in.')
+      ], { icon: 'megaphone' }));
+
       root.appendChild(UI.sectionTitle('When I can serve'));
       var av = S.availabilityOf(me);
       root.appendChild(UI.card(null, [
@@ -207,6 +342,7 @@
     },
 
     /* forced === true when the administrator issued a one-time password */
+
     changePassword: function (forced) {
       var Sync = global.Sync;
       if (Sync.mode !== 'server') return;

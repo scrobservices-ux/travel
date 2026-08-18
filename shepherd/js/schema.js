@@ -226,6 +226,18 @@
     duties: true,           // willing to be on the duty rota at all
     notes: ''
   };
+  /* Which messages a person wants. Everything is on unless they say otherwise —
+     an assignment nobody told you about is the whole problem being solved. */
+  S.DEFAULT_NOTIFY = { assignments: true, digest: true, reports: true };
+  S.notifyOf = function (person) {
+    var n = (person && person.notify) || {};
+    return {
+      assignments: n.assignments !== false,
+      digest: n.digest !== false,
+      reports: n.reports !== false
+    };
+  };
+
   S.availabilityOf = function (person) {
     var a = (person && person.availability) || {};
     return {

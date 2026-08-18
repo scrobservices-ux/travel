@@ -102,6 +102,42 @@ node server/server.js --port 8443 --cert fullchain.pem --key privkey.pem
 
 ---
 
+## Email, invitations and the calendar
+
+Invitations and assignment notices go out through the congregation's own email account —
+Shepherd has no mail service of its own and sends nothing to anyone else. Set it up on
+**Administration → Email & notifications** once the server is reachable:
+
+| | |
+|---|---|
+| Transport | `smtp` with STARTTLS or implicit TLS, or `file` (writes `.eml` files to `server/data/outbox` and sends nothing — the default, useful for watching it work first), or `off` |
+| Gmail | host `smtp.gmail.com`, port 587, an **app password** — not the account password, and 2-step verification must be on |
+| Address in links | leave **Web address** blank and Shepherd uses whatever address the request came in on. Behind a proxy that means you want `--trust-proxy` set, or invitation links will say `http://…` |
+| Where the password lives | `server/data/mail.json`, mode 0600, never sent to a browser and never in a backup export |
+
+Two things about hosting affect this:
+
+- **Invitation links must work from outside.** A publisher opens the link on their phone,
+  usually on mobile data. If Shepherd is only reachable on the hall wifi or a Tailscale
+  network, the link only works on a device already on it. That is a perfectly good
+  arrangement — just expect to be asked.
+- **Calendar subscriptions are fetched by the phone, not by a person.** The address
+  carries a random token and no cookie. It must be reachable from the internet for a phone
+  to refresh it, so on a private network a downloaded `.ics` file is the better route.
+
+Port 587 outbound is blocked by some hosts; 465 with **implicit TLS** usually works
+instead. If a message fails, the outbox on the same page shows the error the mail server
+gave, and it is retried up to five times.
+
+### Installing on phones
+
+The app installs to a home screen and works offline, which needs **HTTPS** (or
+`localhost`) — browsers will not register a service worker over plain `http`. All three
+hosting routes below give you that. Nothing else has to be set up: the manifest, the
+icons and the worker are served by Shepherd itself.
+
+---
+
 ## What Shepherd does to be safe on the internet
 
 | | |
@@ -112,7 +148,9 @@ node server/server.js --port 8443 --cert fullchain.pem --key privkey.pem
 | Authorisation | enforced on the server from the role table, not just hidden in the interface; cross-congregation writes refused |
 | Headers | `Content-Security-Policy` (no third-party anything is loaded, so it is strict), `X-Frame-Options: DENY`, `X-Content-Type-Options`, `Referrer-Policy`, and HSTS over HTTPS |
 | Uploads | request bodies capped; the `server/` directory is never served |
-| Data | one JSON file plus password and session files, all on your disk |
+| Data | one JSON file plus password, session, invitation and mail-settings files, all on your disk |
+| Invitations | single-use token, 14 days, and it only ever sets that one person's password |
+| Calendar feeds | 192-bit random token in the address, one person's own assignments only, replaceable from their own page |
 
 `--trust-proxy` (or `TRUST_PROXY=1`) tells Shepherd to believe `X-Forwarded-Proto` and
 `X-Forwarded-For` from the proxy in front of it. **Only set it when there really is one** —

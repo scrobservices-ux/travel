@@ -82,6 +82,27 @@
 
   /* ---------- start-up ---------- */
 
+  /* An invitation link is /invite?token=… — the app opens on the acceptance
+     screen rather than the sign-in one. */
+  Sync.inviteToken = function () {
+    var m = /[?&]token=([^&]+)/.exec(location.search || '');
+    return m ? decodeURIComponent(m[1]) : null;
+  };
+
+  Sync.inviteInfo = function (token) {
+    return api('GET', 'api/invite/info?token=' + encodeURIComponent(token));
+  };
+
+  Sync.acceptInvite = function (token, password) {
+    return api('POST', 'api/invite/accept', { token: token, password: password })
+      .then(function () {
+        return api('GET', 'api/me').then(function (me) {
+          Sync.user = me;
+          return pullFull().then(function () { start(); return me; });
+        });
+      });
+  };
+
   Sync.init = function (done) {
     Sync.origin = U.uid('client');
     if (location.protocol === 'file:') { finishLocal(done); return; }

@@ -23,7 +23,7 @@ const ELDER_VIEWS = ['dashboard', 'meetings', 'board', 'duties', 'publishers', '
   'territories', 'shepherding', 'tasks', 'attendance', 'accounts', 'announcements'];
 const PUB_VIEWS = ['home', 'my-assignments', 'meetings', 'announcements', 'my-report', 'my-territories', 'profile'];
 const ADMIN_VIEWS = ['admin', 'admin-congregations', 'admin-users', 'admin-program',
-  'admin-billing', 'admin-data', 'admin-audit'];
+  'admin-email', 'admin-billing', 'admin-data', 'admin-audit'];
 
 (async () => {
   const browser = await chromium.launch(LAUNCH);

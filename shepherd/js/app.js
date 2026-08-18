@@ -64,6 +64,7 @@
       { group: 'Configuration', items: [
         { id: 'admin-program', label: 'Program source', icon: 'book' },
         { id: 'admin-access', label: 'Logins & sharing', icon: 'lock' },
+        { id: 'admin-email', label: 'Email & notifications', icon: 'megaphone' },
         { id: 'admin-billing', label: 'Subscription', icon: 'cash' }
       ] },
       { group: 'Data', items: [
@@ -434,6 +435,62 @@
     ]);
   }
 
+  /* Someone opening the link an elder emailed them: they choose a password and
+     they are in, with no account details to remember. */
+  function inviteScreen(token) {
+    gateShell('One moment…', 'Checking your invitation.', el('div.muted', { text: 'Loading…' }));
+
+    global.Sync.inviteInfo(token).then(function (info) {
+      var pw = UI.input({ type: 'password' });
+      var again = UI.input({ type: 'password' });
+      var error = el('div');
+
+      function submit() {
+        U.clear(error);
+        if (pw.value.length < 8) {
+          error.appendChild(UI.banner('danger', 'Please use at least 8 characters'));
+          return;
+        }
+        if (pw.value !== again.value) {
+          error.appendChild(UI.banner('danger', 'The two passwords do not match'));
+          return;
+        }
+        global.Sync.acceptInvite(token, pw.value).then(function () {
+          history.replaceState(null, '', location.pathname.replace(/\/invite$/, '/') );
+          UI.flag('Welcome', 'This is your own view of the congregation.', 'success');
+          App.go('home');
+          App.render();
+        }, function (err) {
+          U.clear(error);
+          error.appendChild(UI.banner('danger', 'Could not finish', err.message));
+        });
+      }
+      [pw, again].forEach(function (f) {
+        f.addEventListener('keydown', function (e) { if (e.key === 'Enter') submit(); });
+      });
+
+      gateShell('Welcome, ' + info.firstName,
+        (info.congregation ? info.congregation + ' uses Shepherd for the meeting schedule and the duty rota. ' : '')
+          + 'Choose a password and it is yours.', [
+        error,
+        UI.kv([['Your name', info.firstName + ' ' + info.lastName], ['Sign in with', info.email]]),
+        UI.divider(),
+        UI.field('Choose a password', pw, 'At least 8 characters. Only you will know it.'),
+        UI.field('Type it again', again),
+        UI.btn('Set it and go in', { variant: 'primary', icon: 'check', onClick: submit }),
+        el('p.small.muted', { style: 'margin-top:16px',
+          text: 'You will see the parts and duties you are given, be able to tell the elders when you are away, and hand in your field service report.' })
+      ]);
+    }, function (err) {
+      gateShell('That link did not work', err.message, [
+        el('p.small.muted', { text: 'Ask an elder to send you a new invitation.' }),
+        UI.btn('Go to the sign-in page', { variant: 'primary', onClick: function () {
+          location.href = location.pathname.replace(/\/invite$/, '/');
+        } })
+      ]);
+    });
+  }
+
   function setupScreen() {
     var d = { firstName: '', lastName: '', email: '', password: '', congregationName: '', city: '', demo: false };
     function inp(key, opts) {
@@ -538,6 +595,8 @@
     document.documentElement.setAttribute('data-theme', Store.state.session.theme || 'light');
 
     if (global.Sync.mode === 'server') {
+      var inviteToken = global.Sync.inviteToken();
+      if (inviteToken && !global.Sync.user) { inviteScreen(inviteToken); return; }
       if (global.Sync.needsSetup) { setupScreen(); return; }
       if (!global.Sync.user) { loginScreen(); return; }
     }
@@ -586,6 +645,7 @@
   /* ---------- boot ---------- */
 
   function boot() {
+    if (global.PWA) global.PWA.register();
     global.Sync.init(function () {
       var server = global.Sync.mode === 'server';
       if (!Store.ready) {

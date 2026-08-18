@@ -399,6 +399,69 @@ the last sync, anything still waiting, and sign-out.
 
 ---
 
+## Getting people in — invitations
+
+Nobody has to be handed a password. In shared mode an administrator opens
+**Administration → Users & roles**, presses **Invite**, and types the publisher's email
+address:
+
+1. The address is saved on their record, so the elders can see it in the usual place.
+2. An email goes out with a link that is good for **14 days** and works once.
+3. The publisher opens it, sees who invited them and which congregation it is for, and
+   chooses their own password. Nobody else ever knows it.
+4. They land straight in **My Congregation** — their assignments, the meeting programs,
+   their report, their away dates. Nothing else.
+5. Roles and qualifications are added afterwards, as the body decides: mark him for
+   prayer, for the Bible reading, for a talk, put him on the attendant rota, make him a
+   group overseer. The pages he can open follow from that at once, without a new
+   invitation.
+
+The users list shows where each person stands — *invited*, *accepted*, *expired* — and an
+invitation can be sent again at any time. If email is not set up yet the link is shown on
+screen instead, to pass on by hand or over WhatsApp; it works exactly the same.
+
+Publishers still cannot promote themselves: roles are set by an administrator and the
+server checks every write against the congregation's own arrangement.
+
+---
+
+## Notifications, calendar and the phone
+
+**Email.** Set it up once on **Administration → Email & notifications** with whatever
+account the congregation already has — a Gmail app password, the hall's own hosting, any
+SMTP relay. Host, port, user, password, who it comes from; then **Send a test message**.
+There is no third-party service in the middle, and the password never leaves the server.
+Three kinds of message go out, and each person can switch any of them off on their own
+**My details** page:
+
+| Message | When |
+|---|---|
+| **You have been given something** | one message when a part or a duty is put against their name, however many landed at once |
+| **The week ahead** | a short list, on the day and hour the administrator picks, and only to people who actually have something on |
+| **Your report is due** | once, on the day it is due, and only if it is not already in |
+
+Nothing is sent to somebody about their own edit, nothing is sent about a date that has
+already passed, and until an SMTP account is entered messages are written to
+`server/data/outbox` as `.eml` files instead — so the whole thing can be watched working
+before anything is sent to a real person.
+
+**Calendar.** On **My details → Add to my calendar** a publisher can either download a
+`.ics` file of what they have on, or take a private subscription address. Subscribing is
+the better one: their phone re-reads it and the entries change when the schedule changes.
+It carries the meeting time, the hall address, who they are working with, and a reminder
+the day before. The address is a long random token, works without signing in, and can be
+replaced from the same page if it gets into the wrong hands — the old one stops working
+immediately.
+
+**On the phone.** Shepherd installs to the home screen and opens full screen, with no
+address bar — Android and desktop Chrome offer an **Install** button on My details;
+on an iPhone it is Safari's *Share ▸ Add to Home Screen*, spelt out on the same page. The
+app, its styles and its icons are stored on the device, so it still opens in a hall with
+no signal — the schedule is already cached and anything changed offline is queued and goes
+up when the signal comes back. Records are never put in that cache, only the app itself.
+
+---
+
 ## SaaS shape
 
 Multi-congregation and multi-tenant from the data model up: every record carries a
@@ -433,7 +496,10 @@ shepherd/
   server/db.js          the shared JSON database and its change log
   server/auth.js        passwords (PBKDF2-SHA256) and sessions
   server/permit.js      server-side authorisation, from the congregation's own arrangement
-  server/data/          the congregation's database — not in git
+  server/mail.js        SMTP client and outbox  (no dependencies)
+  server/notify.js      invitations, calendar tokens, the messages themselves
+  server/data/          the congregation's database, mail settings and outbox — not in git
+  sw.js, manifest.webmanifest, icons/   what makes it installable on a phone
   deploy/               Dockerfile, compose, Caddy, nginx, systemd, backup script
   test/                 headless checks
 ```
@@ -451,9 +517,11 @@ node test/shared.js      # two browsers on one server, including going offline
 node test/paperwork.js  # every print document, the importer, and file uploads
 node test/roles.js      # the default arrangement, group scoping, server enforcement
 node test/scheduling.js # fairness, availability, sizes, manual override
+node test/notify.js     # invite → accept → assignment email → calendar feed → SMTP settings
+node test/mobile.js     # the invitation in a real browser, installing, and working offline
 ```
 
-All seven exit non-zero on failure. `test/roles.js` needs nothing but Node for the first
+All nine exit non-zero on failure. `test/roles.js` needs nothing but Node for the first
 half. `test/server.js` needs nothing but Node and covers
 first-run setup, wrong passwords, publisher self-service limits (a publisher may confirm
 their own part but not assign themselves one), and that no password material reaches the
@@ -468,6 +536,15 @@ dropped, and prints a real PDF. `test/roles.js` checks the default division of w
 signs in as a group overseer against a live server to confirm he can record his own
 group's reports but not another group's, cannot raise elders' tasks until the congregation
 grants it, can the moment it does, and cannot rewrite the arrangement himself.
+`test/notify.js` walks the whole invitation chain against a live server — invite, accept,
+sign in again, the token refused a second time — then checks that an assignment sends one
+message and only one, that confirming your own part emails nobody, that somebody who
+turned assignment messages off is left alone, that a calendar feed serves on its token
+alone and stops working when it is replaced, and that the SMTP password is never handed
+back to a browser. `test/mobile.js` opens the invitation link in a real browser at phone
+size, sets a password, checks the publisher lands in their own workspace with the part
+they were given, then pulls the network out and reloads to prove the app still opens —
+and that nothing from the congregation's records is sitting in the offline cache.
 `test/scheduling.js` fills twelve weeks and checks that every slot is covered with no
 clashes, that no active publisher is left out, that people marked for the same things
 carry comparable amounts, that nothing lands on a week someone is away, that a brother

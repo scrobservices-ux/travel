@@ -92,7 +92,9 @@
     sparkle: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z',
     drag: 'M9 6h.5M9 12h.5M9 18h.5M15 6h.5M15 12h.5M15 18h.5',
     filter: 'M4 5h16l-6 7v6l-4 2v-8L4 5z',
-    copy: 'M9 9h10v11H9zM5 15V4h10v2'
+    copy: 'M9 9h10v11H9zM5 15V4h10v2',
+    phone: 'M7 3h10v18H7zM10 5.5h4M11 18.5h2',
+    mail: 'M3 6h18v12H3zM3 7l9 6 9-6'
   };
 
   U.icon = function (name, size, cls) {
@@ -388,6 +390,49 @@
   U.matches = function (haystack, needle) {
     if (!needle) return true;
     return String(haystack || '').toLowerCase().indexOf(String(needle).toLowerCase()) !== -1;
+  };
+
+  /* ---------- calendar ---------- */
+
+  /* An .ics file the phone's calendar understands. Works with no server at all —
+     the file is built here and saved like any other download. */
+  U.ics = function (name, events) {
+    function stamp(dateIso, time) {
+      return String(dateIso).replace(/-/g, '') + 'T' + String(time || '00:00').replace(':', '') + '00';
+    }
+    function esc(v) { return String(v || '').replace(/([,;\\])/g, '\\$1').replace(/\n/g, '\\n'); }
+    function plus(time, minutes) {
+      var p = String(time || '00:00').split(':');
+      var total = (+p[0]) * 60 + (+p[1] || 0) + (+minutes || 60);
+      return pad(Math.floor(total / 60) % 24) + ':' + pad(total % 60);
+    }
+    var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Shepherd//Congregation//EN',
+      'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:' + esc(name)];
+    events.forEach(function (ev) {
+      lines.push('BEGIN:VEVENT');
+      lines.push('UID:' + ev.uid + '@shepherd');
+      lines.push('DTSTAMP:' + stamp(U.today(), '00:00') + 'Z');
+      lines.push('DTSTART:' + stamp(ev.date, ev.time));
+      lines.push('DTEND:' + stamp(ev.date, plus(ev.time, ev.minutes)));
+      lines.push('SUMMARY:' + esc(ev.title));
+      if (ev.description) lines.push('DESCRIPTION:' + esc(ev.description));
+      if (ev.location) lines.push('LOCATION:' + esc(ev.location));
+      lines.push('BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY',
+        'DESCRIPTION:' + esc(ev.title), 'END:VALARM');
+      lines.push('END:VEVENT');
+    });
+    lines.push('END:VCALENDAR');
+    return lines.join('\r\n') + '\r\n';
+  };
+
+  /* Hand a block of text to whatever the phone uses to send messages. */
+  U.share = function (title, text) {
+    if (global.navigator && navigator.share) {
+      navigator.share({ title: title, text: text }).catch(function () { /* dismissed */ });
+      return 'shared';
+    }
+    global.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+    return 'whatsapp';
   };
 
   global.U = U;

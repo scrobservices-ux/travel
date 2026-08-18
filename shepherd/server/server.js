@@ -19,6 +19,8 @@ var url = require('url');
 var DB = require('./db.js');
 var Auth = require('./auth.js');
 var Permit = require('./permit.js');
+var Mail = require('./mail.js');
+var Notify = require('./notify.js');
 
 require('../js/util.js');
 require('../js/schema.js');
@@ -47,6 +49,18 @@ var TRUST_PROXY = !!arg('trust-proxy', process.env.TRUST_PROXY === '1');
 
 var db = new DB(DATA_DIR);
 var auth = new Auth(DATA_DIR);
+var mail = new Mail(DATA_DIR);
+var notify = new Notify(DATA_DIR, mail);
+
+/* Links in emails need an address that works from a phone, which the server
+   cannot know for itself — so use what the administrator set, else what the
+   browser asked for. */
+function baseUrlFrom(req) {
+  if (mail.settings.baseUrl) return mail.settings.baseUrl.replace(/\/$/, '');
+  var host = req && req.headers && req.headers.host;
+  if (!host) return 'http://localhost:' + PORT;
+  return (isSecure(req) ? 'https://' : 'http://') + host;
+}
 
 /* ---------- helpers ---------- */
 
@@ -187,6 +201,7 @@ var MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8', '.md': 'text/plain; charset=utf-8'
 };
 
@@ -334,7 +349,7 @@ routes['POST /api/changes'] = function (req, res, body) {
   if (!s) return;
   if (!Array.isArray(body.changes)) { fail(res, 400, 'changes must be an array.'); return; }
 
-  var applied = [], rejected = [];
+  var applied = [], rejected = [], newlyAssigned = [];
   body.changes.forEach(function (change) {
     if (!change || !change.c || (change.op !== 'put' && change.op !== 'del')) {
       rejected.push({ id: change && change.id, reason: 'Malformed change.' });
@@ -345,9 +360,26 @@ routes['POST /api/changes'] = function (req, res, body) {
       rejected.push({ c: change.c, id: change.id, reason: verdict.reason });
       return;
     }
+    // remember what it looked like, so we can see who has just been given something
+    var before = null;
+    if (change.op === 'put' && (change.c === 'weeks' || change.c === 'duties')) {
+      var current = db.find(change.c, change.id);
+      before = current ? JSON.parse(JSON.stringify(current)) : null;
+    }
     var stored = db.apply(change, { personId: s.personId, origin: body.origin || null });
-    if (stored) applied.push(stored.seq);
+    if (stored) {
+      applied.push(stored.seq);
+      if (change.c === 'weeks') {
+        Notify.newAssignments(before, change.rec).forEach(function (a) { newlyAssigned.push(a); });
+      } else if (change.c === 'duties') {
+        var dt = dutyName(change.rec);
+        var d = Notify.newDuty(before, change.rec, dt);
+        if (d) newlyAssigned.push(d);
+      }
+    }
   });
+
+  if (newlyAssigned.length) queueAssignmentEmails(newlyAssigned, s.personId, req);
 
   // on disk before the client is told it was accepted
   if (applied.length) db.flush();
@@ -362,6 +394,234 @@ routes['POST /api/changes'] = function (req, res, body) {
     seq: db.seq
   });
 };
+
+function dutyName(duty) {
+  if (!duty) return 'Duty';
+  var cong = db.find('congregations', duty.congId);
+  var types = globalThis.Schema.dutyTypesFor(cong);
+  var t = types.filter(function (x) { return x.id === duty.type; })[0];
+  return t ? t.name : duty.type;
+}
+
+/* One email per person, however many assignments landed at once. */
+function queueAssignmentEmails(items, byPersonId, req) {
+  var base = baseUrlFrom(req);
+  var today = globalThis.U.today();
+  var grouped = {};
+  items.forEach(function (it) {
+    if (!it.personId || it.personId === byPersonId) return;      // no need to email yourself
+    if (it.date && it.date < today) return;                      // nothing for the past
+    (grouped[it.personId] = grouped[it.personId] || []).push(it);
+  });
+  Object.keys(grouped).forEach(function (personId) {
+    var person = db.find('people', personId);
+    if (!person || !person.email) return;
+    if (!Notify.wants(person, 'assignment')) return;
+    var cong = db.find('congregations', person.congId);
+    var list = grouped[personId].map(function (it) {
+      var withPerson = it.with && db.find('people', it.with);
+      return Object.assign({}, it, {
+        withName: withPerson ? withPerson.firstName + ' ' + withPerson.lastName : null
+      });
+    });
+    notify.assignmentEmail({ person: person, cong: cong, items: list, baseUrl: base });
+  });
+  mail.flush();
+}
+
+/* ---------- invitations ---------- */
+
+routes['POST /api/invite'] = function (req, res, body) {
+  var s = requireSession(req, res);
+  if (!s) return;
+  var me = personOf(s.personId);
+  if (!Permit.can(db, me, 'admin.manage')) { fail(res, 403, 'Administrators only.'); return; }
+
+  var person = personOf(String(body.personId || ''));
+  if (!person) { fail(res, 404, 'No such publisher.'); return; }
+  var email = String(body.email || person.email || '').trim().toLowerCase();
+  if (!email || email.indexOf('@') === -1) { fail(res, 400, 'A valid email address is needed.'); return; }
+
+  // keep the record's email in step, so it is where the elders can see it
+  if (person.email !== email) {
+    var updated = JSON.parse(JSON.stringify(person));
+    updated.email = email;
+    db.apply({ c: 'people', id: person.id, op: 'put', rec: updated }, { personId: s.personId });
+    db.flush();
+    person = personOf(person.id);
+  }
+
+  var out = notify.invite({
+    person: person,
+    cong: db.find('congregations', person.congId),
+    email: email,
+    invitedBy: s.personId,
+    invitedByName: me ? me.firstName + ' ' + me.lastName : 'an elder',
+    baseUrl: baseUrlFrom(req)
+  });
+  mail.flush();
+  send(res, 200, {
+    ok: true, link: out.link, email: email,
+    transport: mail.settings.transport,
+    configured: mail.configured() && mail.settings.transport === 'smtp'
+  });
+};
+
+routes['GET /api/invite/info'] = function (req, res, body, query) {
+  var inv = notify.inviteFor(String(query.token || ''));
+  if (!inv) { fail(res, 404, 'That invitation is not recognised.'); return; }
+  if (inv.expired) { fail(res, 410, inv.reason); return; }
+  var person = personOf(inv.personId);
+  if (!person) { fail(res, 404, 'That invitation is no longer attached to a publisher.'); return; }
+  var cong = db.find('congregations', person.congId);
+  send(res, 200, {
+    firstName: person.firstName, lastName: person.lastName,
+    email: inv.email, congregation: cong ? cong.name : ''
+  });
+};
+
+routes['POST /api/invite/accept'] = function (req, res, body) {
+  var t = String(body.token || '');
+  var inv = notify.inviteFor(t);
+  if (!inv) { fail(res, 404, 'That invitation is not recognised.'); return; }
+  if (inv.expired) { fail(res, 410, inv.reason); return; }
+  var person = personOf(inv.personId);
+  if (!person) { fail(res, 404, 'That invitation is no longer attached to a publisher.'); return; }
+  try {
+    auth.setPassword(person.id, inv.email, String(body.password || ''), false);
+  } catch (e) { fail(res, 400, e.message); return; }
+  notify.acceptInvite(t);
+  var sessionToken = auth.startSession(person.id, req.headers['user-agent']);
+  send(res, 200, { personId: person.id, seq: db.seq },
+    { 'Set-Cookie': sessionCookie(sessionToken, req) });
+};
+
+/* ---------- email settings ---------- */
+
+routes['GET /api/mail'] = function (req, res) {
+  var s = requireSession(req, res);
+  if (!s) return;
+  var me = personOf(s.personId);
+  if (!Permit.can(db, me, 'admin.manage')) { fail(res, 403, 'Administrators only.'); return; }
+  send(res, 200, {
+    settings: mail.publicSettings(),
+    recent: mail.queue.slice(-25).reverse().map(function (m) {
+      return {
+        to: m.to, subject: m.subject, kind: m.kind, createdAt: m.createdAt,
+        sentAt: m.sentAt, failedAt: m.failedAt, error: m.error, attempts: m.attempts
+      };
+    })
+  });
+};
+
+routes['POST /api/mail'] = function (req, res, body) {
+  var s = requireSession(req, res);
+  if (!s) return;
+  var me = personOf(s.personId);
+  if (!Permit.can(db, me, 'admin.manage')) { fail(res, 403, 'Administrators only.'); return; }
+  send(res, 200, { settings: mail.saveSettings(body.settings || {}) });
+};
+
+routes['POST /api/mail/test'] = function (req, res, body) {
+  var s = requireSession(req, res);
+  if (!s) return;
+  var me = personOf(s.personId);
+  if (!Permit.can(db, me, 'admin.manage')) { fail(res, 403, 'Administrators only.'); return; }
+  var to = String(body.to || (me && me.email) || '').trim();
+  if (!to) { fail(res, 400, 'Where should the test go?'); return; }
+  var msg = mail.enqueue({
+    to: to, toName: me ? me.firstName + ' ' + me.lastName : '',
+    subject: 'Shepherd test message',
+    text: 'This is a test from Shepherd. If you can read it, the congregation can be emailed.',
+    html: '<p>This is a test from Shepherd.</p><p>If you can read it, the congregation can be emailed.</p>',
+    kind: 'test', personId: s.personId
+  });
+  mail.deliver(msg).then(function () {
+    msg.sentAt = Date.now();
+    send(res, 200, { ok: true, transport: mail.settings.transport });
+  }, function (err) {
+    msg.attempts += 1;
+    msg.error = String(err && err.message || err);
+    send(res, 200, { ok: false, error: msg.error });
+  });
+};
+
+/* ---------- calendar ---------- */
+
+routes['POST /api/calendar/link'] = function (req, res, body) {
+  var s = requireSession(req, res);
+  if (!s) return;
+  var target = String(body.personId || s.personId);
+  var me = personOf(s.personId);
+  if (target !== s.personId && !Permit.can(db, me, 'admin.manage')) {
+    fail(res, 403, 'You can only make a link for yourself.');
+    return;
+  }
+  var t = body.reset ? notify.resetCalendar(target) : notify.calendarToken(target);
+  var base = baseUrlFrom(req);
+  send(res, 200, {
+    url: base + '/calendar/' + t + '.ics',
+    webcal: base.replace(/^https?:/, 'webcal:') + '/calendar/' + t + '.ics'
+  });
+};
+
+function serveCalendar(req, res, pathname) {
+  var t = pathname.replace('/calendar/', '').replace(/\.ics$/, '');
+  var personId = notify.personForCalendar(t);
+  var person = personId && personOf(personId);
+  if (!person) { fail(res, 404, 'No such calendar.'); return; }
+  var cong = db.find('congregations', person.congId);
+  var events = [];
+  var today = globalThis.U.today();
+
+  (db.doc.weeks || []).filter(function (w) { return w.congId === person.congId; }).forEach(function (w) {
+    ['midweek', 'weekend'].forEach(function (meeting) {
+      var block = w[meeting];
+      if (!block || block.cancelled || block.date < today) return;
+      block.parts.forEach(function (part) {
+        var mine = part.assigneeId === person.id || part.assistantId === person.id;
+        if (!mine) return;
+        var other = part.assigneeId === person.id ? part.assistantId : part.assigneeId;
+        var otherPerson = other && db.find('people', other);
+        events.push({
+          uid: part.id + '-' + person.id,
+          title: part.title + (part.assistantId === person.id ? ' (assistant)' : ''),
+          date: block.date, time: block.time, minutes: part.minutes || 30,
+          location: cong ? cong.hallAddress || cong.name : '',
+          description: [
+            part.source || '',
+            otherPerson ? 'With ' + otherPerson.firstName + ' ' + otherPerson.lastName : '',
+            part.notes || ''
+          ].filter(Boolean).join('\n')
+        });
+      });
+    });
+  });
+
+  (db.doc.duties || []).filter(function (d) {
+    return d.congId === person.congId && d.personId === person.id && d.date >= today;
+  }).forEach(function (d) {
+    var week = (db.doc.weeks || []).filter(function (w) {
+      return w.congId === d.congId && (w.midweek.date === d.date || w.weekend.date === d.date);
+    })[0];
+    var time = week ? (week.midweek.date === d.date ? week.midweek.time : week.weekend.time) : '19:00';
+    events.push({
+      uid: d.id + '-' + person.id,
+      title: dutyName(d),
+      date: d.date, time: time, minutes: 90,
+      location: cong ? cong.hallAddress || cong.name : '',
+      description: 'Duty at the meeting'
+    });
+  });
+
+  var ics = Notify.buildIcs((cong ? cong.name : 'Congregation') + ' — ' + person.firstName, events);
+  res.writeHead(200, Object.assign({
+    'Content-Type': 'text/calendar; charset=utf-8',
+    'Content-Disposition': 'inline; filename="shepherd.ics"',
+    'Cache-Control': 'no-cache'
+  }, securityHeaders(req)));
+  res.end(ics);
+}
 
 routes['POST /api/password'] = function (req, res, body) {
   var s = requireSession(req, res);
@@ -399,7 +659,12 @@ routes['GET /api/accounts'] = function (req, res) {
   if (!s) return;
   var me = personOf(s.personId);
   if (Permit.rolesOf(me).indexOf('admin') === -1) { fail(res, 403, 'Administrators only.'); return; }
-  send(res, 200, { logins: auth.list(), sessions: auth.activeSessions() });
+  var invites = {};
+  (db.doc.people || []).forEach(function (p) {
+    var st = notify.inviteStatus(p.id);
+    if (st) invites[p.id] = st;
+  });
+  send(res, 200, { logins: auth.list(), sessions: auth.activeSessions(), invites: invites });
 };
 
 routes['POST /api/accounts/remove'] = function (req, res, body) {
@@ -437,6 +702,15 @@ function handle(req, res) {
   }
 
   if (req.method !== 'GET' && req.method !== 'HEAD') { fail(res, 405, 'Method not allowed'); return; }
+
+  // a calendar someone's phone subscribes to: the token in the path is the key
+  if (pathname.indexOf('/calendar/') === 0 && /\.ics$/.test(pathname)) {
+    serveCalendar(req, res, pathname);
+    return;
+  }
+  // the invitation link opens the app, which reads the token from the query
+  if (pathname === '/invite') { serveStatic(req, res, '/index.html'); return; }
+
   serveStatic(req, res, pathname);
 }
 
@@ -459,6 +733,11 @@ server.listen(PORT, HOST, function () {
   console.log('  data       ' + DATA_DIR);
   console.log('  database   ' + (db.exists() ? 'ready (change ' + db.seq + ')' : 'not set up yet'));
   console.log('  logins     ' + (auth.isEmpty() ? 'none — open the app to set up the first administrator' : auth.list().length));
+  console.log('  email      ' + (mail.settings.transport === 'smtp'
+    ? 'via ' + mail.settings.host
+    : mail.settings.transport === 'off'
+      ? 'off'
+      : 'not set up — messages are written to ' + path.join(DATA_DIR, 'outbox')));
   console.log('  listening  ' + scheme + '://localhost:' + PORT);
   var nets = os.networkInterfaces();
   Object.keys(nets).forEach(function (name) {
@@ -474,6 +753,95 @@ server.listen(PORT, HOST, function () {
     console.log('  from anywhere else.');
   }
 });
+
+/* ---------- things that happen on their own ---------- */
+
+/* Anything waiting in the outbox goes out; a failed message is retried a few
+   times and then left alone with its reason recorded. */
+setInterval(function () {
+  if (mail.pending().length) mail.flush();
+}, 60 * 1000).unref();
+
+/* Once a week, everyone who wants it gets what they have coming; and around the
+   report deadline, whoever has not handed one in gets a nudge. Checked hourly so
+   the exact minute the server started does not matter. */
+setInterval(digestAndReminders, 60 * 60 * 1000).unref();
+setTimeout(digestAndReminders, 30 * 1000).unref();
+
+function digestAndReminders() {
+  if (!db.exists() || !mail.configured()) return;
+  var now = new Date();
+  var today = globalThis.U.today();
+  var base = mail.settings.baseUrl || ('http://localhost:' + PORT);
+
+  // weekly digest
+  if (now.getDay() === (mail.settings.digestDay == null ? 1 : mail.settings.digestDay)
+      && now.getHours() >= (mail.settings.digestHour == null ? 8 : mail.settings.digestHour)
+      && mail.settings.lastDigestOn !== today) {
+    mail.settings.lastDigestOn = today;
+    mail.saveSettings({ lastDigestOn: today });
+    sendDigests(base, today);
+  }
+
+  // report reminders, on the day they are due
+  (db.doc.congregations || []).forEach(function (cong) {
+    var due = cong.reportDueDay || 6;
+    if (now.getDate() !== due) return;
+    var stamp = 'reports-' + today + '-' + cong.id;
+    if (mail.settings.lastReminder === stamp) return;
+    mail.saveSettings({ lastReminder: stamp });
+    sendReportReminders(cong, base);
+  });
+
+  mail.flush();
+}
+
+function sendDigests(base, today) {
+  var horizon = globalThis.U.addDays(today, 8);
+  (db.doc.people || []).forEach(function (person) {
+    if (!person.email || person.status === 'inactive' || person.status === 'moved') return;
+    if (!Notify.wants(person, 'digest')) return;
+    var items = [];
+    (db.doc.weeks || []).filter(function (w) { return w.congId === person.congId; }).forEach(function (w) {
+      ['midweek', 'weekend'].forEach(function (meeting) {
+        var block = w[meeting];
+        if (!block || block.cancelled || block.date < today || block.date > horizon) return;
+        block.parts.forEach(function (part) {
+          if (part.assigneeId === person.id || part.assistantId === person.id) {
+            items.push({
+              title: part.title, date: block.date, time: block.time,
+              assistant: part.assistantId === person.id
+            });
+          }
+        });
+      });
+    });
+    (db.doc.duties || []).forEach(function (d) {
+      if (d.personId !== person.id || d.date < today || d.date > horizon) return;
+      items.push({ title: dutyName(d), date: d.date, assistant: false });
+    });
+    if (!items.length) return;                 // nothing to say, so say nothing
+    items.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    notify.digestEmail({
+      person: person, cong: db.find('congregations', person.congId),
+      items: items, baseUrl: base
+    });
+  });
+}
+
+function sendReportReminders(cong, base) {
+  var period = globalThis.U.prevPeriod(globalThis.U.period(globalThis.U.today()));
+  (db.doc.people || []).forEach(function (person) {
+    if (person.congId !== cong.id) return;
+    if (!person.email || (person.status !== 'active' && person.status !== 'irregular')) return;
+    if (!Notify.wants(person, 'report')) return;
+    var handed = (db.doc.reports || []).some(function (r) {
+      return r.personId === person.id && r.period === period;
+    });
+    if (handed) return;
+    notify.reportReminderEmail({ person: person, cong: cong, period: period, baseUrl: base });
+  });
+}
 
 function shutdown() {
   console.log('\nSaving…');

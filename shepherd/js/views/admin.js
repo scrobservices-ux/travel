@@ -573,6 +573,7 @@
           U.clear(box);
           var byPerson = {};
           out.logins.forEach(function (l) { byPerson[l.personId] = l; });
+          out.invites = out.invites || {};
           var sessionsBy = {};
           out.sessions.forEach(function (s) {
             if (!sessionsBy[s.personId] || s.lastSeenAt > sessionsBy[s.personId]) sessionsBy[s.personId] = s.lastSeenAt;
@@ -610,10 +611,20 @@
             { key: 'now', label: 'Open now', render: function (p) {
               return sessionsBy[p.id] ? UI.lozenge('Active', 'success') : el('span.muted', { text: '—' });
             } },
+            { key: 'invite', label: 'Invitation', render: function (p) {
+              var inv = (out.invites || {})[p.id];
+              if (!inv) return el('span.muted', { text: '—' });
+              if (inv.state === 'accepted') return UI.lozenge('Accepted ' + U.fmtDate(U.iso(new Date(inv.acceptedAt))), 'success');
+              if (inv.state === 'expired') return UI.lozenge('Expired', 'removed');
+              return UI.lozenge('Sent ' + U.relative(inv.invitedAt), 'warn');
+            } },
             { key: 'actions', label: '', render: function (p) {
               var l = byPerson[p.id];
               return el('div.row', [
-                UI.btn(l ? 'Reset password' : 'Create login', { sm: true, onClick: function () { createLogin(p, !!l, draw); } }),
+                UI.btn(l ? 'Re-invite' : 'Invite by email', { sm: true, variant: l ? 'subtle' : '',
+                  onClick: function () { invitePerson(p, draw); } }),
+                UI.btn(l ? 'Reset password' : 'Set a password', { sm: true, variant: 'subtle',
+                  onClick: function () { createLogin(p, !!l, draw); } }),
                 l && p.id !== Sync.user.personId
                   ? UI.btn('Remove', { sm: true, variant: 'subtle', onClick: function () {
                     UI.confirm({ title: 'Remove the login for ' + Store.name(p.id) + '?',
@@ -637,6 +648,52 @@
       draw();
     }
   };
+
+  /* The ordinary way in: the person gets an email, picks their own password, and
+     the elders never handle it. */
+  function invitePerson(person, done) {
+    var Sync = global.Sync;
+    var email = UI.input({ type: 'email', value: person.email || '' });
+    UI.modal({
+      title: 'Invite ' + Store.name(person.id),
+      sub: 'They receive an email with a link, choose their own password, and land in their own view of the congregation. Nobody else sees the password.',
+      body: [
+        UI.field('Email address', email, 'This becomes what they sign in with, and is saved to their record.'),
+        UI.banner('neutral', 'What they will be able to do',
+          'See the parts and duties they are given and confirm them, tell you when they are away, hand in their field service report, and read announcements. Nothing else until you give them a role.')
+      ],
+      actions: [{ label: 'Send the invitation', variant: 'primary', onClick: function () {
+        if (!email.value.trim() || email.value.indexOf('@') === -1) {
+          UI.flag('A valid email address is needed', null, 'danger');
+          return false;
+        }
+        Sync.api('POST', 'api/invite', { personId: person.id, email: email.value.trim() })
+          .then(function (out) {
+            if (out.configured) {
+              UI.flag('Invitation sent', email.value.trim(), 'success');
+            } else {
+              // email is not set up yet, so hand over the link to pass on another way
+              UI.modal({
+                title: 'Invitation ready',
+                sub: 'Email is not set up on this server yet, so pass this link to '
+                  + person.firstName + ' yourself — by message, or in person.',
+                body: [
+                  el('div.mono', { style: 'padding:12px;background:var(--bg-sunken);border-radius:6px;word-break:break-all',
+                    text: out.link }),
+                  el('div.row', { style: 'margin-top:12px' }, [
+                    UI.copyBtn(function () { return out.link; }, 'Copy the link'),
+                    UI.btn('Set up email', { variant: 'subtle', icon: 'cog',
+                      onClick: function () { App.go('admin-email'); } })
+                  ])
+                ],
+                closeLabel: 'Done'
+              });
+            }
+            if (done) done();
+          }, function (err) { UI.flag('Could not send it', err.message, 'danger'); });
+      } }]
+    });
+  }
 
   function createLogin(person, exists, done) {
     var Sync = global.Sync;
@@ -678,6 +735,152 @@
       } }]
     });
   }
+
+  /* ---------- email ---------- */
+
+  Views['admin-email'] = {
+    title: 'email and notifications',
+    perm: PERM,
+    render: function (root) {
+      var Sync = global.Sync;
+
+      root.appendChild(UI.pageHead({
+        crumbs: [{ label: 'Administration', href: App.href('admin') }, { label: 'Email & notifications' }],
+        title: 'Email & notifications',
+        sub: 'How invitations and assignment notices reach people.'
+      }));
+
+      if (Sync.mode !== 'server') {
+        root.appendChild(UI.banner('warn', 'Email needs the server',
+          'Messages are sent by the Shepherd server, so this only applies once you are running it. In this browser-only mode you can still print assignment slips or copy a list to send by hand.'));
+        return;
+      }
+
+      var box = el('div');
+      root.appendChild(box);
+
+      function draw() {
+        U.clear(box);
+        box.appendChild(el('div.muted', { text: 'Loading…' }));
+        Sync.api('GET', 'api/mail').then(function (out) {
+          U.clear(box);
+          var set = out.settings;
+          var draft = {
+            transport: set.transport, host: set.host, port: set.port, secure: set.secure,
+            user: set.user, pass: '', from: set.from, fromName: set.fromName,
+            replyTo: set.replyTo, baseUrl: set.baseUrl,
+            digestDay: set.digestDay, digestHour: set.digestHour
+          };
+
+          box.appendChild(el('div.grid.c4', [
+            UI.stat('Sending', set.transport === 'smtp' ? 'By email'
+              : set.transport === 'off' ? 'Turned off' : 'To a folder',
+              set.transport === 'smtp' ? set.host : set.transport === 'off' ? 'Nothing is sent' : 'server/data/outbox'),
+            UI.stat('Waiting', set.queued, 'In the outbox'),
+            UI.stat('Sent', set.sent, 'Since the server started'),
+            UI.stat('Failed', set.failed, set.failed ? 'See the list below' : 'None', set.failed ? 'down' : 'up')
+          ]));
+
+          if (set.transport !== 'smtp') {
+            box.appendChild(UI.banner('warn', 'Nothing is being emailed yet',
+              'Until a mail account is entered below, messages are written to files in server/data/outbox so you can see exactly what would have gone out. Invitations still work — you are given the link to pass on yourself.'));
+          }
+
+          box.appendChild(UI.card('The mail account to send from', [
+            el('p.small.muted', { style: 'margin-bottom:12px',
+              text: 'Any ordinary account will do — a Gmail address with an app password, the congregation’s own hosting, or a relay. Shepherd only sends; it never reads mail.' }),
+            UI.field('How to send', UI.select([
+              { id: 'file', name: 'Write to a folder (nothing is sent)' },
+              { id: 'smtp', name: 'Send by email (SMTP)' },
+              { id: 'off', name: 'Turn messages off entirely' }
+            ], draft.transport, function (v) { draft.transport = v; })),
+            el('div.grid.c2', [
+              UI.field('Server', UI.input({ value: draft.host, placeholder: 'smtp.gmail.com',
+                onInput: function (e) { draft.host = e.target.value; } })),
+              UI.field('Port', UI.input({ type: 'number', value: draft.port,
+                onInput: function (e) { draft.port = +e.target.value || 587; } }))
+            ]),
+            UI.checkbox('The port expects TLS immediately (port 465)', draft.secure,
+              function (v) { draft.secure = v; }, 'Leave off for 587, which upgrades with STARTTLS.'),
+            el('div.grid.c2', [
+              UI.field('Username', UI.input({ value: draft.user,
+                onInput: function (e) { draft.user = e.target.value; } })),
+              UI.field('Password', UI.input({ type: 'password', placeholder: set.hasPassword ? '••••••••  (unchanged)' : '',
+                onInput: function (e) { draft.pass = e.target.value; } }))
+            ]),
+            el('div.grid.c2', [
+              UI.field('Send from', UI.input({ type: 'email', value: draft.from,
+                placeholder: 'congregation@example.org', onInput: function (e) { draft.from = e.target.value; } })),
+              UI.field('Shown as', UI.input({ value: draft.fromName,
+                onInput: function (e) { draft.fromName = e.target.value; } }))
+            ]),
+            UI.field('Replies go to', UI.input({ type: 'email', value: draft.replyTo,
+              placeholder: 'the secretary, perhaps', onInput: function (e) { draft.replyTo = e.target.value; } })),
+            UI.field('Address to put in links', UI.input({ value: draft.baseUrl,
+              placeholder: 'https://shepherd.example.org',
+              onInput: function (e) { draft.baseUrl = e.target.value; } }),
+              'Leave blank and Shepherd uses whatever address the browser came in on — set it if people open it from outside.')
+          ], { icon: 'megaphone' }));
+
+          box.appendChild(UI.card('The weekly summary', [
+            el('p.small.muted', { style: 'margin-bottom:12px',
+              text: 'Everyone with something coming up gets one message listing it. Nobody with an empty week is emailed.' }),
+            el('div.grid.c2', [
+              UI.field('Day', UI.select(U.DAYS.map(function (d, i) { return { id: String(i), name: d }; }),
+                String(draft.digestDay), function (v) { draft.digestDay = +v; })),
+              UI.field('Hour', UI.input({ type: 'number', min: 0, max: 23, value: draft.digestHour,
+                onInput: function (e) { draft.digestHour = +e.target.value || 0; } }))
+            ])
+          ], { icon: 'clock' }));
+
+          box.appendChild(el('div.row', { style: 'margin:16px 0' }, [
+            UI.btn('Save', { variant: 'primary', onClick: function () {
+              Sync.api('POST', 'api/mail', { settings: draft }).then(function () {
+                UI.flag('Saved', null, 'success'); draw();
+              }, function (err) { UI.flag('Could not save', err.message, 'danger'); });
+            } }),
+            UI.btn('Send a test message', { icon: 'megaphone', onClick: function () {
+              var to = UI.input({ type: 'email', value: (Auth.me() || {}).email || '' });
+              UI.modal({
+                title: 'Send a test',
+                sub: 'Save your settings first if you have just changed them.',
+                body: UI.field('Send it to', to),
+                actions: [{ label: 'Send', variant: 'primary', onClick: function () {
+                  Sync.api('POST', 'api/mail/test', { to: to.value.trim() }).then(function (out) {
+                    if (out.ok) {
+                      UI.flag(out.transport === 'smtp' ? 'Sent' : 'Written to the outbox folder',
+                        out.transport === 'smtp' ? 'Check the inbox.' : 'server/data/outbox', 'success');
+                    } else {
+                      UI.flag('It did not go', out.error, 'danger');
+                    }
+                    draw();
+                  }, function (err) { UI.flag('It did not go', err.message, 'danger'); });
+                } }]
+              });
+            } })
+          ]));
+
+          box.appendChild(UI.sectionTitle('Recent messages'));
+          box.appendChild(UI.table([
+            { key: 'when', label: 'When', render: function (m) { return U.relative(m.createdAt); } },
+            { key: 'to', label: 'To' },
+            { key: 'subject', label: 'Subject' },
+            { key: 'kind', label: 'Kind', render: function (m) { return UI.tag(m.kind); } },
+            { key: 'state', label: 'State', render: function (m) {
+              if (m.sentAt) return UI.lozenge('Sent', 'success');
+              if (m.failedAt) return el('div', [UI.lozenge('Failed', 'removed'),
+                el('div.small.muted', { text: m.error || '' })]);
+              return UI.lozenge(m.attempts ? 'Retrying' : 'Waiting', 'warn');
+            } }
+          ], out.recent, { empty: 'Nothing has been sent yet.' }));
+        }, function (err) {
+          U.clear(box);
+          box.appendChild(UI.banner('danger', 'Could not read the email settings', err.message));
+        });
+      }
+      draw();
+    }
+  };
 
   /* ---------- billing ---------- */
 
