@@ -14,7 +14,7 @@ is fine on a Kingdom Hall or home network and nowhere else.
 Best if the machine running Shepherd sits behind a normal home or hall router. The tunnel
 makes an outbound connection, so nothing needs opening on the router.
 
-**Cloudflare Tunnel** (free, needs a domain on Cloudflare):
+**Cloudflare Tunnel** (free; no domain and no account needed to start):
 
 ```bash
 # on the machine running Shepherd
@@ -24,8 +24,11 @@ node server/server.js --port 8080 --host 127.0.0.1 --trust-proxy
 cloudflared tunnel --url http://127.0.0.1:8080
 ```
 
-That prints a public `https://…` address straight away. For a permanent address, create a
-named tunnel and map it to a hostname such as `shepherd.yourdomain.org`:
+That prints a public `https://…trycloudflare.com` address straight away, with no account and
+no domain — good for trying it and for a first evening. **It changes every time the tunnel
+restarts**, so before inviting the congregation, move to a permanent address: that needs a
+free Cloudflare account and a domain on it, and gives a hostname such as
+`shepherd.yourdomain.org` that never changes:
 
 ```bash
 cloudflared tunnel login
