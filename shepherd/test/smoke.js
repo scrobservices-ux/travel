@@ -19,9 +19,11 @@ function chromePath() {
 const LAUNCH = chromePath() ? { executablePath: chromePath() } : {};
 const path = require('path').resolve(__dirname, '..', 'index.html');
 
-const ELDER_VIEWS = ['dashboard', 'meetings', 'board', 'duties', 'publishers', 'reports',
-  'territories', 'shepherding', 'tasks', 'attendance', 'accounts', 'announcements'];
-const PUB_VIEWS = ['home', 'my-assignments', 'meetings', 'announcements', 'my-report', 'my-territories', 'profile'];
+const ELDER_VIEWS = ['dashboard', 'meetings', 'board', 'duties', 'cleaning', 'covisit',
+  'publishers', 'reports', 'territories', 'shepherding', 'tasks', 'attendance',
+  'accounts', 'announcements'];
+const PUB_VIEWS = ['home', 'my-assignments', 'meetings', 'my-cleaning', 'announcements',
+  'my-report', 'my-territories', 'profile'];
 const ADMIN_VIEWS = ['admin', 'admin-congregations', 'admin-users', 'admin-program',
   'admin-email', 'admin-billing', 'admin-data', 'admin-audit'];
 

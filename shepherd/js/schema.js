@@ -28,6 +28,7 @@
     { id: 'service', name: 'Service overseer', workspaces: ['publisher', 'elders'] },
     { id: 'accounts', name: 'Accounts servant', workspaces: ['publisher', 'elders'] },
     { id: 'territory', name: 'Territory servant', workspaces: ['publisher', 'elders'] },
+    { id: 'cleaning', name: 'Cleaning / maintenance servant', workspaces: ['publisher', 'elders'] },
     { id: 'admin', name: 'Account administrator', workspaces: ['publisher', 'elders', 'admin'] }
   ];
   S.roleName = function (id) {
@@ -65,6 +66,16 @@
     { id: 'territories.manage', area: 'Field ministry', name: 'Check territories in and out',
       note: 'The territory servant, under the service overseer.' },
 
+    { id: 'cleaning.view', area: 'Kingdom Hall', name: 'See the cleaning schedule',
+      note: 'Which group is on after each meeting, and when the general cleaning is.' },
+    { id: 'cleaning.manage', area: 'Kingdom Hall', name: 'Arrange the cleaning',
+      note: 'Set the rotation, move a group, call a general cleaning. The cleaning servant, under the coordinator.' },
+
+    { id: 'covisit.view', area: 'Body of elders', name: 'See the circuit overseer visit preparations',
+      note: 'The whole checklist, and how ready the congregation is.' },
+    { id: 'covisit.manage', area: 'Body of elders', name: 'Arrange a circuit overseer visit',
+      note: 'Set the dates and hand out who does what by when. Normally the coordinator.' },
+
     { id: 'tasks.view', area: 'Body of elders', name: "See the elders' task board" },
     { id: 'tasks.edit', area: 'Body of elders', name: 'Raise and close tasks',
       note: 'Including what goes on the next elders’ meeting agenda.' },
@@ -93,7 +104,7 @@
   S.DEFAULT_MATRIX = {
     'schedule.view': { publisher: 'all', servant: 'all', elder: 'all', secretary: 'all',
       coordinator: 'all', life_ministry: 'all', service: 'all', group_overseer: 'all',
-      territory: 'all', accounts: 'all' },
+      territory: 'all', accounts: 'all', cleaning: 'all' },
     'schedule.edit': { coordinator: 'all', life_ministry: 'all' },
     'duties.edit': { coordinator: 'all', life_ministry: 'all', servant: 'all' },
     'attendance.edit': { secretary: 'all', coordinator: 'all', servant: 'all' },
@@ -103,14 +114,24 @@
     'publishers.edit': { secretary: 'all', coordinator: 'all' },
     'reports.submit': { publisher: 'all', servant: 'all', elder: 'all', secretary: 'all',
       coordinator: 'all', group_overseer: 'all', service: 'all', life_ministry: 'all',
-      territory: 'all', accounts: 'all' },
+      territory: 'all', accounts: 'all', cleaning: 'all' },
     'reports.review': { secretary: 'all', coordinator: 'all', service: 'all', group_overseer: 'group' },
     'shepherding.view': { elder: 'all', coordinator: 'all', secretary: 'all', group_overseer: 'group' },
 
     'territories.view': { publisher: 'all', servant: 'all', elder: 'all', secretary: 'all',
       coordinator: 'all', territory: 'all', service: 'all', group_overseer: 'all',
-      life_ministry: 'all', accounts: 'all' },
+      life_ministry: 'all', accounts: 'all', cleaning: 'all' },
     'territories.manage': { territory: 'all', service: 'all', coordinator: 'all' },
+
+    'cleaning.view': { publisher: 'all', servant: 'all', elder: 'all', secretary: 'all',
+      coordinator: 'all', life_ministry: 'all', service: 'all', group_overseer: 'all',
+      territory: 'all', accounts: 'all', cleaning: 'all' },
+    'cleaning.manage': { cleaning: 'all', coordinator: 'all', servant: 'all' },
+
+    'covisit.view': { elder: 'all', coordinator: 'all', secretary: 'all', servant: 'all',
+      group_overseer: 'all', service: 'all', life_ministry: 'all', territory: 'all',
+      accounts: 'all', cleaning: 'all' },
+    'covisit.manage': { coordinator: 'all' },
 
     'tasks.view': { elder: 'all', servant: 'all', coordinator: 'all', secretary: 'all',
       group_overseer: 'all', service: 'all', life_ministry: 'all', territory: 'all', accounts: 'all' },
@@ -228,15 +249,138 @@
   };
   /* Which messages a person wants. Everything is on unless they say otherwise —
      an assignment nobody told you about is the whole problem being solved. */
-  S.DEFAULT_NOTIFY = { assignments: true, digest: true, reports: true };
+  S.DEFAULT_NOTIFY = {
+    assignments: true, digest: true, reports: true, cleaning: true, covisit: true, push: true
+  };
   S.notifyOf = function (person) {
     var n = (person && person.notify) || {};
     return {
       assignments: n.assignments !== false,
       digest: n.digest !== false,
-      reports: n.reports !== false
+      reports: n.reports !== false,
+      cleaning: n.cleaning !== false,
+      covisit: n.covisit !== false,
+      push: n.push !== false
     };
   };
+
+
+  /* ---------- cleaning the Kingdom Hall ---------- *
+     Two different things, and congregations run both: the group whose turn it is
+     tidies after a meeting, and once a month everyone comes for a thorough clean.
+     The rota is a plain rotation of the service groups so nobody is missed and
+     the same group does not keep coming round. */
+  S.CLEANING_KINDS = [
+    { id: 'group', name: 'After the meeting', tone: 'inprogress',
+      note: 'The group whose turn it is stays behind.' },
+    { id: 'general', name: 'General cleaning', tone: 'warn',
+      note: 'The whole congregation is invited.' }
+  ];
+  S.cleaningKind = function (id) {
+    return S.CLEANING_KINDS.filter(function (k) { return k.id === id; })[0] || S.CLEANING_KINDS[0];
+  };
+
+  S.DEFAULT_CLEANING = {
+    after: 'weekend',        // 'weekend' | 'midweek' | 'both' — which meeting the group stays after
+    groupsPerTurn: 1,        // small congregations sometimes put two groups together
+    generalWeek: 'last',     // 'first' | 'second' | 'third' | 'fourth' | 'last' | 'none'
+    generalDay: 6,           // 0 Sunday … 6 Saturday
+    generalTime: '09:00',
+    generalMinutes: 180,
+    remindDaysBefore: 3,     // the first nudge
+    remindOnTheDay: true,    // and a pop-up the morning of
+    notes: ''
+  };
+  S.cleaningFor = function (cong) {
+    return Object.assign({}, S.DEFAULT_CLEANING, (cong && cong.cleaning) || {});
+  };
+  S.WEEK_OF_MONTH = [
+    { id: 'first', name: 'First' }, { id: 'second', name: 'Second' },
+    { id: 'third', name: 'Third' }, { id: 'fourth', name: 'Fourth' },
+    { id: 'last', name: 'Last' }, { id: 'none', name: 'Not scheduled' }
+  ];
+  S.WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  /* ---------- the circuit overseer's visit ---------- *
+     The week itself only goes smoothly if the work is spread out beforehand, and
+     every brother knows which piece is his and when it is wanted. This is the
+     starting list; a body of elders adds, removes or re-dates anything, and what
+     it saves on the congregation is what is used next time.
+
+     `weeksBefore` counts back from the first day of the visit; a negative number
+     is after it has finished. `role` is who normally carries it — the app turns
+     that into a person by looking at who holds the role, and any item can be
+     handed to somebody else by name. */
+  S.COVISIT_TEMPLATE = [
+    { key: 'dates', weeksBefore: 8, role: 'coordinator',
+      title: 'Confirm the dates with the circuit overseer',
+      detail: 'Agree arrival and departure, and let the body of elders know so nobody plans to be away.' },
+    { key: 'body_meeting', weeksBefore: 8, role: 'coordinator',
+      title: 'Fix the time of the meeting with the body of elders',
+      detail: 'Ask the elders and ministerial servants to keep it clear.' },
+    { key: 'info', weeksBefore: 6, role: 'secretary',
+      title: 'Send the circuit overseer whatever he has asked for in advance',
+      detail: 'Congregation details, the publisher figures and anything else he requests.' },
+    { key: 'hospitality', weeksBefore: 6, role: 'coordinator',
+      title: 'Arrange accommodation and meals',
+      detail: 'Who is hosting, which meals, and who is caring for laundry and travel.' },
+    { key: 'schedule', weeksBefore: 5, role: 'life_ministry',
+      title: 'Adjust the meeting schedule for the visit week',
+      detail: 'His talks go in, the parts that move are moved, and the songs are set.' },
+    { key: 'service', weeksBefore: 5, role: 'service',
+      title: 'Plan the field service arrangements for each day',
+      detail: 'Times, meeting points, territory ready, and a brother to care for each group.' },
+    { key: 'records', weeksBefore: 4, role: 'secretary',
+      title: 'Bring the publisher records and reports up to date for review',
+      detail: 'Every card current, missing reports chased, the file ready to be looked at.' },
+    { key: 'accounts', weeksBefore: 4, role: 'accounts',
+      title: 'Have the accounts and the last audit ready',
+      detail: 'The monthly reports, the receipts, and the audit signed off.' },
+    { key: 'territory', weeksBefore: 4, role: 'territory',
+      title: 'Territory records up to date and ready to show',
+      detail: 'What is out, what has not been worked in a while, and the map showing coverage.' },
+    { key: 'parts', weeksBefore: 3, role: 'life_ministry',
+      title: 'Assign the meeting parts for the visit week and tell everyone',
+      detail: 'Give people time to prepare — the week is watched more closely than most.' },
+    { key: 'clean', weeksBefore: 2, role: 'cleaning',
+      title: 'Arrange a thorough cleaning of the hall before the visit',
+      detail: 'Call a general cleaning, and check what needs repairing rather than only cleaning.' },
+    { key: 'announce', weeksBefore: 2, role: 'secretary',
+      title: 'Announce the visit — dates, times and arrangements',
+      detail: 'Including any change to the meeting times and the field service arrangements.' },
+    { key: 'shepherding', weeksBefore: 2, role: 'coordinator',
+      title: 'Prepare the list of visits and calls to make with him',
+      detail: 'Who would be encouraged by a call: the sick, the elderly, those who have grown weak.' },
+    { key: 'sound', weeksBefore: 1, role: 'servant',
+      title: 'Check the sound, video and platform arrangements',
+      detail: 'Microphones, the loop, the video connection, the reading desk and the lighting.' },
+    { key: 'confirm', weeksBefore: 1, role: 'coordinator',
+      title: 'Confirm the last details with the circuit overseer',
+      detail: 'Arrival time, what he needs on hand, and who is meeting him.' },
+    { key: 'files', weeksBefore: 1, role: 'secretary',
+      title: 'Put the files he will want to see in one place',
+      detail: 'Publisher records, correspondence, the accounts, territory, the meeting schedule.' },
+    { key: 'elders_meeting', weeksBefore: 0, role: 'coordinator',
+      title: 'The meeting with the body of elders',
+      detail: 'On the day agreed, with the points the body wants to raise written down beforehand.' },
+    { key: 'follow_up', weeksBefore: -2, role: 'coordinator',
+      title: 'Pass on what he recommended and set the follow-up',
+      detail: 'Turn each recommendation into something on the task board with a name against it.' },
+    { key: 'file_notes', weeksBefore: -2, role: 'secretary',
+      title: 'File the notes from the visit',
+      detail: 'So the next visit starts from what was said at this one.' }
+  ];
+
+  S.covisitTemplateFor = function (cong) {
+    var stored = cong && cong.covisitTemplate;
+    return (stored && stored.length) ? stored : S.COVISIT_TEMPLATE;
+  };
+
+  S.COVISIT_STATUS = [
+    { id: 'planned', name: 'Being prepared', tone: 'inprogress' },
+    { id: 'current', name: 'This week', tone: 'warn' },
+    { id: 'done', name: 'Finished', tone: 'success' }
+  ];
 
   S.availabilityOf = function (person) {
     var a = (person && person.availability) || {};

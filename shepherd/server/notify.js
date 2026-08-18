@@ -15,14 +15,39 @@ var S = globalThis.Schema;
 
 var INVITE_DAYS = 14;
 
-function Notify(dir, mail) {
+function Notify(dir, mail, push) {
   this.dir = dir;
   this.mail = mail;
+  this.push = push || null;
   this.invitePath = path.join(dir, 'invites.json');
   this.calendarPath = path.join(dir, 'calendars.json');
+  this.sentPath = path.join(dir, 'reminders.json');
   this.invites = read(this.invitePath, {});
   this.calendars = read(this.calendarPath, {});
+  this.sent = read(this.sentPath, {});
 }
+
+/* A reminder is sent once and once only. The key carries the date, so the same
+   nudge next month is a different key; anything older than 90 days is dropped so
+   the file cannot grow for ever. */
+Notify.prototype.once = function (key) {
+  if (this.sent[key]) return false;
+  this.sent[key] = Date.now();
+  var cutoff = Date.now() - 90 * 86400000;
+  var self = this;
+  Object.keys(this.sent).forEach(function (k) { if (self.sent[k] < cutoff) delete self.sent[k]; });
+  write(this.sentPath, this.sent);
+  return true;
+};
+
+/* Sends a pop-up to every device a person has, if they have asked for them.
+   Quiet about failures: a reminder that could not be delivered must never stop
+   the email that says the same thing. */
+Notify.prototype.pop = function (person, message) {
+  if (!this.push || !person) return Promise.resolve({ sent: 0 });
+  if (!wants(person, 'push')) return Promise.resolve({ sent: 0 });
+  return this.push.toPerson(person.id, message).catch(function () { return { sent: 0, failed: 1 }; });
+};
 
 function read(file, fallback) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return fallback; }
@@ -41,6 +66,9 @@ function wants(person, kind) {
   if (kind === 'assignment') return n.assignments !== false;
   if (kind === 'digest') return n.digest !== false;
   if (kind === 'report') return n.reports !== false;
+  if (kind === 'cleaning') return n.cleaning !== false;
+  if (kind === 'covisit') return n.covisit !== false;
+  if (kind === 'push') return n.push !== false;
   return true;
 }
 Notify.wants = wants;
@@ -316,6 +344,170 @@ Notify.prototype.reportReminderEmail = function (opts) {
     subject: 'Field service report for ' + period,
     text: text, html: html, kind: 'report', personId: opts.person.id
   });
+};
+
+/* ---------- cleaning the hall ---------- */
+
+/* opts: {person, cong, item, label, when, baseUrl, general} */
+Notify.prototype.cleaningEmail = function (opts) {
+  if (!opts.person.email) return null;
+  var link = (opts.baseUrl || '').replace(/\/$/, '') + '/#/my-cleaning';
+  var when = U.fmtDate(opts.item.date, 'long');
+  var lead = opts.item.kind === 'general'
+    ? 'The whole congregation is invited to clean the hall on ' + when
+      + ', from ' + (opts.item.time || '09:00') + '.'
+    : 'It is your group’s turn to care for the hall on ' + when
+      + ', after the ' + (opts.item.meeting === 'midweek' ? 'midweek' : 'weekend') + ' meeting.';
+  var text = [
+    'Hello ' + opts.person.firstName + ',',
+    '',
+    lead,
+    opts.item.notes ? '' : null,
+    opts.item.notes ? 'Note: ' + opts.item.notes : null,
+    '',
+    link,
+    '',
+    opts.cong ? opts.cong.name : ''
+  ].filter(function (l) { return l !== null; }).join('\n');
+  var html = layout(opts.item.kind === 'general' ? 'General cleaning' : 'Your group cleans the hall', [
+    '<p>Hello ' + esc(opts.person.firstName) + ',</p>',
+    '<p>' + esc(lead) + '</p>',
+    opts.item.notes ? '<div class="note">' + esc(opts.item.notes) + '</div>' : '',
+    button(link, 'See the rota')
+  ]);
+  return this.mail.enqueue({
+    to: opts.person.email,
+    toName: opts.person.firstName + ' ' + opts.person.lastName,
+    subject: opts.item.kind === 'general'
+      ? 'General cleaning — ' + U.fmtDate(opts.item.date, 'day')
+      : 'Your group cleans the hall — ' + U.fmtDate(opts.item.date, 'day'),
+    text: text, html: html, kind: 'cleaning', personId: opts.person.id
+  });
+};
+
+/* What the pop-up says. Short, because it is read on a lock screen. */
+Notify.cleaningPop = function (item, label) {
+  var when = U.fmtDate(item.date, 'day');
+  if (item.kind === 'general') {
+    return {
+      title: 'General cleaning ' + when,
+      body: 'The whole congregation, from ' + (item.time || '09:00') + '.'
+        + (item.notes ? ' ' + item.notes : ''),
+      url: './#/my-cleaning', tag: 'cleaning-' + item.id, kind: 'cleaning'
+    };
+  }
+  return {
+    title: 'Your group cleans the hall ' + when,
+    body: 'After the ' + (item.meeting === 'midweek' ? 'midweek' : 'weekend') + ' meeting'
+      + (label ? ' — ' + label : '') + '.' + (item.notes ? ' ' + item.notes : ''),
+    url: './#/my-cleaning', tag: 'cleaning-' + item.id, kind: 'cleaning'
+  };
+};
+
+/* The coordinator and the cleaning servant are told who is on, whether or not
+   it is their own group — they are the ones who get asked. */
+Notify.prototype.cleaningOverviewEmail = function (opts) {
+  if (!opts.person.email) return null;
+  var link = (opts.baseUrl || '').replace(/\/$/, '') + '/#/cleaning';
+  var lines = opts.items.map(function (i) {
+    return '• ' + U.fmtDate(i.date, 'day') + ' — ' + i.label
+      + (i.item.kind === 'general' ? ' (general cleaning, from ' + (i.item.time || '09:00') + ')' : '');
+  });
+  var text = [
+    'Hello ' + opts.person.firstName + ',',
+    '',
+    'Coming up on the cleaning rota:',
+    '',
+    lines.join('\n'),
+    '',
+    'Everyone concerned has been told.',
+    link
+  ].join('\n');
+  var html = layout('Cleaning coming up', [
+    '<p>Hello ' + esc(opts.person.firstName) + ',</p>',
+    '<ul>' + opts.items.map(function (i) {
+      return '<li>' + esc(U.fmtDate(i.date, 'day') + ' — ' + i.label) + '</li>';
+    }).join('') + '</ul>',
+    '<p class="muted small">Everyone concerned has been told.</p>',
+    button(link, 'Open the rota')
+  ]);
+  return this.mail.enqueue({
+    to: opts.person.email,
+    toName: opts.person.firstName + ' ' + opts.person.lastName,
+    subject: 'Cleaning coming up',
+    text: text, html: html, kind: 'cleaning', personId: opts.person.id
+  });
+};
+
+/* ---------- the circuit overseer's visit ---------- */
+
+/* opts: {person, cong, visit, tasks, baseUrl, tone: 'due'|'overdue'} */
+Notify.prototype.covisitEmail = function (opts) {
+  if (!opts.person.email) return null;
+  var link = (opts.baseUrl || '').replace(/\/$/, '') + '/#/covisit/' + opts.visit.id;
+  var late = opts.tone === 'overdue';
+  var lead = late
+    ? 'These are past the day they were wanted by, and the circuit overseer arrives on '
+      + U.fmtDate(opts.visit.from, 'long') + '.'
+    : 'These are wanted this week, before the circuit overseer arrives on '
+      + U.fmtDate(opts.visit.from, 'long') + '.';
+  var lines = opts.tasks.map(function (t) {
+    return '• ' + t.title + ' — by ' + U.fmtDate(t.dueOn, 'day');
+  });
+  var text = [
+    'Hello ' + opts.person.firstName + ',',
+    '',
+    lead,
+    '',
+    lines.join('\n'),
+    '',
+    'Tick them off here: ' + link,
+    '',
+    opts.cong ? opts.cong.name : ''
+  ].join('\n');
+  var html = layout(late ? 'Still to do for the visit' : 'Your part of the visit preparation', [
+    '<p>Hello ' + esc(opts.person.firstName) + ',</p>',
+    '<p>' + esc(lead) + '</p>',
+    opts.tasks.map(function (t) {
+      return '<div class="card"><div class="t">' + esc(t.title) + '</div>'
+        + '<div class="d">Wanted by ' + esc(U.fmtDate(t.dueOn, 'day')) + '</div>'
+        + (t.detail ? '<div class="note">' + esc(t.detail) + '</div>' : '')
+        + '</div>';
+    }).join(''),
+    button(link, 'Open the preparation')
+  ]);
+  return this.mail.enqueue({
+    to: opts.person.email,
+    toName: opts.person.firstName + ' ' + opts.person.lastName,
+    subject: late ? 'Still to do before the circuit overseer’s visit'
+      : 'Your part of the circuit overseer’s visit preparation',
+    text: text, html: html, kind: 'covisit', personId: opts.person.id
+  });
+};
+
+Notify.covisitPop = function (visit, tasks, late) {
+  var first = tasks[0];
+  return {
+    title: late ? 'Overdue for the circuit overseer’s visit' : 'Due this week for the visit',
+    body: tasks.length === 1
+      ? first.title + ' — by ' + U.fmtDate(first.dueOn, 'day')
+      : tasks.length + ' jobs, the first by ' + U.fmtDate(first.dueOn, 'day'),
+    url: './#/covisit/' + visit.id,
+    tag: 'covisit-' + visit.id + (late ? '-late' : ''),
+    important: !!late,
+    kind: 'covisit'
+  };
+};
+
+Notify.assignmentPop = function (items) {
+  var first = items[0];
+  return {
+    title: items.length === 1 ? 'You have an assignment' : 'You have ' + items.length + ' assignments',
+    body: items.length === 1
+      ? first.title + ' — ' + U.fmtDate(first.date, 'day')
+      : items.map(function (i) { return i.title; }).slice(0, 3).join(', '),
+    url: './#/my-assignments', tag: 'assignment', kind: 'assignment'
+  };
 };
 
 /* ---------- html shell ---------- */

@@ -60,7 +60,7 @@
                   sm: true, variant: 'primary',
                   onClick: function () {
                     Store.setPartStatus(r.part.id, 'confirmed');
-                    UI.flag('Confirmed', title, 'success');
+                    afterAccepting(me, r, title);
                   }
                 }) : null,
                 r.part ? UI.btn('Cannot do it', { sm: true, variant: 'subtle', onClick: function () {
@@ -72,6 +72,10 @@
                   });
                 } }) : null
               ])
+            ]),
+            el('div.row', { style: 'margin-top:8px' }, [
+              UI.btn('Add this to my calendar', { sm: true, variant: 'subtle', icon: 'calendar',
+                onClick: function () { calendarForOne(me, r, title); } })
             ]),
             r.part && r.part.notes ? el('p.small', { style: 'margin-top:8px', text: '📝 ' + r.part.notes }) : null,
             r.part && r.part.source ? el('p.small.muted', { style: 'margin-top:4px', text: r.part.source }) : null,
@@ -95,6 +99,62 @@
       ], past, { sortKey: 'date', sortDir: 'desc', empty: 'Nothing yet.' }));
     }
   };
+
+  /* One assignment as a calendar entry, for the phone to swallow whole. */
+  function eventFor(me, r, title) {
+    var cong = Store.cong();
+    var other = r.part && (r.role === 'assistant' ? r.part.assigneeId : r.part.assistantId);
+    return {
+      uid: (r.part ? r.part.id : r.duty.id) + '-' + me.id,
+      title: title + (r.role === 'assistant' ? ' (assistant)' : ''),
+      date: r.date,
+      time: r.time || (r.meeting === 'midweek' ? cong.meetings.midweek.time : cong.meetings.weekend.time),
+      minutes: (r.part && r.part.minutes) || 30,
+      location: cong.hallAddress || cong.name || '',
+      description: [
+        r.part && r.part.source ? r.part.source : '',
+        other ? 'With ' + Store.name(other) : '',
+        r.part && r.part.notes ? r.part.notes : ''
+      ].filter(Boolean).join('\n')
+    };
+  }
+
+  function calendarForOne(me, r, title) {
+    U.ics('assignment', [eventFor(me, r, title)]);
+  }
+
+  /* Accepting is the moment it becomes real, so that is when the app offers to
+     put it in the phone's own calendar — once. After that it stops asking, and
+     a subscription keeps itself up to date without being asked at all. */
+  function afterAccepting(me, r, title) {
+    var asked = false;
+    try { asked = localStorage.getItem('shepherd.calendar.offered') === '1'; } catch (e) { asked = false; }
+    if (asked) { UI.flag('Confirmed', title, 'success'); return; }
+
+    UI.modal({
+      title: 'Confirmed — put it in your calendar?',
+      sub: title + ' · ' + U.fmtDate(r.date, 'long'),
+      body: [
+        el('p.small', { text: global.Sync.mode === 'server'
+          ? 'Subscribe once and your phone keeps this up to date on its own — new assignments appear, and a change to the schedule follows through. Or take this one entry on its own.'
+          : 'Your phone can take this entry now. Once your congregation runs Shepherd on a server you can subscribe instead, and everything keeps itself up to date.' }),
+        el('div.row', { style: 'margin-top:14px' }, [
+          UI.btn('Add just this one', { icon: 'calendar', onClick: function () {
+            calendarForOne(me, r, title);
+          } }),
+          global.Sync.mode === 'server'
+            ? UI.btn('Subscribe to all of mine', { variant: 'primary', icon: 'calendar', onClick: function () {
+              calendarFor(me, Store.assignmentsFor(me.id, {}).filter(function (x) { return x.date >= U.today(); }));
+            } })
+            : null
+        ])
+      ],
+      closeLabel: 'Not now',
+      actions: [{ label: 'Do not ask again', variant: 'subtle', onClick: function () {
+        try { localStorage.setItem('shepherd.calendar.offered', '1'); } catch (e) { /* private mode */ }
+      } }]
+    });
+  }
 
   function assignmentText(me, upcoming) {
     if (!upcoming.length) return 'Nothing scheduled at the moment.';
@@ -200,6 +260,77 @@
     return wrap;
   }
 
+  /* Pop-up reminders. The browser only ever asks once, so nothing is requested
+     until a brother taps the button himself. */
+  function pushCard(me, n) {
+    var PWA = global.PWA;
+    var wrap = el('div');
+
+    function paint() {
+      U.clear(wrap);
+      wrap.appendChild(UI.sectionTitle('Pop-up reminders on this device'));
+
+      if (global.Sync.mode !== 'server') {
+        wrap.appendChild(UI.card(null, [
+          el('p.small.muted', { text: 'Pop-ups come from your congregation’s server, so they start working once the congregation is running Shepherd on one.' })
+        ], { icon: 'bell' }));
+        return;
+      }
+      if (!PWA) return;
+
+      var state = PWA.pushState();
+      var body = [];
+
+      if (state === 'needs-install') {
+        body.push(el('p.small', { text: 'On an iPhone, reminders only work once Shepherd is on your home screen — that is Apple’s rule. Add it from the card above, open it from the home screen, and this button appears.' }));
+      } else if (state === 'unsupported') {
+        body.push(el('p.small', { text: 'This browser cannot show reminders. Everything still arrives by email, and is in the app when you open it.' }));
+      } else if (state === 'blocked') {
+        body.push(el('p.small', { text: 'This device is blocking notifications from Shepherd. Turn them back on in the browser’s settings for this site, then come back here.' }));
+      } else if (state === 'on') {
+        body.push(el('p.small', { text: 'Reminders are on for this device — an assignment, your group’s turn to clean, and anything the circuit overseer’s visit needs from you.' }));
+        body.push(el('div.row', { style: 'margin-top:12px' }, [
+          UI.btn('Send me a test', { icon: 'bell', onClick: function () {
+            global.Sync.api('POST', 'api/push/test', {}).then(function (out) {
+              if (out.ok) UI.flag('Sent', 'It should appear on this device in a moment.', 'success');
+              else UI.flag('Nothing arrived', out.error, 'warn');
+            }, function (err) { UI.flag('Could not send it', err.message, 'danger'); });
+          } }),
+          UI.btn('Turn them off here', { variant: 'subtle', onClick: function () {
+            PWA.disablePush().then(function () {
+              UI.flag('Turned off', 'This device will not pop up again.', 'success');
+              paint();
+            });
+          } })
+        ]));
+      } else {
+        body.push(el('p.small', { text: 'Get a pop-up on this device when you are given a part or a duty, when your group is on for cleaning, and when something for the circuit overseer’s visit is yours to do.' }));
+        body.push(el('div.row', { style: 'margin-top:12px' }, [
+          UI.btn('Turn on reminders', { variant: 'primary', icon: 'bell', onClick: function () {
+            PWA.enablePush().then(function () {
+              UI.flag('Reminders on', 'This device will let you know.', 'success');
+              paint();
+            }, function (err) { UI.flag('Not turned on', err.message, 'warn'); });
+          } })
+        ]));
+      }
+
+      if (state === 'on' || state === 'off' || state === 'granted') {
+        body.push(UI.checkbox('Pop-ups on all my devices', n.push, function (v) {
+          setNotify(me, 'push', v);
+        }, 'Turning this off stops the pop-ups everywhere without touching the emails.'));
+      }
+      body.push(el('p.small.muted', { style: 'margin-top:10px',
+        text: 'A reminder travels sealed through your phone maker’s notification service — the same one every app on the phone uses. It cannot read what is inside.' }));
+
+      wrap.appendChild(UI.card(null, body, { icon: 'bell' }));
+    }
+
+    paint();
+    if (PWA) PWA.subscribe(function () { if (wrap.isConnected) paint(); });
+    return wrap;
+  }
+
   Views.profile = {
     title: 'your details',
     render: function (root) {
@@ -287,8 +418,16 @@
         }, 'A short list every week — only if you have something on.'),
         UI.checkbox('Remind me about my field service report', n.reports, function (v) {
           setNotify(me, 'reports', v);
-        }, 'Once, on the day it is due, and only if it is not in.')
+        }, 'Once, on the day it is due, and only if it is not in.'),
+        UI.checkbox('Tell me when my group is cleaning the hall', n.cleaning, function (v) {
+          setNotify(me, 'cleaning', v);
+        }, 'And when the congregation cleans together.'),
+        UI.checkbox('Remind me about the circuit overseer’s visit', n.covisit, function (v) {
+          setNotify(me, 'covisit', v);
+        }, 'Only about jobs that are yours.')
       ], { icon: 'megaphone' }));
+
+      root.appendChild(pushCard(me, n));
 
       root.appendChild(UI.sectionTitle('When I can serve'));
       var av = S.availabilityOf(me);

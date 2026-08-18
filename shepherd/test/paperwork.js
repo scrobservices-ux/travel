@@ -29,7 +29,7 @@ const APP = 'file://' + path.resolve(__dirname, '..', 'index.html');
   await p.evaluate(()=>localStorage.clear()); await p.reload(); await p.waitForTimeout(500);
 
   console.log('== print centre ==');
-  for (const doc of ['schedule','slips','rota','publishers','records','territories','service','accounts','attendance','agenda']) {
+  for (const doc of ['schedule','slips','rota','cleaning','covisit','publishers','records','territories','service','accounts','attendance','agenda']) {
     await p.evaluate(d=>{location.hash='#/print/'+d}, doc);
     await p.waitForTimeout(400);
     const info = await p.evaluate(()=>({

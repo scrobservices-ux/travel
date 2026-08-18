@@ -129,6 +129,25 @@ Port 587 outbound is blocked by some hosts; 465 with **implicit TLS** usually wo
 instead. If a message fails, the outbox on the same page shows the error the mail server
 gave, and it is retried up to five times.
 
+### Pop-up reminders
+
+Nothing to install and no account to open: Shepherd generates its own key pair on
+first use (`server/data/push-keys.json`, mode 0600) and talks to each phone's
+push service directly. Three things worth knowing before you promise them to the
+congregation:
+
+- **HTTPS, again.** Reminders ride on the service worker, so they need a secure
+  address — every route below gives you one.
+- **Outbound HTTPS must be allowed.** The server posts to `fcm.googleapis.com`,
+  `updates.push.services.mozilla.com`, `web.push.apple.com` and the like. A
+  firewall that blocks outbound 443 blocks reminders; the emails still go.
+- **Never delete `push-keys.json`.** A new key pair silently orphans every phone
+  already subscribed, and each would have to turn reminders on again.
+
+Subscriptions live in `server/data/push-subs.json` (mode 0600) and are never part
+of the synced document or a backup export, so a phone address cannot leak through
+a restore. A phone that has been wiped answers `410` and is dropped automatically.
+
 ### Installing on phones
 
 The app installs to a home screen and works offline, which needs **HTTPS** (or
@@ -151,6 +170,7 @@ icons and the worker are served by Shepherd itself.
 | Data | one JSON file plus password, session, invitation and mail-settings files, all on your disk |
 | Invitations | single-use token, 14 days, and it only ever sets that one person's password |
 | Calendar feeds | 192-bit random token in the address, one person's own assignments only, replaceable from their own page |
+| Reminders | sealed per device (RFC 8291) and signed per request (RFC 8292); the push service in the middle cannot read them |
 
 `--trust-proxy` (or `TRUST_PROXY=1`) tells Shepherd to believe `X-Forwarded-Proto` and
 `X-Forwarded-For` from the proxy in front of it. **Only set it when there really is one** —

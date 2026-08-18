@@ -5,8 +5,8 @@
   "description": "Congregation coordination for a body of elders — publisher, elders and administration workspaces.",
   "scripts": {
     "start": "node server/server.js",
-    "test": "node test/server.js && node test/roles.js && node test/notify.js",
-    "test:browser": "node test/smoke.js && node test/interact.js && node test/shared.js && node test/paperwork.js && node test/scheduling.js && node test/mobile.js"
+    "test": "node test/server.js && node test/roles.js && node test/notify.js && node test/push.js",
+    "test:browser": "node test/smoke.js && node test/interact.js && node test/shared.js && node test/paperwork.js && node test/scheduling.js && node test/mobile.js && node test/hall.js"
   },
   "engines": { "node": ">=18" }
 }

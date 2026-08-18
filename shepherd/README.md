@@ -206,13 +206,14 @@ The default arrangement follows how the work is usually divided:
 
 | Role | Holds by default |
 |---|---|
-| **Coordinator (COBE)** | everything the body handles |
+| **Coordinator (COBE)** | everything the body handles, including arranging the circuit overseer's visit |
 | **Secretary** | publisher records, collecting reports, attendance, announcements, files; sees the accounts but does not keep them |
 | **Service overseer** | territories, collecting reports, sees publisher records |
 | **Life & Ministry overseer** | prepares the meeting schedule and the duty rota |
 | **Group overseer** | his own group's records, reports and shepherding notes |
 | **Territory servant** | checking territories in and out |
 | **Accounts servant** | keeps the congregation accounts |
+| **Cleaning / maintenance servant** | the cleaning rota — whose turn it is, and calling a general cleaning |
 | **Ministerial servant** | duty rota, attendance, files, sees the task board |
 | **Elder** | shepherding, tasks, files, sees publisher records and the accounts |
 | **Publisher** | their own report, their own details, the schedules and territory list |
@@ -399,6 +400,65 @@ the last sync, anything still waiting, and sign-out.
 
 ---
 
+## Keeping the hall — the cleaning rota
+
+Two arrangements, and most congregations run both. **Elders Desk → Cleaning rota**:
+
+- **The group's turn.** Press *Fill the rota* and each service group is put in
+  after the meeting your congregation cleans — every group in order, carrying on
+  from whoever went last, so nobody is passed over and nobody keeps coming round.
+  Swap two groups over by hand and the rotation carries on from the swap.
+- **General cleaning.** Once a month, whichever week and day the congregation
+  keeps — last Saturday at 9 by default. Everybody is invited, and everybody is
+  reminded.
+
+Whoever is on gets a reminder three days out — a pop-up on the phone and an email
+saying which meeting it follows and any note left with it ("windows this time") —
+and a second pop-up on the morning itself. The coordinator and the cleaning
+servant are told for **every** turn, whichever group is on, because they are the
+ones who get asked. Anyone who would rather not be messaged can turn it off on
+their own page, and a publisher sees their own turns under **My Congregation →
+Cleaning**.
+
+A page of the rota prints for the notice board, and the turns land in each
+publisher's calendar subscription along with their assignments.
+
+---
+
+## The circuit overseer's visit
+
+**Elders Desk → Circuit overseer visit.** Put in the week he arrives, and the
+whole preparation lays itself out **backwards from that day** — nineteen jobs by
+default, each with a brother's name against it and the day it is wanted by:
+
+| When | Some of what falls due |
+|---|---|
+| **8 weeks** | Confirm the dates; fix the time of the meeting with the body of elders |
+| **6 weeks** | Send him whatever he has asked for in advance; accommodation and meals |
+| **5 weeks** | The meeting schedule for the visit week; the field service arrangements |
+| **4 weeks** | Publisher records and reports current; accounts and the last audit; territory records |
+| **3 weeks** | Assign the meeting parts and tell everyone |
+| **2 weeks** | A thorough cleaning; announce the arrangements; the list of calls to make with him |
+| **1 week** | Sound, video and platform checked; confirm the last details; the files he will want |
+| **The week** | The meeting with the body of elders |
+| **Afterwards** | Pass on his recommendations; file the notes for next time |
+
+Each job goes to whoever holds that responsibility — the secretary's to the
+secretary, the accounts to the accounts servant — worked out from your own
+congregation's arrangement, not a fixed list. Nothing is fixed: re-date anything,
+hand it to somebody else, add your own, strike one out. If the dates move, every
+job still to do moves with them; a job already done keeps the day it was done by.
+
+Each brother sees **What is mine** at the top of the page and ticks his own off —
+the server lets him tick his own and nothing else, so nobody can quietly re-date
+another man's job or move the visit. He is reminded a week before each one is
+wanted, and chased once a week while any is late. The coordinator sees how ready
+the congregation is, who is carrying what, and whether one brother has been given
+the lot. His own deadlines appear in his phone calendar, and the whole sheet
+prints for the elders' meeting.
+
+---
+
 ## Getting people in — invitations
 
 Nobody has to be handed a password. In shared mode an administrator opens
@@ -439,17 +499,35 @@ Three kinds of message go out, and each person can switch any of them off on the
 | **You have been given something** | one message when a part or a duty is put against their name, however many landed at once |
 | **The week ahead** | a short list, on the day and hour the administrator picks, and only to people who actually have something on |
 | **Your report is due** | once, on the day it is due, and only if it is not already in |
+| **Your group is cleaning** | three days before your group's turn, and before a general cleaning |
+| **The circuit overseer's visit** | a week before each job of yours is wanted, and while any is late |
 
 Nothing is sent to somebody about their own edit, nothing is sent about a date that has
 already passed, and until an SMTP account is entered messages are written to
 `server/data/outbox` as `.eml` files instead — so the whole thing can be watched working
 before anything is sent to a real person.
 
+**Pop-up reminders on the phone.** The same things arrive as a notification on
+the lock screen, whether or not the app is open — that is Web Push, and Shepherd
+implements it itself, so there is no third-party notification service to sign up
+to and nothing to pay for. A publisher turns them on for himself under **My
+details → Pop-up reminders**; nothing is ever asked for on its own, because a
+browser only asks once. Two honest caveats, both said in the app: the reminder
+travels **sealed** through the phone maker's own notification service (Google's,
+Mozilla's, Apple's) — the same road every app on the phone uses, and it cannot
+read what is inside — and an **iPhone only allows it once Shepherd is on the home
+screen**, which is Apple's rule. Everything also arrives by email, so nobody is
+left out. The coordinator can press *Tell them now* on the rota rather than wait
+for the next hour to come round.
+
 **Calendar.** On **My details → Add to my calendar** a publisher can either download a
 `.ics` file of what they have on, or take a private subscription address. Subscribing is
 the better one: their phone re-reads it and the entries change when the schedule changes.
 It carries the meeting time, the hall address, who they are working with, and a reminder
-the day before. The address is a long random token, works without signing in, and can be
+the day before — and alongside the assignments, their group's cleaning turns and,
+for an elder, the days his circuit overseer jobs are wanted by. When somebody
+confirms an assignment the app offers the calendar there and then: that one entry,
+or the subscription that keeps itself up to date. It asks once and then stops. The address is a long random token, works without signing in, and can be
 replaced from the same page if it gets into the wrong hands — the old one stops working
 immediately.
 
@@ -498,6 +576,9 @@ shepherd/
   server/permit.js      server-side authorisation, from the congregation's own arrangement
   server/mail.js        SMTP client and outbox  (no dependencies)
   server/notify.js      invitations, calendar tokens, the messages themselves
+  server/push.js        Web Push — VAPID signing and aes128gcm, written out in full
+  js/cleaning.js        the cleaning rotation
+  js/covisit.js         the circuit overseer visit checklist and its dates
   server/data/          the congregation's database, mail settings and outbox — not in git
   sw.js, manifest.webmanifest, icons/   what makes it installable on a phone
   deploy/               Dockerfile, compose, Caddy, nginx, systemd, backup script
@@ -519,9 +600,11 @@ node test/roles.js      # the default arrangement, group scoping, server enforce
 node test/scheduling.js # fairness, availability, sizes, manual override
 node test/notify.js     # invite → accept → assignment email → calendar feed → SMTP settings
 node test/mobile.js     # the invitation in a real browser, installing, and working offline
+node test/hall.js       # the cleaning rota, the visit preparation, and who may change what
+node test/push.js       # the reminder crypto, opened as a phone would open it
 ```
 
-All nine exit non-zero on failure. `test/roles.js` needs nothing but Node for the first
+All eleven exit non-zero on failure. `test/roles.js` needs nothing but Node for the first
 half. `test/server.js` needs nothing but Node and covers
 first-run setup, wrong passwords, publisher self-service limits (a publisher may confirm
 their own part but not assign themselves one), and that no password material reaches the
@@ -545,6 +628,16 @@ back to a browser. `test/mobile.js` opens the invitation link in a real browser 
 size, sets a password, checks the publisher lands in their own workspace with the part
 they were given, then pulls the network out and reloads to prove the app still opens —
 and that nothing from the congregation's records is sitting in the offline cache.
+`test/hall.js` watches the rotation go round every group and carry on from a swap
+made by hand, lays out a visit and moves its dates, checks an elder can tick off
+his own job but cannot touch another brother's or re-date the visit, and then
+sends the reminders and reads the outbox to see that everyone in the group on
+duty was told — and that the man who asked not to be was not. `test/push.js`
+plays the part of the phone: it makes the key pair a browser would make and opens
+what the server sealed, checks another phone cannot, checks a meddled-with
+message is refused, verifies the signature against the key the phone was given,
+and catches the outgoing request on a stand-in push service to confirm nothing
+readable is on the wire.
 `test/scheduling.js` fills twelve weeks and checks that every slot is covered with no
 clashes, that no active publisher is left out, that people marked for the same things
 carry comparable amounts, that nothing lands on a week someone is away, that a brother

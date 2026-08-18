@@ -202,6 +202,70 @@
       }
     },
 
+    /* the cleaning rota for the notice board */
+    cleaning: {
+      name: 'Cleaning rota',
+      hint: 'Whose turn it is after the meeting, and the general cleaning dates.',
+      options: ['weeks'],
+      build: function () {
+        var Clean = global.Clean;
+        var from = U.weekStart(U.today());
+        var to = U.addDays(from, state.weeks * 7);
+        var rows = Clean ? Clean.between(from, to) : [];
+        if (!rows.length) {
+          return [sheet([sheetHead('Cleaning rota'), el('p', { text: 'Nothing on the rota yet.' })])];
+        }
+        return [sheet([
+          sheetHead('Cleaning the hall', U.fmtDate(from) + ' — ' + U.fmtDate(to)),
+          pTable([
+            { key: 'date', label: 'Date', width: '20%', render: function (c) { return U.fmtDate(c.date, 'day'); } },
+            { key: 'when', label: 'When', width: '24%', render: function (c) {
+              return c.kind === 'general' ? 'From ' + (c.time || '09:00')
+                : 'After the ' + (c.meeting === 'midweek' ? 'midweek' : 'weekend') + ' meeting';
+            } },
+            { key: 'who', label: 'Who', width: '30%', render: function (c) {
+              return c.kind === 'general' ? 'The whole congregation' : Clean.label(c);
+            } },
+            { key: 'notes', label: 'Notes' }
+          ], rows),
+          sheetFoot('Please leave the hall as you would wish to find it')
+        ])];
+      }
+    },
+
+    /* the circuit overseer preparation, for the elders' meeting */
+    covisit: {
+      name: 'Circuit overseer visit preparation',
+      hint: 'Every job, who has it and when it is wanted — the sheet for the elders’ meeting.',
+      options: [],
+      build: function () {
+        var CO = global.CO;
+        var visit = CO && (CO.next() || Store.covisits()[Store.covisits().length - 1]);
+        if (!visit) {
+          return [sheet([sheetHead('Circuit overseer visit'), el('p', { text: 'No visit has been planned yet.' })])];
+        }
+        var p = CO.progress(visit);
+        var pages = [];
+        CO.stages(visit).forEach(function (stage, i) {
+          pages.push(sheet([
+            sheetHead(i === 0 ? 'Circuit overseer’s visit — preparation' : 'Preparation (continued)',
+              U.fmtDate(visit.from, 'long') + ' to ' + U.fmtDate(visit.to, 'long')
+                + (visit.coName ? ' · ' + visit.coName : '')
+                + ' · ' + p.done + ' of ' + p.total + ' done'),
+            el('h3', { text: stage.name + ' — ' + stage.sub }),
+            pTable([
+              { key: 'due', label: 'Wanted by', width: '16%', render: function (t) { return U.fmtDate(t.dueOn, 'day'); } },
+              { key: 'what', label: 'What', width: '44%', render: function (t) { return t.title; } },
+              { key: 'who', label: 'Who', width: '22%', render: function (t) { return nameOf(t.personId); } },
+              { key: 'done', label: 'Done', render: function (t) { return t.doneAt ? '✓' : '☐'; } }
+            ], stage.tasks),
+            sheetFoot('Body of elders — ' + Store.cong().name)
+          ]));
+        });
+        return pages;
+      }
+    },
+
     publishers: {
       name: 'Publisher list',
       hint: 'Contact list by service group.',

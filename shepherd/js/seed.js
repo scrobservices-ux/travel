@@ -17,7 +17,7 @@
     ['Michael Adeyemi', 'm', 'servant', ['accounts', 'servant'], ['prayer', 'gems', 'living', 'av', 'attendant', 'mic', 'cbs_reader', 'wt_reader', 'bible_reading', 'student']],
     ['Stephen Dube', 'm', 'servant', ['territory', 'servant'], ['prayer', 'gems', 'living', 'attendant', 'platform', 'mic', 'wt_reader', 'bible_reading', 'student']],
     ['Philip Osei', 'm', 'servant', ['servant', 'group_overseer'], ['prayer', 'gems', 'av', 'attendant', 'mic', 'cbs_reader', 'bible_reading', 'student']],
-    ['Timothy Kalu', 'm', 'servant', ['servant'], ['prayer', 'av', 'attendant', 'platform', 'mic', 'wt_reader', 'cbs_reader', 'bible_reading', 'student']],
+    ['Timothy Kalu', 'm', 'servant', ['servant', 'cleaning'], ['prayer', 'av', 'attendant', 'platform', 'mic', 'wt_reader', 'cbs_reader', 'bible_reading', 'student']],
     ['Mark Chukwu', 'm', 'none', ['publisher'], ['prayer', 'attendant', 'mic', 'bible_reading', 'student', 'assistant', 'cbs_reader']],
     ['Elijah Banda', 'm', 'none', ['publisher'], ['prayer', 'av', 'mic', 'bible_reading', 'student', 'assistant', 'wt_reader']],
     ['Isaac Mensah', 'm', 'none', ['publisher'], ['bible_reading', 'student', 'assistant', 'attendant']],
@@ -272,6 +272,65 @@
       }
     ];
 
+    /* ---------- cleaning the hall ---------- */
+    /* The groups take it in turn after the weekend meeting, and the whole
+       congregation comes on the last Saturday of the month. */
+    var cleaning = [];
+    weeks.filter(function (wk) { return wk.weekend && wk.weekend.date >= U.addDays(today, -42); })
+      .forEach(function (wk, i) {
+        cleaning.push({
+          id: 'cln_w' + i, congId: congId, date: wk.weekend.date, kind: 'group',
+          groupIds: [groups[i % groups.length].id], meeting: 'weekend', time: wk.weekend.time,
+          notes: '', doneAt: wk.weekend.date < today ? Date.now() : null,
+          doneBy: wk.weekend.date < today ? 'p_1' : null, createdAt: Date.now()
+        });
+      });
+    [0, 1].forEach(function (m) {
+      var period = U.period(U.addMonths(today, m));
+      var day = period + '-01';
+      var lastSaturday = null;
+      while (U.period(day) === period) {
+        if (U.dow(day) === 6) lastSaturday = day;
+        day = U.addDays(day, 1);
+      }
+      if (lastSaturday && lastSaturday >= today) {
+        cleaning.push({
+          id: 'cln_g' + m, congId: congId, date: lastSaturday, kind: 'general',
+          groupIds: [], meeting: null, time: '09:00', minutes: 180,
+          notes: m === 0 ? 'Windows and the car park this month.' : '',
+          doneAt: null, doneBy: null, createdAt: Date.now()
+        });
+      }
+    });
+
+    /* ---------- the circuit overseer's visit ---------- */
+    /* Four weeks out, so the demo shows a body of elders part-way through the
+       preparation rather than a blank list. */
+    var coFrom = U.addDays(thisWeek, 28);
+    /* who normally carries each job — looked up rather than hard-coded, so the
+       demo stays right if the people above are ever re-ordered */
+    var holderOf = function (role) {
+      var found = people.filter(function (p) { return (p.roles || []).indexOf(role) !== -1; })[0];
+      return found ? found.id : 'p_1';
+    };
+    var covisits = [{
+      id: 'co_1', congId: congId, from: coFrom, to: U.addDays(coFrom, 5),
+      coName: 'Brother Marcus Bello', coWifeName: 'Sister Ada Bello',
+      talkTitle: '', notes: '', closedAt: null, createdAt: Date.now(),
+      tasks: S.COVISIT_TEMPLATE.map(function (t, i) {
+        var due = U.addDays(coFrom, -7 * t.weeksBefore);
+        var done = due < U.addDays(today, -3);
+        return {
+          id: 'cot_' + i, key: t.key, title: t.title, detail: t.detail, role: t.role,
+          personId: holderOf(t.role),
+          weeksBefore: t.weeksBefore, dueOn: due,
+          doneAt: done ? Date.now() - 86400000 : null,
+          doneBy: done ? holderOf(t.role) : null,
+          note: ''
+        };
+      })
+    }];
+
     var users = people.slice(0, 12).map(function (p) {
       return { id: 'u_' + p.id, personId: p.id, congId: congId, email: p.email, lastSeenAt: Date.now() - Math.random() * 86400000 * 5, active: true };
     });
@@ -298,6 +357,8 @@
       transactions: transactions,
       announcements: announcements,
       documents: [],
+      cleaning: cleaning,
+      covisits: covisits,
       users: users,
       audit: [{
         id: U.uid('a'), at: Date.now(), personId: 'p_1', action: 'account.created',
@@ -335,7 +396,8 @@
       // empty congregation with none has nowhere to put the first person added
       groups: [{ id: U.uid('grp'), congId: cong.id, name: 'Group 1', overseerId: null, assistantId: null }],
       weeks: [], duties: [], territories: [], reports: [],
-      attendance: [], tasks: [], visits: [], transactions: [], announcements: [], documents: [], users: [],
+      attendance: [], tasks: [], visits: [], transactions: [], announcements: [], documents: [],
+      cleaning: [], covisits: [], users: [],
       audit: []
     };
   };

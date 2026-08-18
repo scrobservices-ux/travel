@@ -21,6 +21,7 @@ var Auth = require('./auth.js');
 var Permit = require('./permit.js');
 var Mail = require('./mail.js');
 var Notify = require('./notify.js');
+var Push = require('./push.js');
 
 require('../js/util.js');
 require('../js/schema.js');
@@ -50,7 +51,8 @@ var TRUST_PROXY = !!arg('trust-proxy', process.env.TRUST_PROXY === '1');
 var db = new DB(DATA_DIR);
 var auth = new Auth(DATA_DIR);
 var mail = new Mail(DATA_DIR);
-var notify = new Notify(DATA_DIR, mail);
+var push = new Push(DATA_DIR);
+var notify = new Notify(DATA_DIR, mail, push);
 
 /* Links in emails need an address that works from a phone, which the server
    cannot know for itself — so use what the administrator set, else what the
@@ -425,6 +427,7 @@ function queueAssignmentEmails(items, byPersonId, req) {
       });
     });
     notify.assignmentEmail({ person: person, cong: cong, items: list, baseUrl: base });
+    notify.pop(person, Notify.assignmentPop(list));
   });
   mail.flush();
 }
@@ -546,6 +549,70 @@ routes['POST /api/mail/test'] = function (req, res, body) {
   });
 };
 
+/* ---------- pop-up reminders ---------- */
+
+routes['GET /api/push'] = function (req, res) {
+  var s = requireSession(req, res);
+  if (!s) return;
+  send(res, 200, {
+    publicKey: push.publicKey(),
+    devices: push.forPerson(s.personId).length,
+    total: push.count()
+  });
+};
+
+routes['POST /api/push/subscribe'] = function (req, res, body) {
+  var s = requireSession(req, res);
+  if (!s) return;
+  try {
+    push.subscribe(s.personId, body.subscription, req.headers['user-agent']);
+  } catch (e) { fail(res, 400, e.message); return; }
+  send(res, 200, { ok: true, devices: push.forPerson(s.personId).length });
+};
+
+routes['POST /api/push/unsubscribe'] = function (req, res, body) {
+  var s = requireSession(req, res);
+  if (!s) return;
+  // only your own device — the token is derived from the address, so check it is yours
+  var mine = push.forPerson(s.personId).some(function (sub) { return sub.endpoint === body.endpoint; });
+  if (!mine) { send(res, 200, { ok: true, devices: push.forPerson(s.personId).length }); return; }
+  push.unsubscribe(String(body.endpoint || ''));
+  send(res, 200, { ok: true, devices: push.forPerson(s.personId).length });
+};
+
+routes['POST /api/push/test'] = function (req, res) {
+  var s = requireSession(req, res);
+  if (!s) return;
+  var person = personOf(s.personId);
+  push.toPerson(s.personId, {
+    title: 'Shepherd',
+    body: 'That is what a reminder looks like. Assignments, cleaning turns and visit deadlines arrive this way.',
+    url: './#/home', tag: 'test', kind: 'test'
+  }).then(function (out) {
+    send(res, 200, Object.assign({ ok: out.sent > 0 }, out,
+      out.sent ? {} : { error: push.lastError || 'No device is subscribed on this account yet.' }));
+  }, function (err) {
+    send(res, 200, { ok: false, error: String(err && err.message || err) });
+  });
+  void person;
+};
+
+/* Sends whatever is due right now rather than waiting for the hour to come
+   round — the coordinator's "tell them now", and what the tests use. */
+routes['POST /api/reminders/run'] = function (req, res) {
+  var s = requireSession(req, res);
+  if (!s) return;
+  var me = personOf(s.personId);
+  if (!Permit.can(db, me, 'cleaning.manage') && !Permit.can(db, me, 'covisit.manage')
+      && !Permit.can(db, me, 'admin.manage')) {
+    fail(res, 403, 'Only those caring for the rota or the visit can send these.');
+    return;
+  }
+  var before = mail.queue.length;
+  hallReminders();
+  send(res, 200, { ok: true, queued: mail.queue.length - before });
+};
+
 /* ---------- calendar ---------- */
 
 routes['POST /api/calendar/link'] = function (req, res, body) {
@@ -611,6 +678,48 @@ function serveCalendar(req, res, pathname) {
       date: d.date, time: time, minutes: 90,
       location: cong ? cong.hallAddress || cong.name : '',
       description: 'Duty at the meeting'
+    });
+  });
+
+  /* the hall cleaning this person is expected at */
+  (db.doc.cleaning || []).filter(function (c) {
+    if (c.congId !== person.congId || c.date < today) return false;
+    if (c.kind === 'general') return true;
+    return (c.groupIds || []).indexOf(person.serviceGroupId) !== -1;
+  }).forEach(function (c) {
+    var week = (db.doc.weeks || []).filter(function (w) {
+      return w.congId === c.congId && (w.midweek.date === c.date || w.weekend.date === c.date);
+    })[0];
+    var time = c.kind === 'general'
+      ? (c.time || '09:00')
+      : (week ? (week.midweek.date === c.date ? week.midweek.time : week.weekend.time) : '19:00');
+    events.push({
+      uid: c.id + '-' + person.id,
+      title: c.kind === 'general' ? 'General cleaning' : 'Cleaning the hall — ' + cleaningLabel(c),
+      date: c.date, time: time, minutes: c.minutes || (c.kind === 'general' ? 180 : 60),
+      location: cong ? cong.hallAddress || cong.name : '',
+      description: c.kind === 'general'
+        ? 'The whole congregation is invited.' + (c.notes ? '\n' + c.notes : '')
+        : 'After the ' + (c.meeting === 'midweek' ? 'midweek' : 'weekend') + ' meeting.'
+          + (c.notes ? '\n' + c.notes : '')
+    });
+  });
+
+  /* and what the circuit overseer's visit wants from him, on the day it is
+     wanted — so it shows up in his own diary, not only in the app */
+  (db.doc.covisits || []).filter(function (v) {
+    return v.congId === person.congId && !v.closedAt;
+  }).forEach(function (visit) {
+    (visit.tasks || []).forEach(function (t) {
+      if (t.personId !== person.id || t.doneAt || t.dueOn < today) return;
+      events.push({
+        uid: t.id + '-' + person.id,
+        title: 'CO visit: ' + t.title,
+        date: t.dueOn, time: '09:00', minutes: 30,
+        location: cong ? cong.name : '',
+        description: (t.detail || '') + '\nBefore the circuit overseer arrives on '
+          + globalThis.U.fmtDate(visit.from, 'long') + '.'
+      });
     });
   });
 
@@ -738,6 +847,9 @@ server.listen(PORT, HOST, function () {
     : mail.settings.transport === 'off'
       ? 'off'
       : 'not set up — messages are written to ' + path.join(DATA_DIR, 'outbox')));
+  console.log('  reminders  ' + (push.count()
+    ? push.count() + ' device(s) subscribed to pop-up reminders'
+    : 'pop-ups ready — publishers turn them on under “My details”'));
   console.log('  listening  ' + scheme + '://localhost:' + PORT);
   var nets = os.networkInterfaces();
   Object.keys(nets).forEach(function (name) {
@@ -768,6 +880,13 @@ setInterval(function () {
 setInterval(digestAndReminders, 60 * 60 * 1000).unref();
 setTimeout(digestAndReminders, 30 * 1000).unref();
 
+/* The hall reminders — whose turn it is to clean, and what is due before the
+   circuit overseer arrives. Checked every hour; each one goes out once. These do
+   not wait for an email account to be set up, because a pop-up on a phone needs
+   no mail server at all. */
+setInterval(hallReminders, 60 * 60 * 1000).unref();
+setTimeout(hallReminders, 45 * 1000).unref();
+
 function digestAndReminders() {
   if (!db.exists() || !mail.configured()) return;
   var now = new Date();
@@ -791,6 +910,140 @@ function digestAndReminders() {
     if (mail.settings.lastReminder === stamp) return;
     mail.saveSettings({ lastReminder: stamp });
     sendReportReminders(cong, base);
+  });
+
+  mail.flush();
+}
+
+/* ---------- cleaning and the circuit overseer's visit ---------- */
+
+function baseUrl() {
+  return (mail.settings.baseUrl || ('http://localhost:' + PORT)).replace(/\/$/, '');
+}
+
+function activePeopleOf(congId) {
+  return (db.doc.people || []).filter(function (p) {
+    return p.congId === congId && p.status !== 'inactive'
+      && p.status !== 'moved' && p.status !== 'deceased';
+  });
+}
+
+function cleaningLabel(item) {
+  if (item.kind === 'general') return 'The whole congregation';
+  var names = (item.groupIds || []).map(function (id) {
+    var g = db.find('groups', id);
+    return g ? g.name : 'a group';
+  });
+  return names.length ? names.join(' and ') : 'Cleaning';
+}
+
+/* Who is expected: the group whose turn it is, or everybody for a general clean. */
+function cleaningPeople(item) {
+  var people = activePeopleOf(item.congId);
+  if (item.kind === 'general') return people;
+  return people.filter(function (p) {
+    return (item.groupIds || []).indexOf(p.serviceGroupId) !== -1;
+  });
+}
+
+/* The brothers who get told whatever their own group is doing. */
+function cleaningStewards(congId) {
+  return activePeopleOf(congId).filter(function (p) {
+    var roles = p.roles || [];
+    return roles.indexOf('coordinator') !== -1 || roles.indexOf('cleaning') !== -1;
+  });
+}
+
+function hallReminders() {
+  if (!db.exists()) return;
+  var U = globalThis.U, S = globalThis.Schema;
+  var today = U.today();
+  var hour = new Date().getHours();
+  var base = baseUrl();
+
+  (db.doc.congregations || []).forEach(function (cong) {
+    var set = S.cleaningFor(cong);
+    var lead = +set.remindDaysBefore || 3;
+    var items = (db.doc.cleaning || []).filter(function (c) {
+      return c.congId === cong.id && c.date >= today && c.date <= U.addDays(today, lead);
+    });
+
+    items.forEach(function (item) {
+      var days = U.diffDays(today, item.date);
+      var label = cleaningLabel(item);
+
+      // the first nudge, the agreed number of days out
+      if (days === lead && notify.once('clean-lead-' + item.id)) {
+        cleaningPeople(item).forEach(function (person) {
+          if (!Notify.wants(person, 'cleaning')) return;
+          notify.cleaningEmail({ person: person, cong: cong, item: item, baseUrl: base });
+          notify.pop(person, Notify.cleaningPop(item, label));
+        });
+        // and the brothers who carry it, whichever group is on
+        var stewards = cleaningStewards(cong.id);
+        stewards.forEach(function (person) {
+          notify.cleaningOverviewEmail({
+            person: person, cong: cong, baseUrl: base,
+            items: [{ date: item.date, label: label, item: item }]
+          });
+          notify.pop(person, {
+            title: item.kind === 'general' ? 'General cleaning ' + U.fmtDate(item.date, 'day')
+              : label + ' cleans ' + U.fmtDate(item.date, 'day'),
+            body: 'Everyone concerned has been told.',
+            url: './#/cleaning', tag: 'cleaning-steward-' + item.id, kind: 'cleaning'
+          });
+        });
+      }
+
+      // and a pop-up on the morning itself
+      if (days === 0 && set.remindOnTheDay !== false && hour >= 7
+          && notify.once('clean-day-' + item.id)) {
+        cleaningPeople(item).forEach(function (person) {
+          if (!Notify.wants(person, 'cleaning')) return;
+          notify.pop(person, Notify.cleaningPop(item, label));
+        });
+      }
+    });
+
+    /* the circuit overseer's visit: each brother is reminded of his own jobs a
+       week out, and again once they are late. */
+    (db.doc.covisits || []).filter(function (v) {
+      return v.congId === cong.id && !v.closedAt && v.to >= today;
+    }).forEach(function (visit) {
+      var byPerson = {};
+      (visit.tasks || []).forEach(function (t) {
+        if (t.doneAt || !t.personId) return;
+        var late = t.dueOn < today;
+        var soon = !late && t.dueOn <= U.addDays(today, 7);
+        if (!late && !soon) return;
+        var bucket = (byPerson[t.personId] = byPerson[t.personId] || { due: [], late: [] });
+        bucket[late ? 'late' : 'due'].push(t);
+      });
+
+      Object.keys(byPerson).forEach(function (personId) {
+        var person = db.find('people', personId);
+        if (!person || !Notify.wants(person, 'covisit')) return;
+        var bucket = byPerson[personId];
+
+        // late work is chased weekly; what is merely due is said once
+        if (bucket.late.length) {
+          var lateKey = 'co-late-' + visit.id + '-' + personId + '-' + U.weekStart(today);
+          if (notify.once(lateKey)) {
+            notify.covisitEmail({ person: person, cong: cong, visit: visit,
+              tasks: bucket.late, baseUrl: base, tone: 'overdue' });
+            notify.pop(person, Notify.covisitPop(visit, bucket.late, true));
+          }
+        }
+        if (bucket.due.length) {
+          var dueKey = 'co-due-' + visit.id + '-' + personId + '-' + bucket.due.map(function (t) { return t.id; }).join(',');
+          if (notify.once(dueKey)) {
+            notify.covisitEmail({ person: person, cong: cong, visit: visit,
+              tasks: bucket.due, baseUrl: base, tone: 'due' });
+            notify.pop(person, Notify.covisitPop(visit, bucket.due, false));
+          }
+        }
+      });
+    });
   });
 
   mail.flush();

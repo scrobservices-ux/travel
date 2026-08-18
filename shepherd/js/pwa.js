@@ -72,6 +72,7 @@
           }
         });
       });
+      PWA.checkPush();
     }).catch(function () { /* a stale or blocked worker is not worth a warning */ });
 
     /* Reload only when a worker replaces an earlier one — on the very first
@@ -82,6 +83,94 @@
       if (!hadController || reloading) return;
       reloading = true;
       location.reload();
+    });
+  };
+
+  /* ---------- pop-up reminders ---------- *
+   * Asking is a one-time thing and the browser only asks once, so the app never
+   * asks on its own: a brother taps a button when he wants them. */
+  PWA.pushSupported = function () {
+    return PWA.supported && 'PushManager' in global && 'Notification' in global;
+  };
+
+  PWA.pushState = function () {
+    if (!PWA.pushSupported()) {
+      return PWA.isIOS && !PWA.installed
+        ? 'needs-install'          // iPhones only allow it from the home screen
+        : 'unsupported';
+    }
+    if (global.Notification.permission === 'denied') return 'blocked';
+    if (global.Notification.permission === 'granted') return PWA.subscribed ? 'on' : 'granted';
+    return 'off';
+  };
+  PWA.subscribed = false;
+
+  /* Has this device already got a subscription with the browser? */
+  PWA.checkPush = function () {
+    if (!PWA.pushSupported()) return Promise.resolve(false);
+    return global.navigator.serviceWorker.ready.then(function (reg) {
+      return reg.pushManager.getSubscription();
+    }).then(function (sub) {
+      PWA.subscribed = !!sub;
+      emit();
+      return !!sub;
+    }).catch(function () { return false; });
+  };
+
+  function urlBase64ToUint8Array(base64) {
+    var padding = '='.repeat((4 - base64.length % 4) % 4);
+    var raw = global.atob((base64 + padding).replace(/-/g, '+').replace(/_/g, '/'));
+    var out = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+
+  /* Asks the phone, then tells the server where to send. */
+  PWA.enablePush = function () {
+    if (!PWA.pushSupported()) return Promise.reject(new Error('This browser cannot show reminders.'));
+    var Sync = global.Sync;
+    if (!Sync || Sync.mode !== 'server') {
+      return Promise.reject(new Error('Reminders are sent by the congregation’s server.'));
+    }
+    return global.Notification.requestPermission().then(function (permission) {
+      if (permission !== 'granted') throw new Error('The phone did not allow reminders.');
+      return Sync.api('GET', 'api/push');
+    }).then(function (info) {
+      if (!info || !info.publicKey) throw new Error('The server has no reminder key yet.');
+      return global.navigator.serviceWorker.ready.then(function (reg) {
+        return reg.pushManager.getSubscription().then(function (existing) {
+          if (existing) return existing;
+          return reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(info.publicKey)
+          });
+        });
+      });
+    }).then(function (sub) {
+      return Sync.api('POST', 'api/push/subscribe', { subscription: sub.toJSON() });
+    }).then(function (out) {
+      PWA.subscribed = true;
+      emit();
+      return out;
+    });
+  };
+
+  PWA.disablePush = function () {
+    if (!PWA.pushSupported()) return Promise.resolve();
+    return global.navigator.serviceWorker.ready.then(function (reg) {
+      return reg.pushManager.getSubscription();
+    }).then(function (sub) {
+      if (!sub) return null;
+      var endpoint = sub.endpoint;
+      return sub.unsubscribe().then(function () {
+        var Sync = global.Sync;
+        if (Sync && Sync.mode === 'server') {
+          return Sync.api('POST', 'api/push/unsubscribe', { endpoint: endpoint }).catch(function () { });
+        }
+      });
+    }).then(function () {
+      PWA.subscribed = false;
+      emit();
     });
   };
 

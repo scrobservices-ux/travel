@@ -31,6 +31,8 @@ var WRITE = {
   transactions: 'accounts.edit',
   announcements: 'announce.publish',
   documents: 'files.manage',
+  cleaning: 'cleaning.manage',
+  covisits: 'covisit.manage',
   users: 'admin.manage',
   account: 'admin.manage',
   audit: null            // anyone signed in may append their own entries
@@ -123,6 +125,30 @@ function territorySelfReturn(before, after, personId) {
   return true;
 }
 
+/* Ticking off the piece of the circuit overseer preparation that is yours.
+   Nothing else about the visit may move — not the dates, not who else is doing
+   what, not the wording of anyone's item. */
+function covisitSelfTick(before, after, personId) {
+  if (!before || !after) return false;
+  var bMeta = Object.assign({}, before); delete bMeta.tasks;
+  var aMeta = Object.assign({}, after); delete aMeta.tasks;
+  if (JSON.stringify(bMeta) !== JSON.stringify(aMeta)) return false;
+  var b = before.tasks || [], a = after.tasks || [];
+  if (b.length !== a.length) return false;
+  for (var i = 0; i < b.length; i++) {
+    var bt = b[i], at = a[i];
+    if (bt.id !== at.id) return false;
+    var bRest = Object.assign({}, bt); delete bRest.doneAt; delete bRest.doneBy; delete bRest.note;
+    var aRest = Object.assign({}, at); delete aRest.doneAt; delete aRest.doneBy; delete aRest.note;
+    if (JSON.stringify(bRest) !== JSON.stringify(aRest)) return false;
+    var changed = bt.doneAt !== at.doneAt || bt.doneBy !== at.doneBy || bt.note !== at.note;
+    if (!changed) continue;
+    if (bt.personId !== personId) return false;              // only your own item
+    if (at.doneAt && at.doneBy !== personId) return false;    // and in your own name
+  }
+  return true;
+}
+
 /* Your own record, contact details only. */
 function personSelfEdit(before, after, personId) {
   if (!before || before.id !== personId) return false;
@@ -184,6 +210,7 @@ function permit(db, personId, change) {
   if (c === 'reports' && rec.personId === personId) return ALLOW;
   if (c === 'weeks' && weekSelfChange(before, rec, personId)) return ALLOW;
   if (c === 'territories' && territorySelfReturn(before, rec, personId)) return ALLOW;
+  if (c === 'covisits' && can(db, me, 'covisit.view') && covisitSelfTick(before, rec, personId)) return ALLOW;
 
   return deny('Your roles do not allow changing “' + c + '”.');
 }

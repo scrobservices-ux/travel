@@ -759,6 +759,32 @@
       var box = el('div');
       root.appendChild(box);
 
+      /* pop-up reminders: nothing to configure, but the body of elders should be
+         able to see whether anyone is actually receiving them */
+      var pushBox = el('div');
+      root.appendChild(pushBox);
+      Sync.api('GET', 'api/push').then(function (info) {
+        U.clear(pushBox);
+        pushBox.appendChild(UI.sectionTitle('Pop-up reminders'));
+        pushBox.appendChild(UI.card(null, [
+          UI.kv([
+            ['Devices receiving them', String(info.total || 0)],
+            ['On this device', info.devices ? 'yes' : 'not yet']
+          ]),
+          el('p.small.muted', { style: 'margin-top:10px',
+            text: 'Nothing to set up: each publisher turns them on for himself under “My details”. They go out for a new assignment, a cleaning turn, and a job due for the circuit overseer’s visit — sealed, through the phone maker’s own notification service.' }),
+          el('div.row', { style: 'margin-top:10px' }, [
+            UI.btn('Send anything due now', { icon: 'bell', onClick: function () {
+              Sync.api('POST', 'api/reminders/run', {}).then(function (out) {
+                UI.flag('Sent', out.queued
+                  ? U.plural(out.queued, 'message') + ' queued, and the pop-ups have gone.'
+                  : 'Nothing was due — everyone has already been told.', 'success');
+              }, function (err) { UI.flag('Could not send', err.message, 'danger'); });
+            } })
+          ])
+        ], { icon: 'bell' }));
+      }, function () { /* an older server without reminders */ });
+
       function draw() {
         U.clear(box);
         box.appendChild(el('div.muted', { text: 'Loading…' }));

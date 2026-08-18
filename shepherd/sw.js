@@ -24,6 +24,8 @@ var SHELL = [
   './js/ui.js',
   './js/program.js',
   './js/scheduler.js',
+  './js/cleaning.js',
+  './js/covisit.js',
   './js/sync.js',
   './js/pwa.js',
   './js/app.js',
@@ -31,6 +33,8 @@ var SHELL = [
   './js/views/meetings.js',
   './js/views/board.js',
   './js/views/duties.js',
+  './js/views/cleaning.js',
+  './js/views/covisit.js',
   './js/views/publishers.js',
   './js/views/reports.js',
   './js/views/territories.js',
@@ -120,4 +124,44 @@ self.addEventListener('fetch', function (event) {
    takes over without the person having to close every tab. */
 self.addEventListener('message', function (event) {
   if (event.data === 'skip-waiting') self.skipWaiting();
+});
+
+/* ---------- reminders ---------- *
+ * The server sends a sealed message; the browser hands it here already opened.
+ * Everything shown comes from that message — nothing is fetched, so a reminder
+ * appears the same whether or not there is a signal at that moment. */
+self.addEventListener('push', function (event) {
+  var data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) { data = { title: 'Shepherd' }; }
+  var title = data.title || 'Shepherd';
+  var options = {
+    body: data.body || '',
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-192.png',
+    tag: data.tag || 'shepherd',
+    renotify: !!data.tag,
+    requireInteraction: !!data.important,
+    data: { url: data.url || './', kind: data.kind || 'other' },
+    actions: data.url ? [{ action: 'open', title: 'Open' }] : []
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+/* Tapping it should land on the page it is about, and reuse a window that is
+   already open rather than piling up new ones. */
+self.addEventListener('notificationclick', function (event) {
+  event.notification.close();
+  var target = (event.notification.data && event.notification.data.url) || './';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+      for (var i = 0; i < list.length; i++) {
+        var client = list[i];
+        if (client.url.indexOf(self.registration.scope) === 0 && 'focus' in client) {
+          if ('navigate' in client) { try { client.navigate(target); } catch (e) { /* ignore */ } }
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(target);
+    })
+  );
 });

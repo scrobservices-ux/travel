@@ -49,6 +49,50 @@
       }
     }
 
+    /* the circuit overseer's visit: what is late, and what is coming up */
+    if (Auth.can('covisit.view') && global.CO) {
+      var visit = global.CO.next();
+      if (visit) {
+        var prog = global.CO.progress(visit);
+        var away = U.diffDays(U.today(), visit.from);
+        if (prog.overdue) {
+          items.push({
+            tone: 'danger', icon: 'shield',
+            title: U.plural(prog.overdue, 'job') + ' late for the circuit overseer’s visit',
+            body: prog.overdueTasks.slice(0, 4).map(function (t) {
+              return t.title + ' (' + (t.personId ? Store.name(t.personId) : 'nobody yet') + ')';
+            }).join(', '),
+            action: ['Open the preparation', function () { App.go('covisit', visit.id); }]
+          });
+        } else if (away >= 0 && away <= 42) {
+          items.push({
+            tone: away <= 14 ? 'warn' : 'info', icon: 'shield',
+            title: 'Circuit overseer’s visit ' + (away === 0 ? 'this week' : 'in ' + U.plural(away, 'day')),
+            body: prog.done + ' of ' + prog.total + ' jobs done'
+              + (prog.soon ? ' · ' + U.plural(prog.soon, 'job') + ' due this week' : ''),
+            action: ['Open the preparation', function () { App.go('covisit', visit.id); }]
+          });
+        }
+      }
+    }
+
+    /* whose turn it is to clean */
+    if (Auth.can('cleaning.view') && global.Clean) {
+      var soonest = global.Clean.between(U.today(), U.addDays(U.today(), 10))[0];
+      if (soonest) {
+        items.push({
+          tone: 'info', icon: 'sparkle',
+          title: soonest.kind === 'general'
+            ? 'General cleaning on ' + U.fmtDate(soonest.date, 'day')
+            : global.Clean.label(soonest) + ' cleans on ' + U.fmtDate(soonest.date, 'day'),
+          body: soonest.kind === 'general'
+            ? 'The whole congregation is invited, from ' + (soonest.time || '09:00') + '.'
+            : 'After the ' + (soonest.meeting === 'midweek' ? 'midweek' : 'weekend') + ' meeting.',
+          action: ['Open the rota', function () { App.go('cleaning'); }]
+        });
+      }
+    }
+
     if (Auth.can('schedule.view')) {
       var gaps = [];
       Store.upcomingWeeks(4).forEach(function (w) {
@@ -254,6 +298,20 @@
         root.appendChild(UI.banner('warn', 'Your ' + U.periodLabel(lastPeriod) + ' report has not been handed in',
           'It is due by the ' + cong.reportDueDay + 'th.',
           UI.btn('Submit it now', { sm: true, variant: 'primary', onClick: function () { App.go('my-report'); } })));
+      }
+
+      if (global.Clean) {
+        var myClean = global.Clean.forPerson(me, U.today(), U.addDays(U.today(), 45))[0];
+        if (myClean) {
+          root.appendChild(UI.banner(myClean.kind === 'general' ? 'info' : 'info',
+            myClean.kind === 'general'
+              ? 'General cleaning on ' + U.fmtDate(myClean.date, 'day')
+              : 'Your group cleans on ' + U.fmtDate(myClean.date, 'day'),
+            myClean.kind === 'general'
+              ? 'The whole congregation is invited, from ' + (myClean.time || '09:00') + '.'
+              : 'After the ' + (myClean.meeting === 'midweek' ? 'midweek' : 'weekend') + ' meeting.',
+            UI.btn('See the rota', { sm: true, onClick: function () { App.go('my-cleaning'); } })));
+        }
       }
 
       var next = mine.slice(0, 6);

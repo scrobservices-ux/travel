@@ -11,7 +11,7 @@
      are looking at are personal to the device, not congregation data. */
   var SYNCED = ['congregations', 'people', 'groups', 'weeks', 'duties', 'territories',
     'reports', 'attendance', 'tasks', 'visits', 'transactions', 'announcements', 'documents',
-    'users', 'audit'];
+    'cleaning', 'covisits', 'users', 'audit'];
 
   var Store = {
     state: null,
@@ -226,6 +226,12 @@
   Store.transactions = function () { return scoped('transactions'); };
   Store.announcements = function () { return scoped('announcements'); };
   Store.documents = function () { return scoped('documents'); };
+  Store.cleaning = function () {
+    return U.sortBy(scoped('cleaning'), function (c) { return c.date; });
+  };
+  Store.covisits = function () {
+    return U.sortBy(scoped('covisits'), function (v) { return v.from; });
+  };
 
   Store.person = function (id) { return U.by(Store.state.people, id); };
   Store.name = function (id, style) {

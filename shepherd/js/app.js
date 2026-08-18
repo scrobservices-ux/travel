@@ -18,6 +18,9 @@
         { id: 'announcements', label: 'Announcements', icon: 'megaphone' },
         { id: 'files', label: 'Files', icon: 'copy' }
       ] },
+      { group: 'The hall', items: [
+        { id: 'my-cleaning', label: 'Cleaning', icon: 'sparkle' }
+      ] },
       { group: 'My ministry', items: [
         { id: 'my-report', label: 'Monthly report', icon: 'report' },
         { id: 'my-territories', label: 'My territories', icon: 'map' }
@@ -37,6 +40,10 @@
         { id: 'duties', label: 'Duty rota', icon: 'duty', perm: 'schedule.view' },
         { id: 'fairness', label: 'Who is being used', icon: 'chart', perm: 'schedule.view' },
         { id: 'attendance', label: 'Attendance', icon: 'chart', perm: 'attendance.edit' }
+      ] },
+      { group: 'Kingdom Hall', items: [
+        { id: 'cleaning', label: 'Cleaning rota', icon: 'sparkle', perm: 'cleaning.view' },
+        { id: 'covisit', label: 'Circuit overseer visit', icon: 'shield', perm: 'covisit.view', count: countCovisitDue }
       ] },
       { group: 'Congregation', items: [
         { id: 'publishers', label: 'Publishers', icon: 'people', perm: 'publishers.view' },
@@ -80,6 +87,20 @@
   function countMissingReports() {
     var period = U.prevPeriod(U.period(U.today()));
     return { n: Store.missingReports(period).length, alert: true };
+  }
+  /* the badge on the circuit overseer page: what is late, or mine and due */
+  function countCovisitDue() {
+    var CO = global.CO;
+    if (!CO) return 0;
+    var visit = CO.next();
+    if (!visit) return 0;
+    var p = CO.progress(visit);
+    if (p.overdue) return { n: p.overdue, alert: true };
+    var me = Store.me();
+    var mine = me ? CO.tasksFor(visit, me.id).filter(function (t) {
+      return !t.doneAt && t.dueOn <= U.addDays(U.today(), 7);
+    }).length : 0;
+    return mine || 0;
   }
   function countOverdueTerritories() {
     var n = Store.overdueTerritories().length;
