@@ -13,7 +13,8 @@ Runs two ways, and the app is the same either way:
   Good for trying it out or for one person keeping the schedule on their own laptop.
 
 Shared mode works on a hall network or over the internet — see [HOSTING.md](HOSTING.md)
-for a tunnel from a computer at the hall, a small server with a domain, or Docker.
+for a tunnel from a computer at the hall, a small server with a domain, Docker, or the
+cPanel hosting a congregation may already be paying for.
 
 No build step and no dependencies in either mode.
 
@@ -95,6 +96,7 @@ mobile data, pick one of the routes in **[HOSTING.md](HOSTING.md)**:
 |---|---|---|
 | **Tunnel** (Cloudflare Tunnel or Tailscale) | one command; no domain, no port forwarding, HTTPS included | a laptop or Raspberry Pi at the hall behind a normal router |
 | **Small server + Docker** | a £4/month VPS and a domain; `docker compose up -d` and the certificate is automatic | a congregation that wants it always on |
+| **Hosting you already pay for** | cPanel → Setup Node.js App, a subdomain, and one hourly cron job | anyone with a Namecheap-style shared plan already running a website |
 | **Existing server** | systemd unit and a Caddy or nginx snippet, both in `deploy/` | someone who already runs a server |
 
 Over the internet, serve it over HTTPS — pass `--trust-proxy` when something else

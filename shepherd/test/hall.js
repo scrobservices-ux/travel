@@ -411,6 +411,22 @@ async function stop(code) {
       return !others.some(function (t) { return m.text.indexOf(t.title) !== -1; });
     }));
 
+  /* waking the reminders from outside, for hosting that sleeps */
+  var keyRes = await request('GET', '/api/reminders/cron-key', null, admin);
+  ok('an administrator can fetch the key for a scheduled job',
+    keyRes.status === 200 && !!keyRes.body.key, JSON.stringify(keyRes.body).slice(0, 60));
+  ok('a publisher cannot',
+    (await request('GET', '/api/reminders/cron-key', null, ruthCookie)).status === 403);
+  ok('the scheduled address is refused without the key',
+    (await request('GET', '/api/reminders/cron')).status === 403);
+  ok('and with the wrong one',
+    (await request('GET', '/api/reminders/cron?key=' + 'x'.repeat(32))).status === 403);
+  var cronRun = await request('GET', '/api/reminders/cron?key=' + encodeURIComponent(keyRes.body.key));
+  ok('but works with it, without anybody signing in',
+    cronRun.status === 200 && /shepherd:/.test(cronRun.text), cronRun.text);
+  var keyFile = fs.statSync(path.join(DATA, 'cron-key'));
+  ok('the key is kept where only the server can read it', (keyFile.mode & 0o077) === 0);
+
   /* the calendar feed carries the hall arrangements too */
   console.log('\nin the phone calendar');
   var link = await request('POST', '/api/calendar/link', {}, ruthCookie);

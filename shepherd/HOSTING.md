@@ -1,6 +1,6 @@
 # Putting Shepherd on the internet
 
-Three ways, easiest first. All of them keep the congregation's data on hardware you
+Four ways, easiest first. All of them keep the congregation's data on hardware you
 control — there is no Shepherd cloud to sign up for.
 
 Whichever you pick, the rule is the same: **on the open internet, serve it over HTTPS.**
@@ -75,7 +75,82 @@ docker compose exec -T shepherd tar -c server/data | gzip > shepherd-$(date +%F)
 
 ---
 
-## 3. Directly on a server you already run
+## 3. Shared cPanel hosting you already pay for — Namecheap, Hostinger, most of them
+
+If the congregation (or one of the brothers) already has a hosting account with
+cPanel, Shepherd will very likely run on it with nothing new to buy and nothing left
+switched on at home. Look in cPanel for **Setup Node.js App** under Software. If it is
+there, this route works; if it is not — or if the plan is a managed-WordPress one such
+as Namecheap's EasyWP — it does not, and route 1 or 2 is yours.
+
+**1. Put the files on the host.** cPanel → File Manager → upload a zip of the
+`shepherd` folder into your home directory and extract it, so you have
+`/home/<user>/shepherd/server/server.js`. (Or clone it if the plan gives you SSH.)
+
+**2. Point a subdomain at it.** cPanel → Domains → Create A New Domain →
+`shepherd.yourdomain.org`. Let it make the document root it suggests; the Node app will
+take the address over. Then cPanel → SSL/TLS Status and make sure the certificate covers
+the new subdomain — on most hosts AutoSSL does it within minutes.
+
+**3. Set the app up.** cPanel → Setup Node.js App → Create Application:
+
+| Box | What to put |
+|---|---|
+| Node.js version | 18 or newer |
+| Application mode | Production |
+| Application root | `shepherd` |
+| Application URL | the subdomain you just made |
+| Application startup file | `server/server.js` |
+
+Then, still on that page, add two environment variables:
+
+```
+TRUST_PROXY = 1
+HOST        = 127.0.0.1
+```
+
+`TRUST_PROXY` tells Shepherd the connection reaching the publisher was HTTPS, so
+sign-in cookies are marked secure and invitation links say `https://`. Leave `PORT`
+alone — cPanel sets it. Press **Run JS script → npm install** if it offers; there is
+nothing to install, but it settles the app. Then **Restart**.
+
+Open `https://shepherd.yourdomain.org` and you should get the set-up screen.
+
+**4. Keep the reminders on time.** This is the one thing shared hosting does
+differently: an idle app is put to sleep, and a sleeping app runs no timers, so
+cleaning and visit reminders would wait until somebody next opened the page. In the
+app go to **Administration → Email & notifications → How to keep them on time**, copy
+the line it gives you, and add it in cPanel → Cron Jobs, **Once an hour**. It looks
+like this:
+
+```
+0 * * * * curl -fsS "https://shepherd.yourdomain.org/api/reminders/cron?key=…" >/dev/null
+```
+
+That address is a key: anyone holding it can make the server send reminders that were
+already due, and nothing else — it cannot read or change a single record. Delete
+`server/data/cron-key` to retire it; a new one is made on the next start.
+
+**5. Email.** Shared hosts commonly refuse to let you send through Gmail's servers.
+Use a mailbox on the same domain instead — cPanel → Email Accounts → create
+`congregation@yourdomain.org`, then in Shepherd's email settings use that host's
+outgoing server (usually `mail.yourdomain.org`, port 465 with TLS) and that address.
+Invitations then arrive from the congregation's own address, which is better anyway.
+Press **Send a test message** before inviting anybody.
+
+**6. Backups.** The whole congregation is `shepherd/server/data`. cPanel's own backup
+covers it, but keep your own as well: **Administration → Backup & restore → Download**
+once a month, kept off the server.
+
+**What to watch on a shared plan.** Outbound HTTPS must be allowed for pop-up
+reminders to reach Google's and Apple's notification services — normally fine,
+occasionally firewalled; the emails still go either way. And the database is a file on
+that host, so the account holder can read it: fine when that is the congregation's own
+account, worth thinking about when it is a brother's business account.
+
+---
+
+## 4. Directly on a server you already run
 
 ```bash
 sudo useradd --system --home /opt/shepherd --shell /usr/sbin/nologin shepherd
@@ -154,8 +229,8 @@ a restore. A phone that has been wiped answers `410` and is dropped automaticall
 ### Installing on phones
 
 The app installs to a home screen and works offline, which needs **HTTPS** (or
-`localhost`) — browsers will not register a service worker over plain `http`. All three
-hosting routes below give you that. Nothing else has to be set up: the manifest, the
+`localhost`) — browsers will not register a service worker over plain `http`. Every
+hosting route above gives you that. Nothing else has to be set up: the manifest, the
 icons and the worker are served by Shepherd itself.
 
 ---

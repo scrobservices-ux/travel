@@ -50,6 +50,21 @@ var TRUST_PROXY = !!arg('trust-proxy', process.env.TRUST_PROXY === '1');
 
 var db = new DB(DATA_DIR);
 var auth = new Auth(DATA_DIR);
+/* Shared hosting (cPanel and the like) puts an app to sleep when nobody is
+   using it, and a sleeping app runs no timers. So the reminders can also be
+   woken from outside by a scheduled job, using a key kept next to the database
+   and never sent to a browser except to the administrator who sets the job up. */
+function cronKey() {
+  var file = path.join(DATA_DIR, 'cron-key');
+  try { return fs.readFileSync(file, 'utf8').trim(); }
+  catch (e) {
+    var key = require('crypto').randomBytes(24).toString('base64url');
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(file, key, { encoding: 'utf8', mode: 0o600 });
+    return key;
+  }
+}
+
 var mail = new Mail(DATA_DIR);
 var push = new Push(DATA_DIR);
 var notify = new Notify(DATA_DIR, mail, push);
@@ -611,6 +626,30 @@ routes['POST /api/reminders/run'] = function (req, res) {
   var before = mail.queue.length;
   hallReminders();
   send(res, 200, { ok: true, queued: mail.queue.length - before });
+};
+
+/* Called by a scheduled job rather than by a person, so it carries a key
+   instead of a session. It only ever sends what was already due. */
+routes['GET /api/reminders/cron'] = function (req, res, body, query) {
+  var given = String((query && query.key) || '');
+  var expected = cronKey();
+  var a = Buffer.from(given), b = Buffer.from(expected);
+  var okKey = a.length === b.length && require('crypto').timingSafeEqual(a, b);
+  if (!okKey) { fail(res, 403, 'Not a key this server recognises.'); return; }
+  var before = mail.queue.length;
+  hallReminders();
+  digestAndReminders();
+  res.writeHead(200, Object.assign({ 'Content-Type': 'text/plain; charset=utf-8' }, securityHeaders(req)));
+  res.end('shepherd: ' + (mail.queue.length - before) + ' message(s) queued\n');
+};
+
+/* What an administrator needs to set that job up. */
+routes['GET /api/reminders/cron-key'] = function (req, res) {
+  var s = requireSession(req, res);
+  if (!s) return;
+  var me = personOf(s.personId);
+  if (!Permit.can(db, me, 'admin.manage')) { fail(res, 403, 'Administrators only.'); return; }
+  send(res, 200, { key: cronKey(), path: '/api/reminders/cron' });
 };
 
 /* ---------- calendar ---------- */

@@ -738,6 +738,30 @@
 
   /* ---------- email ---------- */
 
+  /* Shared hosting sleeps an idle app, and a sleeping app runs no timers. This
+     hands the administrator the one line that fixes it. */
+  function cronHelp() {
+    var Sync = global.Sync;
+    Sync.api('GET', 'api/reminders/cron-key').then(function (out) {
+      var url = location.origin + location.pathname.replace(/\/[^/]*$/, '')
+        + out.path + '?key=' + out.key;
+      var line = '0 * * * * curl -fsS "' + url + '" >/dev/null';
+      UI.modal({
+        wide: true,
+        title: 'Keeping the reminders on time',
+        sub: 'Only needed on hosting that puts an idle app to sleep — cPanel, shared hosting and the like. On a machine of your own the server does this by itself every hour.',
+        body: [
+          el('p.small', { text: 'Add this as an hourly cron job (cPanel → Cron Jobs → Once an hour). It wakes the app and sends whatever was due — nothing more.' }),
+          el('pre', { style: 'white-space:pre-wrap;word-break:break-all;background:var(--bg-sunken);padding:12px;border-radius:4px;font-size:12px', text: line }),
+          el('div.row', [UI.copyBtn(function () { return line; }, 'Copy the line')]),
+          el('p.small.muted', { style: 'margin-top:12px',
+            text: 'Treat the address as a password: anyone holding it can make the server send the reminders that are already due. It cannot read or change anything. Delete server/data/cron-key to retire it and a new one is made.' })
+        ],
+        closeLabel: 'Close'
+      });
+    }, function (err) { UI.flag('Could not fetch it', err.message, 'danger'); });
+  }
+
   Views['admin-email'] = {
     title: 'email and notifications',
     perm: PERM,
@@ -774,6 +798,7 @@
           el('p.small.muted', { style: 'margin-top:10px',
             text: 'Nothing to set up: each publisher turns them on for himself under “My details”. They go out for a new assignment, a cleaning turn, and a job due for the circuit overseer’s visit — sealed, through the phone maker’s own notification service.' }),
           el('div.row', { style: 'margin-top:10px' }, [
+            UI.btn('How to keep them on time', { variant: 'subtle', icon: 'clock', onClick: cronHelp }),
             UI.btn('Send anything due now', { icon: 'bell', onClick: function () {
               Sync.api('POST', 'api/reminders/run', {}).then(function (out) {
                 UI.flag('Sent', out.queued
