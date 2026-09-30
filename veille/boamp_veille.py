@@ -37,7 +37,10 @@ API = (
 DEPARTEMENTS = ["95", "60", "77", "93"]
 
 # Mots-clés métier (recherche plein texte sur l'objet du marché)
-KEYWORDS = ["nettoyage", "propreté", "proprete", "entretien des locaux", "vitrerie"]
+KEYWORDS = [
+    "nettoyage", "propreté", "proprete", "entretien des locaux",
+    "entretien ménager", "vitrerie",
+]
 
 # Marqueurs "faible concurrence" mis en avant dans le rapport
 LOW_COMP = ["infructueux", "infructueuse", "relance", "sans suite", "nouvelle consultation"]
