@@ -19,8 +19,10 @@ Doc API : https://boamp-datadila.opendatasoft.com/explore/dataset/boamp/api/
 
 from __future__ import annotations
 
+import html
 import json
 import os
+import re
 import sys
 import urllib.parse
 import urllib.request
@@ -45,6 +47,20 @@ KEYWORDS = [
 # Marqueurs "faible concurrence" mis en avant dans le rapport
 LOW_COMP = ["infructueux", "infructueuse", "relance", "sans suite", "nouvelle consultation"]
 MAPA = ["adaptée", "adaptee", "mapa", "procédure adaptée"]
+
+# Hors métier SCROB : écartés même si l'objet contient "nettoyage"
+EXCLUDE = [
+    "blanchisserie", "fourniture de produits", "fournitures de produits",
+    "produits d'entretien", "matériels de nettoyage", "menuiseries",
+    "ascenseur", "traitement d'air", "voies et espaces publics",
+    "propreté urbaine", "déménagement", "corbeilles", "réseaux",
+]
+
+# Avis de résultat / attribution : le marché est déjà passé
+ATTRIBUTION = ["attribution", "résultat", "resultat"]
+
+# Un avis sans date limite n'est gardé que s'il a moins de N jours
+NO_DEADLINE_MAX_AGE_DAYS = 45
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SEEN_FILE = os.path.join(HERE, "_seen.json")
@@ -92,6 +108,12 @@ def g(rec: dict, *keys: str) -> str:
     return ""
 
 
+def clean(s: str) -> str:
+    """Texte d'affichage : entités HTML décodées, sur une seule ligne."""
+    s = html.unescape(html.unescape(s))
+    return re.sub(r"\s+", " ", s).replace("|", "/").strip()
+
+
 def parse_date(s: str):
     if not s:
         return None
@@ -115,13 +137,18 @@ def tags(objet: str, procedure: str) -> str:
 
 
 def normalise(rec: dict) -> dict:
-    objet = g(rec, "objet")
+    objet = clean(g(rec, "objet"))
     procedure = g(rec, "procedure_libelle", "procedure_categorise_libelle")
     deadline = parse_date(g(rec, "datelimitereponse", "date_limite_reponse"))
     return {
         "idweb": g(rec, "idweb", "id"),
         "objet": objet,
-        "acheteur": g(rec, "nomacheteur", "nom_acheteur"),
+        "acheteur": clean(g(rec, "nomacheteur", "nom_acheteur")),
+        "nature": " ".join(
+            g(rec, k) for k in (
+                "nature_libelle", "nature_categorise_libelle", "type_avis", "famille_libelle",
+            )
+        ).lower(),
         "dept": g(rec, "code_departement"),
         "parution": parse_date(g(rec, "dateparution")),
         "deadline": deadline,
@@ -134,8 +161,21 @@ def normalise(rec: dict) -> dict:
 
 
 def is_open(item: dict, today: date) -> bool:
-    """Avis ouvert : pas de date limite connue, ou échéance non dépassée."""
-    return item["deadline"] is None or item["deadline"] >= today
+    """Avis de marché pertinent et encore ouvert.
+
+    Écarte les avis d'attribution, les objets hors métier, les échéances passées
+    et les avis sans date limite trop anciens (probablement clos).
+    """
+    if any(t in item["nature"] for t in ATTRIBUTION):
+        return False
+    if any(t in item["objet"].lower() for t in EXCLUDE):
+        return False
+    if item["deadline"] is not None:
+        return item["deadline"] >= today
+    return (
+        item["parution"] is not None
+        and (today - item["parution"]).days <= NO_DEADLINE_MAX_AGE_DAYS
+    )
 
 
 def fmt_row(it: dict) -> str:
@@ -192,6 +232,9 @@ def main() -> int:
     except Exception as exc:  # réseau / API : on échoue proprement
         print(f"ERREUR appel API BOAMP : {exc}", file=sys.stderr)
         return 1
+
+    if raw:  # trace du schéma dans les logs Actions, pour ajuster les filtres
+        print("Champs BOAMP :", ", ".join(sorted(raw[0].keys())), file=sys.stderr)
 
     items = [normalise(r) for r in raw]
     open_items = [it for it in items if is_open(it, today)]
