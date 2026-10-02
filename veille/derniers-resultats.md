@@ -1,8 +1,8 @@
 # Veille nettoyage / propreté — SCROB SERVICES
 
-_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 01/10/2026_
+_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 02/10/2026_
 
-**19 avis ouverts** dont **0 nouveaux** depuis le dernier passage.
+**19 avis ouverts** dont **1 nouveaux** depuis le dernier passage.
 
 > 🟢 MAPA = procédure adaptée (peu de concurrence) · 🔁 = relance / marché infructueux (concurrence déjà faible)
 
@@ -11,7 +11,6 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 | Objet du marché | Acheteur | Dépt | Date limite |
 |---|---|---|---|
 | [Nettoyage des bâtiments communaux](https://www.boamp.fr/pages/avis/?q=idweb:26-89177) 🟢 MAPA | MAIRIE D'ECOUEN | 95 | **—** |
-| [Prestations de nettoyage des locaux du siège social et des bâtiments dépendants de la CARSAT Hauts-de-France.](https://www.boamp.fr/pages/avis/?q=idweb:26-82414) | CARSAT HAUTS-DE-FRANCE | 59, 62, 80, 60 | **01/10/2026** |
 | [Nettoyage des locaux communaux](https://www.boamp.fr/pages/avis/?q=idweb:26-85804) | MAIRIE FOLLAINVILLE DENNEMONT | 78, 95, 92 | **05/10/2026** |
 | [Prestations d'entretien ménager](https://www.boamp.fr/pages/avis/?q=idweb:26-83419) | VILLE DE LOUVRES | 95 | **05/10/2026** |
 | [PRESTATIONS DE NETTOYAGE DES LOCAUX ET DE LA VITRERIE DE LA MSA DE PICARDIE](https://www.boamp.fr/pages/avis/?q=idweb:26-86243) | MSA DE PICARDIE | 80, 60, 2 | **06/10/2026** |
@@ -29,3 +28,4 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 | [Prestations de nettoyage et d'entretien des batiments, écoles, structures périscolaires et équipements municipaux](https://www.boamp.fr/pages/avis/?q=idweb:26-92353) | Commune de Coupvray | 77 | **24/10/2026** |
 | [Prestations de nettoyage et d'entretien des locaux et fourniture des consommables hygiéniques](https://www.boamp.fr/pages/avis/?q=idweb:26-89892) | CDGFPT77 | 77 | **26/10/2026** |
 | [Accord-cadre propreté et gestion des déchets des sites du Musée national Picasso Paris](https://www.boamp.fr/pages/avis/?q=idweb:26-93122) | MUSEE NATIONAL PICASSO PARIS | 75, 77, 78, 91, 92, 93, 94, 95 | **28/10/2026** |
+| [Prestation de nettoyage, d’entretien des locaux et autres prestations annexes pour certains bâtiments de la ville de Dam…](https://www.boamp.fr/pages/avis/?q=idweb:26-94424) | Ville de Dammarie Lès Lys | 77, 75, 91, 92 | **02/11/2026** |
