@@ -1,8 +1,8 @@
 # Veille nettoyage / propreté — SCROB SERVICES
 
-_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 04/10/2026_
+_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 05/10/2026_
 
-**20 avis ouverts** dont **1 nouveaux** depuis le dernier passage.
+**20 avis ouverts** dont **0 nouveaux** depuis le dernier passage.
 
 > 🟢 MAPA = procédure adaptée (peu de concurrence) · 🔁 = relance / marché infructueux (concurrence déjà faible)
 
