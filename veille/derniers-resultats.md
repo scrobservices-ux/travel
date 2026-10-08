@@ -1,8 +1,8 @@
 # Veille nettoyage / propreté — SCROB SERVICES
 
-_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 07/10/2026_
+_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 08/10/2026_
 
-**18 avis ouverts** dont **0 nouveaux** depuis le dernier passage.
+**18 avis ouverts** dont **1 nouveaux** depuis le dernier passage.
 
 > 🟢 MAPA = procédure adaptée (peu de concurrence) · 🔁 = relance / marché infructueux (concurrence déjà faible)
 
@@ -11,7 +11,6 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 | Objet du marché | Acheteur | Dépt | Date limite |
 |---|---|---|---|
 | [Nettoyage des bâtiments communaux](https://www.boamp.fr/pages/avis/?q=idweb:26-89177) 🟢 MAPA | MAIRIE D'ECOUEN | 95 | **—** |
-| [Marché 26.AO.BA.053 - Réalisation de prestations de mise en propreté et services annexes des locaux et abords immédiats …](https://www.boamp.fr/pages/avis/?q=idweb:26-85457) | EST ENSEMBLE | 93, 75 | **07/10/2026** |
 | [Prestation nettoyage courant des locaux et vitrerie au profit de l’Académie Militaire de la Gendarmerie Nationale et du …](https://www.boamp.fr/pages/avis/?q=idweb:26-86958) | Commandement des écoles de la GN | 17, 77 | **08/10/2026** |
 | [Prestations de nettoyage du bâtiment H de l'Université Paris 8](https://www.boamp.fr/pages/avis/?q=idweb:26-96404) | Université Paris 8 | 93, 75, 77, 78, 92, 91, 95, 94 | **12/10/2026** |
 | [Prestations de nettoyage du bâtiment H de l'Université Paris 8](https://www.boamp.fr/pages/avis/?q=idweb:26-87522) | Université Paris 8 | 93, 75, 77, 78, 92, 91, 95, 94 | **12/10/2026** |
@@ -28,3 +27,4 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 | [Marché 26.AO.BA.053 - Réalisation de prestations de mise en propreté et services annexes des locaux et abords immédiats …](https://www.boamp.fr/pages/avis/?q=idweb:26-95103) | EST ENSEMBLE | 93, 75 | **02/11/2026** |
 | [Prestation de nettoyage, d’entretien des locaux et autres prestations annexes pour certains bâtiments de la ville de Dam…](https://www.boamp.fr/pages/avis/?q=idweb:26-94424) | Ville de Dammarie Lès Lys | 77, 75, 91, 92 | **02/11/2026** |
 | [Prestations de nettoyage des locaux administratifs](https://www.boamp.fr/pages/avis/?q=idweb:26-96147) | SPL P.A.R.S.E.F | 77 | **04/11/2026** |
+| [Prestations de nettoyage et d'entretien des bâtiments communaux.](https://www.boamp.fr/pages/avis/?q=idweb:26-96991) | COMMUNE DE MAROLLES EN BRIE | 94, 77 | **18/11/2026** |
