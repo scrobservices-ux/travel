@@ -1,8 +1,8 @@
 # Veille nettoyage / propreté — SCROB SERVICES
 
-_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 08/10/2026_
+_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 09/10/2026_
 
-**18 avis ouverts** dont **1 nouveaux** depuis le dernier passage.
+**17 avis ouverts** dont **0 nouveaux** depuis le dernier passage.
 
 > 🟢 MAPA = procédure adaptée (peu de concurrence) · 🔁 = relance / marché infructueux (concurrence déjà faible)
 
@@ -11,7 +11,6 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 | Objet du marché | Acheteur | Dépt | Date limite |
 |---|---|---|---|
 | [Nettoyage des bâtiments communaux](https://www.boamp.fr/pages/avis/?q=idweb:26-89177) 🟢 MAPA | MAIRIE D'ECOUEN | 95 | **—** |
-| [Prestation nettoyage courant des locaux et vitrerie au profit de l’Académie Militaire de la Gendarmerie Nationale et du …](https://www.boamp.fr/pages/avis/?q=idweb:26-86958) | Commandement des écoles de la GN | 17, 77 | **08/10/2026** |
 | [Prestations de nettoyage du bâtiment H de l'Université Paris 8](https://www.boamp.fr/pages/avis/?q=idweb:26-96404) | Université Paris 8 | 93, 75, 77, 78, 92, 91, 95, 94 | **12/10/2026** |
 | [Prestations de nettoyage du bâtiment H de l'Université Paris 8](https://www.boamp.fr/pages/avis/?q=idweb:26-87522) | Université Paris 8 | 93, 75, 77, 78, 92, 91, 95, 94 | **12/10/2026** |
 | [Prestations de nettoyage courant et ponctuel des locaux et de la vitrerie de la Faculté des Métiers de l'Essonne](https://www.boamp.fr/pages/avis/?q=idweb:26-89764) | Faculté Des Métiers de l'Essonne | 75, 77, 78, 91, 92, 94, 93, 95 | **15/10/2026** |
