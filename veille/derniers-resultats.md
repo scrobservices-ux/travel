@@ -1,8 +1,8 @@
 # Veille nettoyage / propreté — SCROB SERVICES
 
-_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 15/10/2026_
+_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 16/10/2026_
 
-**16 avis ouverts** dont **0 nouveaux** depuis le dernier passage.
+**18 avis ouverts** dont **4 nouveaux** depuis le dernier passage.
 
 > 🟢 MAPA = procédure adaptée (peu de concurrence) · 🔁 = relance / marché infructueux (concurrence déjà faible)
 
@@ -10,9 +10,9 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 
 | Objet du marché | Acheteur | Dépt | Date limite |
 |---|---|---|---|
+| [NETTOYAGE ET ENTRETIEN DES BÂTIMENTS COMMUNAUX](https://www.boamp.fr/pages/avis/?q=idweb:26-100508) 🟢 MAPA | Commune de Santeny | 94, 91, 77 | **13/11/2026** |
+| [Nettoyage des locaux](https://www.boamp.fr/pages/avis/?q=idweb:26-100403) 🟢 MAPA | Communauté de Communes Carnelle Pays-de-France | 95 | **16/11/2026** |
 | [Nettoyage des bâtiments communaux](https://www.boamp.fr/pages/avis/?q=idweb:26-89177) 🟢 MAPA | MAIRIE D'ECOUEN | 95 | **—** |
-| [Prestations de nettoyage courant et ponctuel des locaux et de la vitrerie de la Faculté des Métiers de l'Essonne](https://www.boamp.fr/pages/avis/?q=idweb:26-89764) | Faculté Des Métiers de l'Essonne | 75, 77, 78, 91, 92, 94, 93, 95 | **15/10/2026** |
-| [Prestations de nettoyage courant et ponctuel des locaux et de la vitrerie de la Faculté des Métiers de l'Essonne](https://www.boamp.fr/pages/avis/?q=idweb:26-88791) | Faculté Des Métiers de l Essonne | 75, 77, 78, 91, 92, 94, 93, 95 | **15/10/2026** |
 | [Prestations de services de nettoyage des locaux, de la vitrerie ainsi que la fourniture des consommables sanitaires des …](https://www.boamp.fr/pages/avis/?q=idweb:26-87221) | FRANCE TRAVAIL DGA TECH | 75, 93 | **16/10/2026** |
 | [Prestations d'entretien et de nettoyage des locaux](https://www.boamp.fr/pages/avis/?q=idweb:26-88965) | Ville de Méry-sur-Oise | 95 | **20/10/2026** |
 | [Marché public de nettoyage et d’entretien courant des locaux de l’AGRASC.](https://www.boamp.fr/pages/avis/?q=idweb:26-86256) | AGRASC | 75, 91, 92, 93, 94, 95 | **20/10/2026** |
@@ -26,3 +26,5 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 | [Prestations de nettoyage des locaux administratifs](https://www.boamp.fr/pages/avis/?q=idweb:26-96147) | SPL P.A.R.S.E.F | 77 | **04/11/2026** |
 | [Accord-cadre pour la réalisation de prestations de mise en propreté au bénéfice des sites des services déconcentrés et d…](https://www.boamp.fr/pages/avis/?q=idweb:26-98811) | SGAMM IDF | 75, 77, 78, 91, 92, 93, 94, 95 | **12/11/2026** |
 | [Prestations de nettoyage et d'entretien des bâtiments communaux.](https://www.boamp.fr/pages/avis/?q=idweb:26-96991) | COMMUNE DE MAROLLES EN BRIE | 94, 77 | **18/11/2026** |
+| [PRESTATIONS DE NETTOYAGE DES BATIMENTS ET DE LA VITRERIE DU SIEGE ET DES LOCAUX DEPENDANT DE LA CPAM DE L’AUBE ET DU CEN…](https://www.boamp.fr/pages/avis/?q=idweb:26-99874) | CPAM DE L'AUBE | 10, 51, 52, 89, 21, 77 | **19/11/2026** |
+| [Nettoyage des locaux, de la vitrerie, ainsi que la fourniture des équipements et des consommables sanitaires et gestion …](https://www.boamp.fr/pages/avis/?q=idweb:26-99873) | URSSAF ILE DE FRANCE | 93, 75, 91, 77, 78, 95 | **30/11/2026** |
