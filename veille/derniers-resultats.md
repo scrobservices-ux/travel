@@ -1,8 +1,8 @@
 # Veille nettoyage / propreté — SCROB SERVICES
 
-_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 20/10/2026_
+_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 21/10/2026_
 
-**17 avis ouverts** dont **0 nouveaux** depuis le dernier passage.
+**15 avis ouverts** dont **0 nouveaux** depuis le dernier passage.
 
 > 🟢 MAPA = procédure adaptée (peu de concurrence) · 🔁 = relance / marché infructueux (concurrence déjà faible)
 
@@ -13,8 +13,6 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 | [NETTOYAGE ET ENTRETIEN DES BÂTIMENTS COMMUNAUX](https://www.boamp.fr/pages/avis/?q=idweb:26-100508) 🟢 MAPA | Commune de Santeny | 94, 91, 77 | **13/11/2026** |
 | [Nettoyage des locaux](https://www.boamp.fr/pages/avis/?q=idweb:26-100403) 🟢 MAPA | Communauté de Communes Carnelle Pays-de-France | 95 | **16/11/2026** |
 | [Nettoyage des bâtiments communaux](https://www.boamp.fr/pages/avis/?q=idweb:26-89177) 🟢 MAPA | MAIRIE D'ECOUEN | 95 | **—** |
-| [Prestations d'entretien et de nettoyage des locaux](https://www.boamp.fr/pages/avis/?q=idweb:26-88965) | Ville de Méry-sur-Oise | 95 | **20/10/2026** |
-| [Marché public de nettoyage et d’entretien courant des locaux de l’AGRASC.](https://www.boamp.fr/pages/avis/?q=idweb:26-86256) | AGRASC | 75, 91, 92, 93, 94, 95 | **20/10/2026** |
 | [Prestations de services de nettoyage et entretien des bâtiments communaux de la Ville de Verberie](https://www.boamp.fr/pages/avis/?q=idweb:26-91054) | COMMUNE DE VERBERIE | 2, 60, 80 | **23/10/2026** |
 | [Nettoyage des bâtiments communautaires](https://www.boamp.fr/pages/avis/?q=idweb:26-88808) | Communauté de Communes Moret Seine et Loing | 77, 45, 89 | **23/10/2026** |
 | [Prestations de nettoyage et d'entretien des batiments, écoles, structures périscolaires et équipements municipaux](https://www.boamp.fr/pages/avis/?q=idweb:26-92353) | Commune de Coupvray | 77 | **24/10/2026** |
