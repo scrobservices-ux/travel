@@ -7,3 +7,6 @@ index-for-cpanel.html
 # Python bytecode cache (veille script)
 __pycache__/
 *.pyc
+
+# design-taste-frontend working files
+.taste-skill/
