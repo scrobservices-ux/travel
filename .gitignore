@@ -10,3 +10,6 @@ __pycache__/
 
 # design-taste-frontend working files
 .taste-skill/
+
+# Playwright MCP screenshots and traces
+.playwright-mcp/

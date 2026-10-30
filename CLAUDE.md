@@ -11,5 +11,12 @@ when the request doesn't name them:
 - `animate-expo` — motion in React Native / Expo
 - `mobile-native` — web apps or PWAs used on phones
 
+Tools that go with them:
+
+- **Figma connector** (`mcp__Figma__*`) — when a figma.com link or Figma file is involved, read the
+  design from it (or push a design into it) instead of guessing; follow the Figma skills it points to.
+- **Playwright MCP** (`playwright`, from `.mcp.json`) — open the result in a real browser, click through
+  it, and screenshot it at desktop and phone widths before calling design work done.
+
 Where the skills disagree, the user's brief wins; then use impeccable for product UI and
 design-taste-frontend for public pages. Keep their working files (`.taste-skill/`) out of git.
