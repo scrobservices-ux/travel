@@ -1,3 +1,10 @@
+# Multi-part goals
+
+When a request spans several different jobs or skills (for example a launch, a campaign, or a redesign
+plus ads), or touches emails, quotes, clients or money, run it through the `chief-of-staff` skill: split it
+into tasks, delegate, and end with one approval list. A single technical job, even with several steps,
+is done directly without it.
+
 # Design work
 
 For any design-related request — building, redesigning, restyling, critiquing, auditing or polishing a
