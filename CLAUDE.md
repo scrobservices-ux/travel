@@ -1,3 +1,11 @@
+# Speed through parallel work
+
+When a request has several pieces that can run at the same time (for example: redesign a page, write
+outreach emails and prepare ads), use the `chief-of-staff` skill: split the work, run helper agents in
+parallel, and end with one approval list. For a single job, or steps that must happen in order, skip it
+and do the work directly. Coordination never lowers the bar: each piece still goes through its own skill
+(design skills for design, quote skills for quotes, and so on).
+
 # Design work
 
 For any design-related request — building, redesigning, restyling, critiquing, auditing or polishing a
