@@ -1,8 +1,8 @@
 # Veille nettoyage / propreté — SCROB SERVICES
 
-_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 29/10/2026_
+_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 30/10/2026_
 
-**14 avis ouverts** dont **2 nouveaux** depuis le dernier passage.
+**15 avis ouverts** dont **1 nouveaux** depuis le dernier passage.
 
 > 🟢 MAPA = procédure adaptée (peu de concurrence) · 🔁 = relance / marché infructueux (concurrence déjà faible)
 
@@ -21,6 +21,7 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 | [Accord-cadre pour la réalisation de prestations de mise en propreté au bénéfice des sites des services déconcentrés et d…](https://www.boamp.fr/pages/avis/?q=idweb:26-104911) | SGAMM IDF | 75, 77, 78, 91, 92, 93, 94, 95 | **19/11/2026** |
 | [PRESTATIONS DE NETTOYAGE DES BATIMENTS ET DE LA VITRERIE DU SIEGE ET DES LOCAUX DEPENDANT DE LA CPAM DE L’AUBE ET DU CEN…](https://www.boamp.fr/pages/avis/?q=idweb:26-99874) | CPAM DE L'AUBE | 10, 51, 52, 89, 21, 77 | **19/11/2026** |
 | [Nettoyage et maintien de la propreté des espaces non bâtis des campus de l’Université de Strasbourg](https://www.boamp.fr/pages/avis/?q=idweb:26-103001) | UNISTRA - DAM | 67, 68, 75, 91, 92, 93 | **23/11/2026** |
+| [PRESTATIONS DE SERVICE POUR L'EXPLOITATION DE LA PROPRETE ET L'HYGIENE DE LA MEDIATHEQUE ET DES ARCHIVES MUNICIPALES DE …](https://www.boamp.fr/pages/avis/?q=idweb:26-105290) | Ville de MELUN | 77 | **30/11/2026** |
 | [Le nettoyage courants des locaux et des surfaces vitrées de l’École Nationale Supérieure d’Architecture de Paris la Vill…](https://www.boamp.fr/pages/avis/?q=idweb:26-104731) | l’Ecole Nationale Supérieure de l’Architecture de Paris la Villette (ENSA-PLV) | 75, 77, 78, 91, 92, 93, 94, 95 | **30/11/2026** |
 | [Nettoyage des locaux, de la vitrerie, ainsi que la fourniture des équipements et des consommables sanitaires et gestion …](https://www.boamp.fr/pages/avis/?q=idweb:26-99873) | URSSAF ILE DE FRANCE | 93, 75, 91, 77, 78, 95 | **30/11/2026** |
 | [Marché de nettoyage et désinfection des bouches et grilles de ventilation mécanique contrôlée (VMC) et casiers mortuaire…](https://www.boamp.fr/pages/avis/?q=idweb:26-101967) | Centre Hospitalier d'Arras | 62, 59, 60, 80 | **—** |
