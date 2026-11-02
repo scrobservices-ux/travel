@@ -1,8 +1,8 @@
 # Veille nettoyage / propreté — SCROB SERVICES
 
-_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 01/11/2026_
+_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 02/11/2026_
 
-**15 avis ouverts** dont **1 nouveaux** depuis le dernier passage.
+**16 avis ouverts** dont **1 nouveaux** depuis le dernier passage.
 
 > 🟢 MAPA = procédure adaptée (peu de concurrence) · 🔁 = relance / marché infructueux (concurrence déjà faible)
 
@@ -24,4 +24,5 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 | [PRESTATIONS DE SERVICE POUR L'EXPLOITATION DE LA PROPRETE ET L'HYGIENE DE LA MEDIATHEQUE ET DES ARCHIVES MUNICIPALES DE …](https://www.boamp.fr/pages/avis/?q=idweb:26-105290) | Ville de MELUN | 77 | **30/11/2026** |
 | [Le nettoyage courants des locaux et des surfaces vitrées de l’École Nationale Supérieure d’Architecture de Paris la Vill…](https://www.boamp.fr/pages/avis/?q=idweb:26-104731) | l’Ecole Nationale Supérieure de l’Architecture de Paris la Villette (ENSA-PLV) | 75, 77, 78, 91, 92, 93, 94, 95 | **30/11/2026** |
 | [Nettoyage des locaux, de la vitrerie, ainsi que la fourniture des équipements et des consommables sanitaires et gestion …](https://www.boamp.fr/pages/avis/?q=idweb:26-99873) | URSSAF ILE DE FRANCE | 93, 75, 91, 77, 78, 95 | **30/11/2026** |
+| [Marché Gardiennage Entretien Ménager et OM - Claude Bernard](https://www.boamp.fr/pages/avis/?q=idweb:26-106115) | CAISSE DES DEPOTS ET CONSIGNATIONS C/O SCAPRIM PROPERTY MANAGEMENT | 75, 77, 78, 91 | **04/12/2026** |
 | [Marché de nettoyage et désinfection des bouches et grilles de ventilation mécanique contrôlée (VMC) et casiers mortuaire…](https://www.boamp.fr/pages/avis/?q=idweb:26-101967) | Centre Hospitalier d'Arras | 62, 59, 60, 80 | **—** |
