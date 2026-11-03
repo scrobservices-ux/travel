@@ -1,8 +1,8 @@
 # Veille nettoyage / propreté — SCROB SERVICES
 
-_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 02/11/2026_
+_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 03/11/2026_
 
-**16 avis ouverts** dont **1 nouveaux** depuis le dernier passage.
+**15 avis ouverts** dont **1 nouveaux** depuis le dernier passage.
 
 > 🟢 MAPA = procédure adaptée (peu de concurrence) · 🔁 = relance / marché infructueux (concurrence déjà faible)
 
@@ -12,8 +12,6 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 |---|---|---|---|
 | [NETTOYAGE ET ENTRETIEN DES BÂTIMENTS COMMUNAUX](https://www.boamp.fr/pages/avis/?q=idweb:26-100508) 🟢 MAPA | Commune de Santeny | 94, 91, 77 | **13/11/2026** |
 | [Nettoyage des locaux](https://www.boamp.fr/pages/avis/?q=idweb:26-100403) 🟢 MAPA | Communauté de Communes Carnelle Pays-de-France | 95 | **16/11/2026** |
-| [Marché 26.AO.BA.053 - Réalisation de prestations de mise en propreté et services annexes des locaux et abords immédiats …](https://www.boamp.fr/pages/avis/?q=idweb:26-95103) | EST ENSEMBLE | 93, 75 | **02/11/2026** |
-| [Prestation de nettoyage, d’entretien des locaux et autres prestations annexes pour certains bâtiments de la ville de Dam…](https://www.boamp.fr/pages/avis/?q=idweb:26-94424) | Ville de Dammarie Lès Lys | 77, 75, 91, 92 | **02/11/2026** |
 | [Prestations de nettoyage des locaux administratifs](https://www.boamp.fr/pages/avis/?q=idweb:26-96147) | SPL P.A.R.S.E.F | 77 | **04/11/2026** |
 | [Prestation de nettoyage, d’entretien des locaux et autres prestations annexes pour certains bâtiments de la ville de Dam…](https://www.boamp.fr/pages/avis/?q=idweb:26-105515) | Ville de Dammarie Lès Lys | 77, 75, 91, 92 | **06/11/2026** |
 | [Accord-cadre pour la réalisation de prestations de mise en propreté au bénéfice des sites des services déconcentrés et d…](https://www.boamp.fr/pages/avis/?q=idweb:26-98811) | SGAMM IDF | 75, 77, 78, 91, 92, 93, 94, 95 | **12/11/2026** |
@@ -25,4 +23,5 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 | [Le nettoyage courants des locaux et des surfaces vitrées de l’École Nationale Supérieure d’Architecture de Paris la Vill…](https://www.boamp.fr/pages/avis/?q=idweb:26-104731) | l’Ecole Nationale Supérieure de l’Architecture de Paris la Villette (ENSA-PLV) | 75, 77, 78, 91, 92, 93, 94, 95 | **30/11/2026** |
 | [Nettoyage des locaux, de la vitrerie, ainsi que la fourniture des équipements et des consommables sanitaires et gestion …](https://www.boamp.fr/pages/avis/?q=idweb:26-99873) | URSSAF ILE DE FRANCE | 93, 75, 91, 77, 78, 95 | **30/11/2026** |
 | [Marché Gardiennage Entretien Ménager et OM - Claude Bernard](https://www.boamp.fr/pages/avis/?q=idweb:26-106115) | CAISSE DES DEPOTS ET CONSIGNATIONS C/O SCAPRIM PROPERTY MANAGEMENT | 75, 77, 78, 91 | **04/12/2026** |
+| [Groupement de commandes entre la ville et le CCAS relatif au nettoyage des vitres des bâtiments communaux](https://www.boamp.fr/pages/avis/?q=idweb:26-106126) | Ville d'Aubervilliers | 93, 95 | **07/12/2026** |
 | [Marché de nettoyage et désinfection des bouches et grilles de ventilation mécanique contrôlée (VMC) et casiers mortuaire…](https://www.boamp.fr/pages/avis/?q=idweb:26-101967) | Centre Hospitalier d'Arras | 62, 59, 60, 80 | **—** |
