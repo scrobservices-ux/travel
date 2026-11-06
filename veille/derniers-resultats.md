@@ -1,8 +1,8 @@
 # Veille nettoyage / propreté — SCROB SERVICES
 
-_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 05/11/2026_
+_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 06/11/2026_
 
-**14 avis ouverts** dont **0 nouveaux** depuis le dernier passage.
+**15 avis ouverts** dont **1 nouveaux** depuis le dernier passage.
 
 > 🟢 MAPA = procédure adaptée (peu de concurrence) · 🔁 = relance / marché infructueux (concurrence déjà faible)
 
@@ -23,4 +23,5 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 | [Nettoyage des locaux, de la vitrerie, ainsi que la fourniture des équipements et des consommables sanitaires et gestion …](https://www.boamp.fr/pages/avis/?q=idweb:26-99873) | URSSAF ILE DE FRANCE | 93, 75, 91, 77, 78, 95 | **30/11/2026** |
 | [Marché Gardiennage Entretien Ménager et OM - Claude Bernard](https://www.boamp.fr/pages/avis/?q=idweb:26-106115) | CAISSE DES DEPOTS ET CONSIGNATIONS C/O SCAPRIM PROPERTY MANAGEMENT | 75, 77, 78, 91 | **04/12/2026** |
 | [Groupement de commandes entre la ville et le CCAS relatif au nettoyage des vitres des bâtiments communaux](https://www.boamp.fr/pages/avis/?q=idweb:26-106126) | Ville d'Aubervilliers | 93, 95 | **07/12/2026** |
+| [PRESTATIONS DE NETTOYAGE DES LOCAUX MUNICIPAUX](https://www.boamp.fr/pages/avis/?q=idweb:26-107735) | COMMUNE DE CHANTILLY | 60 | **08/12/2026** |
 | [Marché de nettoyage et désinfection des bouches et grilles de ventilation mécanique contrôlée (VMC) et casiers mortuaire…](https://www.boamp.fr/pages/avis/?q=idweb:26-101967) | Centre Hospitalier d'Arras | 62, 59, 60, 80 | **—** |
