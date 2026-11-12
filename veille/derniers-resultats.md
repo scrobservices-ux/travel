@@ -1,8 +1,8 @@
 # Veille nettoyage / propreté — SCROB SERVICES
 
-_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 11/11/2026_
+_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 12/11/2026_
 
-**16 avis ouverts** dont **1 nouveaux** depuis le dernier passage.
+**17 avis ouverts** dont **1 nouveaux** depuis le dernier passage.
 
 > 🟢 MAPA = procédure adaptée (peu de concurrence) · 🔁 = relance / marché infructueux (concurrence déjà faible)
 
@@ -23,6 +23,7 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 | [Marché Gardiennage Entretien Ménager et OM - Claude Bernard](https://www.boamp.fr/pages/avis/?q=idweb:26-106115) | CAISSE DES DEPOTS ET CONSIGNATIONS C/O SCAPRIM PROPERTY MANAGEMENT | 75, 77, 78, 91 | **04/12/2026** |
 | [Groupement de commandes entre la ville et le CCAS relatif au nettoyage des vitres des bâtiments communaux](https://www.boamp.fr/pages/avis/?q=idweb:26-106126) | Ville d'Aubervilliers | 93, 95 | **07/12/2026** |
 | [PRESTATIONS DE NETTOYAGE DES LOCAUX MUNICIPAUX](https://www.boamp.fr/pages/avis/?q=idweb:26-107735) | COMMUNE DE CHANTILLY | 60 | **08/12/2026** |
+| [Mise en propreté des locaux et espaces du Théâtre national de la Colline](https://www.boamp.fr/pages/avis/?q=idweb:26-109603) | Theatre national de la Colline | 75, 77, 78, 91, 92, 93, 94, 95 | **10/12/2026** |
 | [PRESTATIONS DE NETTOYAGE DES SITES GÉRÉS PAR LE CROUS DE VERSAILLES](https://www.boamp.fr/pages/avis/?q=idweb:26-109059) | CROUS de Versailles | 78, 75, 77, 91, 92, 93, 94, 95 | **10/12/2026** |
 | [PRESTATIONS DE NETTOYAGE DES BÂTIMENTS COMMUNAUX](https://www.boamp.fr/pages/avis/?q=idweb:26-108610) | Commune de Beaumont sur Oise | 95, 60, 75, 78, 91, 92, 93, 94 | **18/12/2026** |
 | [Marché de nettoyage et désinfection des bouches et grilles de ventilation mécanique contrôlée (VMC) et casiers mortuaire…](https://www.boamp.fr/pages/avis/?q=idweb:26-101967) | Centre Hospitalier d'Arras | 62, 59, 60, 80 | **—** |
