@@ -1,8 +1,8 @@
 # Veille nettoyage / propreté — SCROB SERVICES
 
-_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 13/11/2026_
+_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 14/11/2026_
 
-**16 avis ouverts** dont **0 nouveaux** depuis le dernier passage.
+**15 avis ouverts** dont **0 nouveaux** depuis le dernier passage.
 
 > 🟢 MAPA = procédure adaptée (peu de concurrence) · 🔁 = relance / marché infructueux (concurrence déjà faible)
 
@@ -10,7 +10,6 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 
 | Objet du marché | Acheteur | Dépt | Date limite |
 |---|---|---|---|
-| [NETTOYAGE ET ENTRETIEN DES BÂTIMENTS COMMUNAUX](https://www.boamp.fr/pages/avis/?q=idweb:26-100508) 🟢 MAPA | Commune de Santeny | 94, 91, 77 | **13/11/2026** |
 | [Nettoyage des locaux](https://www.boamp.fr/pages/avis/?q=idweb:26-100403) 🟢 MAPA | Communauté de Communes Carnelle Pays-de-France | 95 | **16/11/2026** |
 | [Prestations de nettoyage et d'entretien des bâtiments communaux.](https://www.boamp.fr/pages/avis/?q=idweb:26-96991) | COMMUNE DE MAROLLES EN BRIE | 94, 77 | **18/11/2026** |
 | [Accord-cadre pour la réalisation de prestations de mise en propreté au bénéfice des sites des services déconcentrés et d…](https://www.boamp.fr/pages/avis/?q=idweb:26-104911) | SGAMM IDF | 75, 77, 78, 91, 92, 93, 94, 95 | **19/11/2026** |
