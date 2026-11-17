@@ -1,8 +1,8 @@
 # Veille nettoyage / propreté — SCROB SERVICES
 
-_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 16/11/2026_
+_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 17/11/2026_
 
-**15 avis ouverts** dont **0 nouveaux** depuis le dernier passage.
+**15 avis ouverts** dont **1 nouveaux** depuis le dernier passage.
 
 > 🟢 MAPA = procédure adaptée (peu de concurrence) · 🔁 = relance / marché infructueux (concurrence déjà faible)
 
@@ -10,7 +10,6 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 
 | Objet du marché | Acheteur | Dépt | Date limite |
 |---|---|---|---|
-| [Nettoyage des locaux](https://www.boamp.fr/pages/avis/?q=idweb:26-100403) 🟢 MAPA | Communauté de Communes Carnelle Pays-de-France | 95 | **16/11/2026** |
 | [Prestations de nettoyage et d'entretien des bâtiments communaux.](https://www.boamp.fr/pages/avis/?q=idweb:26-96991) | COMMUNE DE MAROLLES EN BRIE | 94, 77 | **18/11/2026** |
 | [Accord-cadre pour la réalisation de prestations de mise en propreté au bénéfice des sites des services déconcentrés et d…](https://www.boamp.fr/pages/avis/?q=idweb:26-104911) | SGAMM IDF | 75, 77, 78, 91, 92, 93, 94, 95 | **19/11/2026** |
 | [PRESTATIONS DE NETTOYAGE DES BATIMENTS ET DE LA VITRERIE DU SIEGE ET DES LOCAUX DEPENDANT DE LA CPAM DE L’AUBE ET DU CEN…](https://www.boamp.fr/pages/avis/?q=idweb:26-99874) | CPAM DE L'AUBE | 10, 51, 52, 89, 21, 77 | **19/11/2026** |
@@ -24,4 +23,5 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 | [Mise en propreté des locaux et espaces du Théâtre national de la Colline](https://www.boamp.fr/pages/avis/?q=idweb:26-109603) | Theatre national de la Colline | 75, 77, 78, 91, 92, 93, 94, 95 | **10/12/2026** |
 | [PRESTATIONS DE NETTOYAGE DES SITES GÉRÉS PAR LE CROUS DE VERSAILLES](https://www.boamp.fr/pages/avis/?q=idweb:26-109059) | CROUS de Versailles | 78, 75, 77, 91, 92, 93, 94, 95 | **10/12/2026** |
 | [PRESTATIONS DE NETTOYAGE DES BÂTIMENTS COMMUNAUX](https://www.boamp.fr/pages/avis/?q=idweb:26-108610) | Commune de Beaumont sur Oise | 95, 60, 75, 78, 91, 92, 93, 94 | **18/12/2026** |
+| [PRESTATIONS RELATIVES AU NETTOYAGE DES BUREAUX, DES LOGEMENTS ET DES PARTIES COMMUNES DES IMMEUBLES, AINSI QUE LA SORTIE…](https://www.boamp.fr/pages/avis/?q=idweb:26-110946) | CRETEIL HABITAT | 75, 77, 91, 92, 93, 94, 95 | **21/12/2026** |
 | [Marché de nettoyage et désinfection des bouches et grilles de ventilation mécanique contrôlée (VMC) et casiers mortuaire…](https://www.boamp.fr/pages/avis/?q=idweb:26-101967) | Centre Hospitalier d'Arras | 62, 59, 60, 80 | **—** |
