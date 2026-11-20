@@ -1,8 +1,8 @@
 # Veille nettoyage / propreté — SCROB SERVICES
 
-_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 19/11/2026_
+_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 20/11/2026_
 
-**14 avis ouverts** dont **0 nouveaux** depuis le dernier passage.
+**12 avis ouverts** dont **0 nouveaux** depuis le dernier passage.
 
 > 🟢 MAPA = procédure adaptée (peu de concurrence) · 🔁 = relance / marché infructueux (concurrence déjà faible)
 
@@ -10,8 +10,6 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 
 | Objet du marché | Acheteur | Dépt | Date limite |
 |---|---|---|---|
-| [Accord-cadre pour la réalisation de prestations de mise en propreté au bénéfice des sites des services déconcentrés et d…](https://www.boamp.fr/pages/avis/?q=idweb:26-104911) | SGAMM IDF | 75, 77, 78, 91, 92, 93, 94, 95 | **19/11/2026** |
-| [PRESTATIONS DE NETTOYAGE DES BATIMENTS ET DE LA VITRERIE DU SIEGE ET DES LOCAUX DEPENDANT DE LA CPAM DE L’AUBE ET DU CEN…](https://www.boamp.fr/pages/avis/?q=idweb:26-99874) | CPAM DE L'AUBE | 10, 51, 52, 89, 21, 77 | **19/11/2026** |
 | [Nettoyage et maintien de la propreté des espaces non bâtis des campus de l’Université de Strasbourg](https://www.boamp.fr/pages/avis/?q=idweb:26-103001) | UNISTRA - DAM | 67, 68, 75, 91, 92, 93 | **23/11/2026** |
 | [PRESTATIONS DE SERVICE POUR L'EXPLOITATION DE LA PROPRETE ET L'HYGIENE DE LA MEDIATHEQUE ET DES ARCHIVES MUNICIPALES DE …](https://www.boamp.fr/pages/avis/?q=idweb:26-105290) | Ville de MELUN | 77 | **30/11/2026** |
 | [Le nettoyage courants des locaux et des surfaces vitrées de l’École Nationale Supérieure d’Architecture de Paris la Vill…](https://www.boamp.fr/pages/avis/?q=idweb:26-104731) | l’Ecole Nationale Supérieure de l’Architecture de Paris la Villette (ENSA-PLV) | 75, 77, 78, 91, 92, 93, 94, 95 | **30/11/2026** |
