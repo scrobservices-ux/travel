@@ -1,8 +1,8 @@
 # Veille nettoyage / propreté — SCROB SERVICES
 
-_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 27/11/2026_
+_Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) · Source : BOAMP open data · Mis à jour le 28/11/2026_
 
-**16 avis ouverts** dont **3 nouveaux** depuis le dernier passage.
+**17 avis ouverts** dont **1 nouveaux** depuis le dernier passage.
 
 > 🟢 MAPA = procédure adaptée (peu de concurrence) · 🔁 = relance / marché infructueux (concurrence déjà faible)
 
@@ -24,5 +24,6 @@ _Zone : Val-d'Oise (95), Oise (60), Seine-et-Marne (77), Seine-Saint-Denis (93) 
 | [PRESTATIONS RELATIVES AU NETTOYAGE DES BUREAUX, DES LOGEMENTS ET DES PARTIES COMMUNES DES IMMEUBLES, AINSI QUE LA SORTIE…](https://www.boamp.fr/pages/avis/?q=idweb:26-110946) | CRETEIL HABITAT | 75, 77, 91, 92, 93, 94, 95 | **21/12/2026** |
 | [PRESTATIONS DE NETTOYAGE DES LOCAUX ET DE LA VITRERIE DE LA GRANDE CHANCELLERIE DE LA LÉGION D’HONNEUR (75007) ET DE LA …](https://www.boamp.fr/pages/avis/?q=idweb:26-114489) | GRANDE CHANCELLERIE DE LA LEGION D HONNEUR | 75, 93 | **04/01/2027** |
 | [Accord-cadre pour les prestations de nettoyage des locaux et des vitres de la ville de Viarmes](https://www.boamp.fr/pages/avis/?q=idweb:26-114828) | Mairie de Viarmes | 95 | **15/01/2027** |
+| [NETTOYAGE DES VITRERIES DANS LES BATIMENTS COMMUNAUX](https://www.boamp.fr/pages/avis/?q=idweb:26-115504) | Ville de Stains | 93 | **—** |
 | [NETTOYAGE DES VITRERIES DANS LES BATIMENTS COMMUNAUX](https://www.boamp.fr/pages/avis/?q=idweb:26-114054) | Ville de Stains | 93 | **—** |
 | [Marché de nettoyage et désinfection des bouches et grilles de ventilation mécanique contrôlée (VMC) et casiers mortuaire…](https://www.boamp.fr/pages/avis/?q=idweb:26-101967) | Centre Hospitalier d'Arras | 62, 59, 60, 80 | **—** |
